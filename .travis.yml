@@ -5,6 +5,9 @@ python:
 script:
   - pytest
 install:
-  - pip install .
+  - pip install .[test]
+  - pip install codecov
 script:
   - pytest
+after_success
+  - codecov
