@@ -9,5 +9,5 @@ install:
   - pip install codecov
 script:
   - pytest --cov=UpnpAVControl
-after_success
+after_success:
   - codecov
