@@ -1,2 +1,5 @@
 [run]
-source=UpnpAVControl
+source = UpnpAVControl
+
+[report]
+omit = tests/*
