@@ -1,5 +1,5 @@
-import UpnpAVControl
+import upnpavcontrol
 
 
 def test_magic_number():
-    assert UpnpAVControl.generate_useless_magic_number() == 42
+    assert upnpavcontrol.generate_useless_magic_number() == 42

@@ -8,6 +8,6 @@ install:
   - pip install .[test]
   - pip install codecov
 script:
-  - pytest --cov=UpnpAVControl
+  - pytest --cov=upnpavcontrol
 after_success:
   - codecov

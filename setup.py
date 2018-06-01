@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='UpnpAVControl',
+    name='upnpavcontrol',
     description='UPNP AV control point library',
     version='0.0.1',
 
