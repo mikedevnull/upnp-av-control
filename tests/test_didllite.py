@@ -34,13 +34,19 @@ def test_didl_container_parse():
     result = list(didllite.parse(didl1))
     assert len(result) == 3
     assert result[0] == didllite.BaseObject(
-        id='29$40850$0', parentID='29$40850', title='= All Songs =',
+        id='29$40850$0',
+        parentID='29$40850',
+        title='= All Songs =',
         upnpclass='object.container.album.musicAlbum')
     assert result[1] == didllite.BaseObject(
-        id='29$40850$40862', parentID='29$40850', title='Album1',
+        id='29$40850$40862',
+        parentID='29$40850',
+        title='Album1',
         upnpclass='object.container.album.musicAlbum')
     assert result[2] == didllite.BaseObject(
-        id='29$40850$40850', parentID='29$40850', title='Album2',
+        id='29$40850$40850',
+        parentID='29$40850',
+        title='Album2',
         upnpclass='object.container.album.musicAlbum')
 
 
