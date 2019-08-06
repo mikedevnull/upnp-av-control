@@ -1,42 +1,33 @@
-import upnpclient
-
-
 class MediaRenderer(object):
-    def __init__(self, location):
-        self._device = upnpclient.Device(location=location)
+    def __init__(self, device):
+        self._device = device
 
     def __repr__(self):
         return '<MediaRenderer {}>'.format(self.friendly_name)
 
-    @property
-    def volume(self):
-        response = self.rendering_control.GetVolume(InstanceID=0, Channel='Master')
+    async def get_volume(self):
+        response = await self.rendering_control.action('GetVolume').async_call(
+            InstanceID=0, Channel='Master')
         return response['CurrentVolume']
 
-    @volume.setter
-    def volume(self, value):
-        return self.rendering_control.SetVolume(InstanceID=0, Channel='Master', DesiredVolume=value)
-    
-    @property
-    def mute(self):
-        response = self.rendering_control.GetMute(InstanceID=0, Channel='Master')
-        return response['CurrentMute']
-
-    @mute.setter
-    def mute(self, value):
-        self.rendering_control.SetMute(InstanceID=0, Channel='Master', DesiredMute=str(bool(value)))
+    async def set_volume(self, value):
+        return await self.rendering_control.action('SetVolume').async_call(
+            InstanceID=0, Channel='Master', DesiredVolume=value)
 
     @property
     def rendering_control(self):
-        return self._device.RenderingControl
+        return self._device.service(
+            'urn:schemas-upnp-org:service:RenderingControl:1')
 
     @property
     def av_transport(self):
-        return self._device.avTransport
+        return self._device.service(
+            'urn:schemas-upnp-org:service:AVTransport:1')
 
     @property
-    def connection_manager(self):    
-        return self._device.ConnectionManager
+    def connection_manager(self):
+        return self._device.service(
+            'urn:schemas-upnp-org:service:ConnectionManager:1')
 
     @property
     def friendly_name(self):
