@@ -7,7 +7,7 @@ setup(name='upnpavcontrol',
       author='Michael Meier',
       author_email='michael.meier@bluesheep.de',
       license='BSD-3-Clause',
-      install_requires=['async_upnp_client', 'attrib', 'lxml'],
+      install_requires=['async_upnp_client', 'fastapi', 'attrib', 'lxml'],
       extras_require={
           'test': [
               'pytest~=3.5',
