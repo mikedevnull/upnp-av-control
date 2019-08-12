@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from upnpavcontrol.mediaserver import didllite
+from upnpavcontrol.core import didllite
 
 didl1 = """
 <DIDL-Lite xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/" xmlns:sec="http://www.sec.co.kr/" xmlns:dlna="urn:schemas-dlna-org:metadata-1-0/">
