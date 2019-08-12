@@ -15,6 +15,10 @@ class MediaRenderer(object):
             InstanceID=0, Channel='Master', DesiredVolume=value)
 
     @property
+    def udn(self):
+        return self.upnp_device.udn
+
+    @property
     def rendering_control(self):
         return self._device.service(
             'urn:schemas-upnp-org:service:RenderingControl:1')
