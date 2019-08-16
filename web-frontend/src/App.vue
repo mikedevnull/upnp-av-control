@@ -2,13 +2,10 @@
   <v-app>
     <v-app-bar app>
       <v-toolbar-title class="headline text-uppercase">
-        <span>Vuetify</span>
-        <span class="font-weight-light">MATERIAL DESIGN</span>
+        <span>Upnp AV Control Point</span>
       </v-toolbar-title>
       <v-spacer></v-spacer>
-      <v-btn text href="https://github.com/vuetifyjs/vuetify/releases/latest" target="_blank">
-        <span class="mr-2">Latest Release</span>
-      </v-btn>
+      <RendererSelector></RendererSelector>
     </v-app-bar>
 
     <v-content>
@@ -17,12 +14,11 @@
 </template>
 
 <script>
-import HelloWorld from "./components/HelloWorld";
-
+import RendererSelector from "./components/RendererSelector";
 export default {
   name: "App",
   components: {
-    HelloWorld
+    RendererSelector
   },
   data: () => ({
     //
