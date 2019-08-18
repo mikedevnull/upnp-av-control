@@ -67,6 +67,7 @@ async def async_scan(factory, timeout: int = 3):
 
     server_search = async_search(
         handle_discovery,
+        timeout=timeout,
         service_type='urn:schemas-upnp-org:device:MediaServer:1')
 
     await asyncio.wait([renderer_search, server_search])
@@ -82,6 +83,20 @@ class DeviceRegistry(object):
                                                    on_update=self._on_update)
         self._av_devices = {}
         self._factory = async_upnp_client.UpnpFactory(AiohttpRequester())
+
+    @property
+    def mediaservers(self):
+        return [
+            entity.device for entity in self._av_devices.values()
+            if is_media_server(entity.device_type)
+        ]
+
+    @property
+    def mediarenderers(self):
+        return [
+            entity.device for entity in self._av_devices.values()
+            if is_media_renderer(entity.device_type)
+        ]
 
     async def start(self):
         _logger.info("Starting device registry")
