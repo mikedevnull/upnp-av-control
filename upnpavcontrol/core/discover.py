@@ -76,13 +76,27 @@ async def async_scan(factory, timeout: int = 3):
     return devices
 
 
+def create_aiohttp_requester():
+    return AiohttpRequester()
+
+
+def create_upnp_advertisement_listener(on_alive, on_byebye, on_update):
+    return UpnpAdvertisementListener(on_alive=on_alive,
+                                     on_byebye=on_byebye,
+                                     on_update=on_update)
+
+
 class DeviceRegistry(object):
-    def __init__(self):
-        self._listener = UpnpAdvertisementListener(on_alive=self._on_alive,
-                                                   on_byebye=self._on_byebye,
-                                                   on_update=self._on_update)
+    def __init__(
+            self,
+            create_advertisement_listener=create_upnp_advertisement_listener,
+            create_requester=create_aiohttp_requester):
+        self._listener = create_advertisement_listener(
+            on_alive=self._on_alive,
+            on_byebye=self._on_byebye,
+            on_update=self._on_update)
         self._av_devices = {}
-        self._factory = async_upnp_client.UpnpFactory(AiohttpRequester())
+        self._factory = async_upnp_client.UpnpFactory(create_requester())
 
     @property
     def mediaservers(self):

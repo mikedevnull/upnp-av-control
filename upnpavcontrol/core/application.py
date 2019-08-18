@@ -1,11 +1,15 @@
+from . import discover
 from .discover import DeviceRegistry, is_media_renderer, is_media_server
 import asyncio
 import logging
 
 
 class AVControlPoint(object):
-    def __init__(self):
-        self._devices = DeviceRegistry()
+    def __init__(self, device_registry=None):
+        if device_registry is None:
+            self._devices = DeviceRegistry()
+        else:
+            self._devices = device_registry
         self._active_renderer = None
 
     @property

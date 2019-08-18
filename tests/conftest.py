@@ -3,6 +3,9 @@ import os.path
 from async_upnp_client import UpnpRequester
 from upnpavcontrol.core import discover
 import asyncio
+from .mock_utils import create_test_advertisement_listener
+from .mock_utils import mock_async_search, create_test_requester
+from .mock_utils import UpnpTestAdvertisementListener
 
 
 class UpnpTestAdvertisementListener(object):
@@ -65,6 +68,11 @@ _RESPONSES = {
 
 def _create_test_requester():
     return UpnpTestRequester(_RESPONSES)
+@pytest.fixture
+def mocked_device_registry():
+    return discover.DeviceRegistry(
+        create_advertisement_listener=create_test_advertisement_listener,
+        create_requester=create_test_requester)
 
 
 @pytest.fixture
@@ -74,46 +82,6 @@ def mock_discovery_backend(monkeypatch):
     monkeypatch.setattr(discover, 'AiohttpRequester', _create_test_requester)
 
 
-scan_server_device_data = {
-    'Host':
-    '239.255.255.250:1900',
-    'Cache-Control':
-    'max-age=1800',
-    'Location':
-    'http://192.168.99.2:9200/plugins/MediaServer.xml',
-    'ST':
-    'urn:schemas-upnp-org:device:MediaServer:1',
-    'NTS':
-    'ssdp:alive',
-    'Server':
-    'foonix/1.2 UPnP/1.0 FooServer/1.50',
-    'USN':
-    'uuid:f5b1b596-c1d2-11e9-af8b-705681aa5dfd::urn:schemas-upnp-org:device:MediaServer:1'  # noqa: E501
-}
-
-scan_renderer_device_data = {
-    'Cache-Control':
-    'max-age=1800',
-    'Ext':
-    None,
-    'Location':
-    'http://192.168.99.1:1234/dmr.xml',
-    'ST':
-    'urn:schemas-upnp-org:device:MediaRenderer:1',
-    'NTS':
-    'ssdp:alive',
-    'Server':
-    'foonix/1.2 UPnP/1.0 FooRender/1.50',
-    'USN':
-    'uuid:13bf6358-00b8-101b-8000-74dfbfed7306::urn:schemas-upnp-org:device:MediaRenderer:1'  # noqa: E501
-}
-
-
-async def mock_async_search(async_callback, timeout, service_type):
-    if discover.is_media_renderer(service_type):
-        await async_callback(scan_renderer_device_data)
-    elif discover.is_media_server(service_type):
-        await async_callback(scan_server_device_data)
 
 
 @pytest.fixture
