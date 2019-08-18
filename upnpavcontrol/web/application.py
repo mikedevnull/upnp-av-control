@@ -1,10 +1,23 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI
 from pydantic import BaseModel
 import logging
 
-app = FastAPI()
 
-_av_control_point_instance = None
+class AVControlPointAPI(FastAPI):
+    def __init__(self, *args, **kwargs):
+        super().__init__(self, *args, **kwargs)
+        self._av_control_point = None
+
+    @property
+    def av_control_point(self):
+        return self._av_control_point
+
+    @av_control_point.setter
+    def av_control_point(self, control_point):
+        self._av_control_point = control_point
+
+
+app = AVControlPointAPI()
 
 
 class RendererDevice(BaseModel):
@@ -16,30 +29,27 @@ class PlaybackInfo(BaseModel):
     volume: int = None
 
 
-def av_control_point():
-    logging.info('av control point dep requested')
-    return _av_control_point_instance
-
-
 def _format_device(device):
     return {'name': device.upnp_device.friendly_name, 'udn': device.udn}
 
 
 @app.get('/player/devices')
-def device_list(av_cp=Depends(av_control_point)):
-    return {'data': [_format_device(s) for s in av_cp.mediarenderers]}
+def device_list():
+    return {'data': [_format_device(s)
+                     for s in app.av_control_point.mediarenderers]}
 
 
 @app.put('/player/device')
-def set_active_player(device: RendererDevice, av_cp=Depends(av_control_point)):
+def set_active_player(device: RendererDevice):
     logging.info('Select device: %s', device.udn)
-    av_cp.set_renderer(device.udn)
+    app.av_control_point.set_renderer(device.udn)
 
 
 @app.get('/player', response_model=PlaybackInfo)
-async def current_playback_info(av_cp=Depends(av_control_point)):
-    if av_cp.mediarenderer is None:
+async def current_playback_info():
+    if app.av_control_point.mediarenderer is None:
         return {'player': None}
     else:
-        volume = await av_cp.mediarenderer.get_volume()
-        return {'player': av_cp.mediarenderer.udn, 'volume': volume}
+        volume = await app.av_control_point.mediarenderer.get_volume()
+        return {'player': app.av_control_point.mediarenderer.udn,
+                'volume': volume}

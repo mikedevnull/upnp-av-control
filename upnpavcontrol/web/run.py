@@ -3,8 +3,7 @@ import uvicorn
 
 def run_web_api(av_control_point):
     from .application import app as web_app
-    from . import application
-    application._av_control_point_instance = av_control_point
+    web_app.av_control_point = av_control_point
 
     config = uvicorn.Config(web_app,
                             debug=True,
