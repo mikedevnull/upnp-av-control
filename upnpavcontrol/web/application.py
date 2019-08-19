@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import logging
 
@@ -41,8 +41,11 @@ def device_list():
 
 @app.put('/player/device')
 def set_active_player(device: RendererDevice):
-    logging.info('Select device: %s', device.udn)
-    app.av_control_point.set_renderer(device.udn)
+    try:
+        logging.info('Select device: %s', device.udn)
+        app.av_control_point.set_renderer(device.udn)
+    except KeyError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @app.get('/player', response_model=PlaybackInfo)

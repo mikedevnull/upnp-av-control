@@ -47,4 +47,12 @@ async def test_current_renderer(webapi_client):
     playbackInfo = response.json()
     assert playbackInfo['player'] == mocked_renderer.udn
     assert playbackInfo['volume'] == 42
+
+    response = await webapi_client.put('/player/device',
+                                       json={'udn': "fake-unkown-invalid-uid"})
+    assert response.status_code == 400
+    response = await webapi_client.get('/player')
     assert response.status_code == 200
+    playbackInfo = response.json()
+    assert playbackInfo['player'] == mocked_renderer.udn
+    assert playbackInfo['volume'] == 42

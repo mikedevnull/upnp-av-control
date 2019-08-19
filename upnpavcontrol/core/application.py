@@ -38,8 +38,10 @@ class AVControlPoint(object):
             else:
                 logging.error('%s is not a media renderer',
                               entry.device.friendly_name)
+                raise KeyError('Not a media renderer')
         else:
             logging.error('Unkown device %s requested', deviceUDN)
+            raise KeyError('Device not found')
 
     async def run(self):
         loop = asyncio.get_running_loop()
