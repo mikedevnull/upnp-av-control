@@ -56,3 +56,28 @@ async def test_current_renderer(webapi_client):
     playbackInfo = response.json()
     assert playbackInfo['player'] == mocked_renderer.udn
     assert playbackInfo['volume'] == 42
+
+
+@pytest.mark.asyncio
+async def test_set_volume(webapi_client):
+    cp = webapi_client.application.av_control_point
+    mocked_renderer = device_mocks.addMockedMediaRenderer(cp)
+
+    # setting volume without an active player is an error
+    response = await webapi_client.put('/player/volume',
+                                       json={'volume_percent': 21})
+    assert response.status_code == 404
+
+    cp.set_renderer(mocked_renderer.udn)
+    response = await webapi_client.put('/player/volume',
+                                       json={'volume_percent': 21})
+    assert response.status_code == 204
+    volume_action = mocked_renderer.rendering_control.action('SetVolume')
+    volume_action.mock.assert_called_once_with(InstanceID=0, Channel='Master',
+                                               DesiredVolume=21)
+
+    volume_action.mock.reset_mock()
+    response = await webapi_client.put('/player/volume',
+                                       json={'volume_percent': 101})
+    assert response.status_code == 422
+    volume_action.mock.assert_not_called()

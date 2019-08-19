@@ -49,6 +49,7 @@ class RenderingControlService(_UpnpServiceMock):
     def __init__(self):
         super().__init__()
         self.add_action_mock('GetVolume')
+        self.add_action_mock('SetVolume')
 
     @property
     def service_type(self):

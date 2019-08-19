@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 import logging
 
 
@@ -46,6 +46,24 @@ def set_active_player(device: RendererDevice):
         app.av_control_point.set_renderer(device.udn)
     except KeyError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+class Volume(BaseModel):
+    volume_percent: int
+
+    @validator('volume_percent')
+    def volume_percent_range(cls, v):
+        if v < 0 or v > 100:
+            raise ValueError('Volume out of range (0 <= volume <= 100)')
+        return v
+
+
+@app.put('/player/volume', status_code=204)
+async def set_player_volume(volume: Volume):
+    if app.av_control_point.mediarenderer is None:
+        raise HTTPException(status_code=404)
+    await app.av_control_point.mediarenderer.set_volume(volume.volume_percent)
+    return ''
 
 
 @app.get('/player', response_model=PlaybackInfo)
