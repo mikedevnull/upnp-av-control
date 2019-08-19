@@ -1,5 +1,6 @@
 import pytest
 from . import mock_utils
+from . import device_mocks
 
 
 @pytest.fixture
@@ -28,13 +29,22 @@ async def test_renderer_device_list(webapi_client):
 
 @pytest.mark.asyncio
 async def test_current_renderer(webapi_client):
-    await mock_utils.find_dummy_renderer_server(
-        webapi_client.application.av_control_point)
+    cp = webapi_client.application.av_control_point
+    mocked_renderer = device_mocks.addMockedMediaRenderer(cp)
+    mocked_renderer.rendering_control.action(
+        'GetVolume').mock.return_value = {'CurrentVolume': 42}
+
     response = await webapi_client.get('/player')
     assert response.status_code == 200
     playbackInfo = response.json()
     assert playbackInfo['player'] is None
 
     response = await webapi_client.put('/player/device',
-                                       json={'udn': 'uuid:13bf6358-00b8-101b-8000-74dfbfed7306'})
+                                       json={'udn': mocked_renderer.udn})
+    assert response.status_code == 200
+    response = await webapi_client.get('/player')
+    assert response.status_code == 200
+    playbackInfo = response.json()
+    assert playbackInfo['player'] == mocked_renderer.udn
+    assert playbackInfo['volume'] == 42
     assert response.status_code == 200
