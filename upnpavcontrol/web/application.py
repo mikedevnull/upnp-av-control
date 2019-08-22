@@ -43,7 +43,7 @@ def _format_server(device):
 
 def _format_browse_url(udn: str, objectId: str = None):
     browseUrl = app.url_path_for('browse_library', udn=udn)
-    if object is not None:
+    if objectId is not None:
         query = urllib.parse.urlencode({'objectID': objectId})
         browseUrl = browseUrl + '?' + query
     return browseUrl
