@@ -27,6 +27,10 @@ class AVControlPoint(object):
         ]
 
     @property
+    def devices(self):
+        return self._devices._av_devices
+
+    @property
     def mediarenderer(self):
         return self._active_renderer
 

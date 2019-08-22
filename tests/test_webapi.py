@@ -81,3 +81,19 @@ async def test_set_volume(webapi_client):
                                        json={'volume_percent': 101})
     assert response.status_code == 422
     volume_action.mock.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_server_device_list(webapi_client):
+    await mock_utils.find_dummy_renderer_server(
+        webapi_client.application.av_control_point)
+    response = await webapi_client.get('/library/devices')
+    assert response.status_code == 200
+    devices = response.json()['data']
+    assert len(devices) == 1
+    device = devices[0]
+    assert device['name'] == 'Footech Media Server [MyFancyCollection]'
+    assert device['udn'] == 'uuid:f5b1b596-c1d2-11e9-af8b-705681aa5dfd'
+    device_links = device['links']
+    assert device_links['browse'] == webapi_client.application.url_path_for(
+        'browse_library', udn=device['udn'])

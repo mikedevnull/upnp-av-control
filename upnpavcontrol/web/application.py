@@ -33,6 +33,12 @@ def _format_device(device):
     return {'name': device.upnp_device.friendly_name, 'udn': device.udn}
 
 
+def _format_server(device):
+    return {'name': device.friendly_name, 'udn': device.udn,
+            'links': {'browse': app.url_path_for('browse_library',
+                                                 udn=device.udn)}
+            }
+
 @app.get('/player/devices')
 def device_list():
     return {'data': [_format_device(s)
@@ -74,3 +80,16 @@ async def current_playback_info():
         volume = await app.av_control_point.mediarenderer.get_volume()
         return {'player': app.av_control_point.mediarenderer.udn,
                 'volume': volume}
+
+
+@app.get('/library/devices')
+def get_media_library_devices():
+    return {'data': [_format_server(x)
+                     for x in app.av_control_point.mediaservers]}
+
+
+@app.get('/library/browse/{udn}')
+async def browse_library(udn: str, objectID: str = '0'):
+    if udn not in app.av_control_point.devices or not \
+            is_media_server(app._av_control_point.devices[udn].device_type):
+        raise HTTPException(status_code=404)
