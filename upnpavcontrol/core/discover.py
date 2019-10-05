@@ -55,16 +55,18 @@ async def async_scan(factory, timeout: int = 3):
     async def handle_discovery(description):
         description_url = description['Location']
         device_type = description['ST']
-        _logger.info('Found %s at %s', device_type, description_url)
+        _logger.debug('Got scan result %s at %s', device_type, description_url)
         device_task = asyncio.create_task(
             create_device_entry(description_url, device_type))
         device_tasks.append(device_task)
 
+    _logger.debug('Start scan for media renderers')
     renderer_search = async_search(
         handle_discovery,
         timeout=timeout,
         service_type='urn:schemas-upnp-org:device:MediaRenderer:1')
 
+    _logger.debug('Start scan for media servers')
     server_search = async_search(
         handle_discovery,
         timeout=timeout,
@@ -119,12 +121,13 @@ class DeviceRegistry(object):
         loop.create_task(self._listener.async_start())
 
     async def scan(self):
+        _logger.info('Searching for AV devices')
         device_entries = await async_scan(self._factory)
         for entry in device_entries:
             usn = entry.device.udn
             if usn not in self._av_devices:
                 self._av_devices[usn] = entry
-                _logger.info("Found new device: %s", entry.device)
+                _logger.info("Scan found new device: %s", entry.device)
 
     async def _on_alive(self, resource):
         device_type = resource['NT']
@@ -136,16 +139,15 @@ class DeviceRegistry(object):
                 entry = await _create_device_entry(self._factory,
                                                    device_location,
                                                    device_type)
-                _logger.info("Found new device: %s", entry.device)
+                _logger.info("New device sent alive message: %s", entry.device)
                 self._av_devices[device_udn] = entry
             else:
                 entry = self._av_devices[device_udn]
-                _logger.info("Got a sign of life from: %s", entry.device)
+                _logger.debug("Got a sign of life from: %s", entry.device)
                 # todo: update last_seen timestamp
                 pass
         else:
-            _logger.debug('Ignored: %s', device_type)
-            _logger.debug('Known devices: %s', self._av_devices.keys())
+            _logger.debug('Ignored: %s (type not of interest)', device_type)
 
     async def _on_byebye(self, resource):
         device_type = resource['NT']
