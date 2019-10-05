@@ -15,4 +15,9 @@ setup(name='upnpavcontrol',
                    'async_asgi_testclient'],
           'dev': ['flake8~=3.5', 'flake8-print~=3.1', 'yapf'],
       },
+      entry_points={
+          'console_scripts': [
+              'upnp-av-web-cp= upnpavcontrol.tools.web_control_point:main',
+          ],
+      },
       packages=find_packages())
