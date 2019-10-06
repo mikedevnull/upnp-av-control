@@ -99,6 +99,7 @@ class DeviceRegistry(object):
             on_update=self._on_update)
         self._av_devices = {}
         self._factory = async_upnp_client.UpnpFactory(create_requester())
+        self._event_callback = None
 
     @property
     def mediaservers(self):
@@ -114,6 +115,9 @@ class DeviceRegistry(object):
             if is_media_renderer(entity.device_type)
         ]
 
+    def set_event_callback(self, callback):
+        self._event_callback = callback
+
     async def start(self):
         _logger.info("Starting device registry")
         loop = asyncio.get_running_loop()
@@ -128,6 +132,8 @@ class DeviceRegistry(object):
             if usn not in self._av_devices:
                 self._av_devices[usn] = entry
                 _logger.info("Scan found new device: %s", entry.device)
+        if len(device_entries) > 0:
+            self._notify_on_update()
 
     async def _on_alive(self, resource):
         device_type = resource['NT']
@@ -141,6 +147,7 @@ class DeviceRegistry(object):
                                                    device_type)
                 _logger.info("New device sent alive message: %s", entry.device)
                 self._av_devices[device_udn] = entry
+                self._notify_on_update()
             else:
                 entry = self._av_devices[device_udn]
                 _logger.debug("Got a sign of life from: %s", entry.device)
@@ -155,6 +162,11 @@ class DeviceRegistry(object):
         if device_udn in self._av_devices:
             entry = self._av_devices.pop(device_udn)
             _logger.info("ByeBye: %s", entry.device)
+            self._notify_on_update()
 
     async def _on_update(self, resource):
         _logger.info("Update: %s: %s", resource['NT'], resource['USN'])
+
+    def _notify_on_update(self):
+        if self._event_callback:
+            self._event_callback()
