@@ -115,6 +115,9 @@ class DeviceRegistry(object):
             if is_media_renderer(entity.device_type)
         ]
 
+    def get_device(self, udn: str):
+        return self._av_devices[udn]
+
     def set_event_callback(self, callback):
         self._event_callback = callback
 
