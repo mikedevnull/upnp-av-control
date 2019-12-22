@@ -12,9 +12,11 @@ class UpnpTestAdvertisementListener(object):
 
     async def trigger_alive(self, payload):
         await self._on_alive(payload)
+        return payload
 
     async def trigger_byebye(self, payload):
         await self._on_byebye(payload)
+        return payload
 
     async def async_start(self):
         pass
@@ -139,7 +141,6 @@ ssdp_byebye_renderer_device_data = {
     'uuid:13bf6358-00b8-101b-8000-74dfbfed7306::urn:schemas-upnp-org:device:MediaRenderer:1'  # noqa: E501
 }
 
-
 ssdp_scan_server_device_data = {
     'Host':
     '239.255.255.250:1900',
@@ -183,5 +184,7 @@ async def mock_async_search(async_callback, timeout, service_type):
 
 
 async def find_dummy_renderer_server(av_control_point):
-    await av_control_point._devices._listener.trigger_alive(ssdp_alive_renderer_device_data)  # noqa: E501
-    await av_control_point._devices._listener.trigger_alive(ssdp_alive_server_device_data)  # noqa: E501
+    await av_control_point._devices._listener.trigger_alive(
+        ssdp_alive_renderer_device_data)  # noqa: E501
+    await av_control_point._devices._listener.trigger_alive(
+        ssdp_alive_server_device_data)  # noqa: E501

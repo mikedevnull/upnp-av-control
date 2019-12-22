@@ -1,6 +1,4 @@
 from unittest import mock
-from upnpavcontrol.core.discover import DeviceEntry
-from upnpavcontrol.core.mediarenderer import MediaRenderer
 
 
 class _UpnpDeviceMock(object):
@@ -10,14 +8,11 @@ class _UpnpDeviceMock(object):
     Add mocked services with mocked actions, which can be called
     async and checked.
     """
-
     def __init__(self, friendly_name: str, udn: str, location: str):
         self._services = {}
         self.friendly_name = friendly_name
         self.udn = udn
         self.location = location
-
-        self.add_service_mock(RenderingControlService())
 
     def service(self, service_type):
         return self._services[service_type]
@@ -58,25 +53,16 @@ class RenderingControlService(_UpnpServiceMock):
 
 class UpnpMediaRendererDevice(_UpnpDeviceMock):
     def __init__(self):
-        self._services = {}
-        self.friendly_name = "FooRenderer"
-        self.udn = "e094faa8-c2bb-11e9-b72e-705681aa5dfd"
-        self.location = "http:://localhost:12342"
+        super().__init__(friendly_name="FooRenderer",
+                         udn="uuid:e094faa8-c2bb-11e9-b72e-705681aa5dfd",
+                         location="http:://localhost:12342")
 
         self.add_service_mock(RenderingControlService())
 
-    def service(self, service_type):
-        return self._services[service_type]
 
-    def add_service_mock(self, service):
-        self._services[service.service_type] = service
-
-
-def addMockedMediaRenderer(av_control_point):
-    renderer = MediaRenderer(UpnpMediaRendererDevice())
-    mockedRendererEntry = DeviceEntry(
-        device=renderer,
-        device_type="urn:schemas-upnp-org:device:MediaRenderer:1")
-    udn = mockedRendererEntry.device.udn
-    av_control_point._devices._av_devices[udn] = mockedRendererEntry
-    return mockedRendererEntry.device
+class UpnpMediaServerDevice(_UpnpDeviceMock):
+    def __init__(self):
+        super().__init__(
+            friendly_name='Footech Media Server [MyFancyCollection]',
+            udn='uuid:f5b1b596-c1d2-11e9-af8b-705681aa5dfd',
+            location='http:://localhost:12343')
