@@ -9,8 +9,8 @@ from unittest.mock import Mock
 
 
 @pytest.mark.asyncio
-async def test_discover_by_alive(mock_discovery_backend):
-    registry = discover.DeviceRegistry()
+async def test_discover_by_alive(mocked_device_registry):
+    registry = mocked_device_registry
 
     discovery_callback = Mock(name='registry_event_callback')
     registry.set_event_callback(discovery_callback)
