@@ -9,6 +9,14 @@ import async_upnp_client
 import asyncio
 import functools
 from attr import attrs, attrib
+from enum import Enum
+
+
+class DiscoveryEventType(Enum):
+    NEW_DEVICE = 0
+    DEVICE_UPDATE = 1
+    DEVICE_LOST = 2
+
 
 _logger = logging.getLogger(__name__)
 
@@ -24,6 +32,10 @@ def is_media_server(service_type):
 
 def is_media_renderer(service_type):
     return media_renderer_regex.match(service_type)
+
+
+def udn_from_usn(usn, device_type):
+    return usn.replace(f'::{device_type}', '')
 
 
 @attrs
@@ -90,9 +102,9 @@ def create_upnp_advertisement_listener(on_alive, on_byebye, on_update):
 
 class DeviceRegistry(object):
     def __init__(
-            self,
-            create_advertisement_listener=create_upnp_advertisement_listener,
-            create_requester=create_aiohttp_requester):
+        self,
+        create_advertisement_listener=create_upnp_advertisement_listener,
+        create_requester=create_aiohttp_requester):
         self._listener = create_advertisement_listener(
             on_alive=self._on_alive,
             on_byebye=self._on_byebye,
@@ -136,7 +148,7 @@ class DeviceRegistry(object):
                 self._av_devices[usn] = entry
                 _logger.info("Scan found new device: %s", entry.device)
         if len(device_entries) > 0:
-            self._notify_on_update()
+            self._notify_on_update(DiscoveryEventType.NEW_DEVICE, usn)
 
     async def _on_alive(self, resource):
         device_type = resource['NT']
@@ -150,7 +162,8 @@ class DeviceRegistry(object):
                                                    device_type)
                 _logger.info("New device sent alive message: %s", entry.device)
                 self._av_devices[device_udn] = entry
-                self._notify_on_update()
+                self._notify_on_update(DiscoveryEventType.NEW_DEVICE,
+                                       device_udn)
             else:
                 entry = self._av_devices[device_udn]
                 _logger.debug("Got a sign of life from: %s", entry.device)
@@ -161,15 +174,15 @@ class DeviceRegistry(object):
 
     async def _on_byebye(self, resource):
         device_type = resource['NT']
-        device_udn = resource['USN'].replace('::%s' % device_type, '')
+        device_udn = udn_from_usn(resource['USN'], device_type)
         if device_udn in self._av_devices:
             entry = self._av_devices.pop(device_udn)
             _logger.info("ByeBye: %s", entry.device)
-            self._notify_on_update()
+            self._notify_on_update(DiscoveryEventType.DEVICE_LOST, device_udn)
 
     async def _on_update(self, resource):
         _logger.info("Update: %s: %s", resource['NT'], resource['USN'])
 
-    def _notify_on_update(self):
+    def _notify_on_update(self, event, udn):
         if self._event_callback:
-            self._event_callback()
+            self._event_callback(event, udn)
