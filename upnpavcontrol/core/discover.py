@@ -14,9 +14,9 @@ import inspect
 
 
 class DiscoveryEventType(Enum):
-    NEW_DEVICE = 0
-    DEVICE_UPDATE = 1
-    DEVICE_LOST = 2
+    NEW_DEVICE = 'NEW_DEVICE'
+    DEVICE_UPDATE = 'DEVICE_UPDATE'
+    DEVICE_LOST = 'DEVICE_LOST'
 
 
 _logger = logging.getLogger(__name__)
@@ -186,4 +186,4 @@ class DeviceRegistry(object):
             if inspect.iscoroutinefunction(self._event_callback):
                 await self._event_callback(event, udn)
             else:
-            self._event_callback(event, udn)
+                self._event_callback(event, udn)

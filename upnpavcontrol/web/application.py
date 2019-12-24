@@ -1,14 +1,18 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, validator
+from starlette.websockets import WebSocket, WebSocketDisconnect
 import logging
 from upnpavcontrol.core.discover import is_media_server
+from .broadcast_event_bus import BroadcastEventBus
 import urllib.parse
+from .models import DiscoveryEvent
 
 
 class AVControlPointAPI(FastAPI):
     def __init__(self, *args, **kwargs):
         super().__init__(self, *args, **kwargs)
         self._av_control_point = None
+        self.event_bus = BroadcastEventBus()
 
     @property
     def av_control_point(self):
@@ -16,7 +20,15 @@ class AVControlPointAPI(FastAPI):
 
     @av_control_point.setter
     def av_control_point(self, control_point):
+        if self._av_control_point is not None:
+            self._av_control_point._devices.set_event_callback(None)
         self._av_control_point = control_point
+        if self._av_control_point is not None:
+            self._av_control_point._devices.set_event_callback(self._device_registry_callback)
+
+    async def _device_registry_callback(self, event_type, device_udn):
+        event = DiscoveryEvent(event_type=event_type, udn=device_udn)
+        await self.event_bus.broadcast_event(event.json())
 
 
 app = AVControlPointAPI()
@@ -120,3 +132,20 @@ async def browse_library(udn: str, objectID: str = '0'):
     server = app.av_control_point.devices[udn].device
     result = await server.browse(objectID)
     return _format_didl_entries(udn, result)
+
+
+@app.websocket('/ws/events')
+async def websocket_endpoint(websocket: WebSocket):
+    await app.event_bus.accept(websocket)
+    try:
+        while True:
+            # currently we don't expect any data coming in, so we discard it
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        app.event_bus.remove_connection(websocket)
+
+
+@app.on_event("startup")
+async def init_event_bus():
+    # Prime the push notification generator
+    await app.event_bus.queue.asend(None)
