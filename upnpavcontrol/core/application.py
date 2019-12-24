@@ -14,17 +14,11 @@ class AVControlPoint(object):
 
     @property
     def mediaservers(self):
-        return [
-            entity.device for entity in self._devices._av_devices.values()
-            if is_media_server(entity.device_type)
-        ]
+        return [entity.device for entity in self._devices._av_devices.values() if is_media_server(entity.device_type)]
 
     @property
     def mediarenderers(self):
-        return [
-            entity.device for entity in self._devices._av_devices.values()
-            if is_media_renderer(entity.device_type)
-        ]
+        return [entity.device for entity in self._devices._av_devices.values() if is_media_renderer(entity.device_type)]
 
     @property
     def devices(self):
@@ -40,8 +34,7 @@ class AVControlPoint(object):
             if is_media_renderer(entry.device_type):
                 self._active_renderer = entry.device
             else:
-                logging.error('%s is not a media renderer',
-                              entry.device.friendly_name)
+                logging.error('%s is not a media renderer', entry.device.friendly_name)
                 raise KeyError('Not a media renderer')
         else:
             logging.error('Unkown device %s requested', deviceUDN)

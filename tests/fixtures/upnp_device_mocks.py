@@ -62,7 +62,6 @@ class UpnpMediaRendererDevice(_UpnpDeviceMock):
 
 class UpnpMediaServerDevice(_UpnpDeviceMock):
     def __init__(self):
-        super().__init__(
-            friendly_name='Footech Media Server [MyFancyCollection]',
-            udn='uuid:f5b1b596-c1d2-11e9-af8b-705681aa5dfd',
-            location='http:://localhost:12343')
+        super().__init__(friendly_name='Footech Media Server [MyFancyCollection]',
+                         udn='uuid:f5b1b596-c1d2-11e9-af8b-705681aa5dfd',
+                         location='http:://localhost:12343')

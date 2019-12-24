@@ -16,15 +16,21 @@ async def run_web_control_point(loop):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '-d', '--debug',
+        '-d',
+        '--debug',
         help="Shot lots of debugging information",
-        action="store_const", dest="loglevel", const=logging.DEBUG,
+        action="store_const",
+        dest="loglevel",
+        const=logging.DEBUG,
         default=logging.WARNING,
     )
     parser.add_argument(
-        '-v', '--verbose',
+        '-v',
+        '--verbose',
         help="Verbose logging",
-        action="store_const", dest="loglevel", const=logging.INFO,
+        action="store_const",
+        dest="loglevel",
+        const=logging.INFO,
     )
     args = parser.parse_args()
     logging.basicConfig(level=args.loglevel)

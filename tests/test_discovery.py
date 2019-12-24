@@ -18,8 +18,7 @@ async def test_discover_by_alive(mocked_device_registry):
 
     discovery_callback.assert_called_once_with(
         discover.DiscoveryEventType.NEW_DEVICE,
-        discover.udn_from_usn(renderer_ssdp_data['USN'],
-                              renderer_ssdp_data['NT']))
+        discover.udn_from_usn(renderer_ssdp_data['USN'], renderer_ssdp_data['NT']))
 
     assert len(registry._av_devices) == 1
     assert len(registry.mediarenderers) == 1
@@ -34,9 +33,8 @@ async def test_discover_by_alive(mocked_device_registry):
     assert len(registry.mediaservers) == 1
 
     assert discovery_callback.call_count == 2
-    discovery_callback.assert_called_with(
-        discover.DiscoveryEventType.NEW_DEVICE,
-        discover.udn_from_usn(server_ssdp_data['USN'], server_ssdp_data['NT']))
+    discovery_callback.assert_called_with(discover.DiscoveryEventType.NEW_DEVICE,
+                                          discover.udn_from_usn(server_ssdp_data['USN'], server_ssdp_data['NT']))
 
     # alive message from an already known device should do nothing
     await registry.trigger_server_alive()
@@ -85,8 +83,7 @@ async def test_remove_by_byebye(mocked_device_registry):
 
     discovery_callback.assert_called_once_with(
         discover.DiscoveryEventType.DEVICE_LOST,
-        discover.udn_from_usn(renderer_ssdp_data['USN'],
-                              renderer_ssdp_data['NT']))
+        discover.udn_from_usn(renderer_ssdp_data['USN'], renderer_ssdp_data['NT']))
 
 
 @pytest.mark.asyncio

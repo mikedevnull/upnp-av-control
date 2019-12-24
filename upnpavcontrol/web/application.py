@@ -48,9 +48,7 @@ def _format_device(device):
 
 
 def _format_server(device):
-    return {'name': device.friendly_name, 'udn': device.udn,
-            'links': {'browse': _format_browse_url(device.udn)}
-            }
+    return {'name': device.friendly_name, 'udn': device.udn, 'links': {'browse': _format_browse_url(device.udn)}}
 
 
 def _format_browse_url(udn: str, objectId: str = None):
@@ -62,9 +60,7 @@ def _format_browse_url(udn: str, objectId: str = None):
 
 
 def _format_didl_entry(udn: str, entry):
-    data = {values[1]: getattr(entry, values[1])
-            for values in entry.didl_properties_defs if
-            hasattr(entry, values[1])}
+    data = {values[1]: getattr(entry, values[1]) for values in entry.didl_properties_defs if hasattr(entry, values[1])}
     data['tag'] = entry.tag
     if entry.tag == 'container':
         data['browseChildren'] = _format_browse_url(udn, entry.id)
@@ -77,8 +73,7 @@ def _format_didl_entries(udn, entries):
 
 @app.get('/player/devices')
 def device_list():
-    return {'data': [_format_device(s)
-                     for s in app.av_control_point.mediarenderers]}
+    return {'data': [_format_device(s) for s in app.av_control_point.mediarenderers]}
 
 
 @app.put('/player/device')
@@ -114,14 +109,12 @@ async def current_playback_info():
         return {'player': None}
     else:
         volume = await app.av_control_point.mediarenderer.get_volume()
-        return {'player': app.av_control_point.mediarenderer.udn,
-                'volume': volume}
+        return {'player': app.av_control_point.mediarenderer.udn, 'volume': volume}
 
 
 @app.get('/library/devices')
 def get_media_library_devices():
-    return {'data': [_format_server(x)
-                     for x in app.av_control_point.mediaservers]}
+    return {'data': [_format_server(x) for x in app.av_control_point.mediaservers]}
 
 
 @app.get('/library/browse/{udn}')

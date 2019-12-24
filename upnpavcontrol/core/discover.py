@@ -21,10 +21,8 @@ class DiscoveryEventType(Enum):
 
 _logger = logging.getLogger(__name__)
 
-media_server_regex = re.compile(
-    r'urn:schemas-upnp-org:device:MediaServer:[1-9]')
-media_renderer_regex = re.compile(
-    r'urn:schemas-upnp-org:device:MediaRenderer:[1-9]')
+media_server_regex = re.compile(r'urn:schemas-upnp-org:device:MediaServer:[1-9]')
+media_renderer_regex = re.compile(r'urn:schemas-upnp-org:device:MediaRenderer:[1-9]')
 
 
 def is_media_server(service_type):
@@ -69,21 +67,18 @@ async def async_scan(factory, timeout: int = 3):
         description_url = description['Location']
         device_type = description['ST']
         _logger.debug('Got scan result %s at %s', device_type, description_url)
-        device_task = asyncio.create_task(
-            create_device_entry(description_url, device_type))
+        device_task = asyncio.create_task(create_device_entry(description_url, device_type))
         device_tasks.append(device_task)
 
     _logger.debug('Start scan for media renderers')
-    renderer_search = async_search(
-        handle_discovery,
-        timeout=timeout,
-        service_type='urn:schemas-upnp-org:device:MediaRenderer:1')
+    renderer_search = async_search(handle_discovery,
+                                   timeout=timeout,
+                                   service_type='urn:schemas-upnp-org:device:MediaRenderer:1')
 
     _logger.debug('Start scan for media servers')
-    server_search = async_search(
-        handle_discovery,
-        timeout=timeout,
-        service_type='urn:schemas-upnp-org:device:MediaServer:1')
+    server_search = async_search(handle_discovery,
+                                 timeout=timeout,
+                                 service_type='urn:schemas-upnp-org:device:MediaServer:1')
 
     await asyncio.wait([renderer_search, server_search])
     devices = await asyncio.gather(*device_tasks)
@@ -96,37 +91,27 @@ def create_aiohttp_requester():
 
 
 def create_upnp_advertisement_listener(on_alive, on_byebye, on_update):
-    return UpnpAdvertisementListener(on_alive=on_alive,
-                                     on_byebye=on_byebye,
-                                     on_update=on_update)
+    return UpnpAdvertisementListener(on_alive=on_alive, on_byebye=on_byebye, on_update=on_update)
 
 
 class DeviceRegistry(object):
-    def __init__(
-        self,
-        create_advertisement_listener=create_upnp_advertisement_listener,
-        create_requester=create_aiohttp_requester):
-        self._listener = create_advertisement_listener(
-            on_alive=self._on_alive,
-            on_byebye=self._on_byebye,
-            on_update=self._on_update)
+    def __init__(self,
+                 create_advertisement_listener=create_upnp_advertisement_listener,
+                 create_requester=create_aiohttp_requester):
+        self._listener = create_advertisement_listener(on_alive=self._on_alive,
+                                                       on_byebye=self._on_byebye,
+                                                       on_update=self._on_update)
         self._av_devices = {}
         self._factory = async_upnp_client.UpnpFactory(create_requester())
         self._event_callback = None
 
     @property
     def mediaservers(self):
-        return [
-            entity.device for entity in self._av_devices.values()
-            if is_media_server(entity.device_type)
-        ]
+        return [entity.device for entity in self._av_devices.values() if is_media_server(entity.device_type)]
 
     @property
     def mediarenderers(self):
-        return [
-            entity.device for entity in self._av_devices.values()
-            if is_media_renderer(entity.device_type)
-        ]
+        return [entity.device for entity in self._av_devices.values() if is_media_renderer(entity.device_type)]
 
     def get_device(self, udn: str):
         return self._av_devices[udn]

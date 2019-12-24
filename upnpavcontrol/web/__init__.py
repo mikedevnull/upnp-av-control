@@ -1,1 +1,1 @@
-from .run import run_web_api
+from .run import run_web_api  # noqa
