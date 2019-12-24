@@ -10,6 +10,7 @@ import asyncio
 import functools
 from attr import attrs, attrib
 from enum import Enum
+import inspect
 
 
 class DiscoveryEventType(Enum):
@@ -148,7 +149,7 @@ class DeviceRegistry(object):
                 self._av_devices[usn] = entry
                 _logger.info("Scan found new device: %s", entry.device)
         if len(device_entries) > 0:
-            self._notify_on_update(DiscoveryEventType.NEW_DEVICE, usn)
+            await self._notify_on_update(DiscoveryEventType.NEW_DEVICE, usn)
 
     async def _on_alive(self, resource):
         device_type = resource['NT']
@@ -157,13 +158,10 @@ class DeviceRegistry(object):
         if is_media_renderer(device_type) or is_media_server(device_type):
             if device_udn not in self._av_devices:
 
-                entry = await _create_device_entry(self._factory,
-                                                   device_location,
-                                                   device_type)
+                entry = await _create_device_entry(self._factory, device_location, device_type)
                 _logger.info("New device sent alive message: %s", entry.device)
                 self._av_devices[device_udn] = entry
-                self._notify_on_update(DiscoveryEventType.NEW_DEVICE,
-                                       device_udn)
+                await self._notify_on_update(DiscoveryEventType.NEW_DEVICE, device_udn)
             else:
                 entry = self._av_devices[device_udn]
                 _logger.debug("Got a sign of life from: %s", entry.device)
@@ -178,11 +176,14 @@ class DeviceRegistry(object):
         if device_udn in self._av_devices:
             entry = self._av_devices.pop(device_udn)
             _logger.info("ByeBye: %s", entry.device)
-            self._notify_on_update(DiscoveryEventType.DEVICE_LOST, device_udn)
+            await self._notify_on_update(DiscoveryEventType.DEVICE_LOST, device_udn)
 
     async def _on_update(self, resource):
         _logger.info("Update: %s: %s", resource['NT'], resource['USN'])
 
-    def _notify_on_update(self, event, udn):
+    async def _notify_on_update(self, event, udn):
         if self._event_callback:
+            if inspect.iscoroutinefunction(self._event_callback):
+                await self._event_callback(event, udn)
+            else:
             self._event_callback(event, udn)
