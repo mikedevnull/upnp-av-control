@@ -1,4 +1,3 @@
-from . import discover
 from .discover import DeviceRegistry, is_media_renderer, is_media_server
 import asyncio
 import logging
