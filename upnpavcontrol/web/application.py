@@ -79,10 +79,10 @@ def device_list():
 
 
 @app.put('/player/device')
-def set_active_player(device: RendererDevice):
+async def set_active_player(device: RendererDevice):
     try:
         logging.info('Select device: %s', device.udn)
-        app.av_control_point.set_renderer(device.udn)
+        await app.av_control_point.set_renderer(device.udn)
     except KeyError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
