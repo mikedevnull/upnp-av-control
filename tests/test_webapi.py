@@ -47,7 +47,7 @@ async def test_set_volume(webapi_client, mocked_renderer_device):
     response = await webapi_client.put('/player/volume', json={'volume_percent': 21})
     assert response.status_code == 404
 
-    cp.set_renderer(mocked_renderer_device.udn)
+    await cp.set_renderer(mocked_renderer_device.udn)
     response = await webapi_client.put('/player/volume', json={'volume_percent': 21})
     assert response.status_code == 204
     volume_action = mocked_renderer_device.rendering_control.action('SetVolume')

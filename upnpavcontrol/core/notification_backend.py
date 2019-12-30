@@ -1,0 +1,132 @@
+from aiohttp import web
+import logging
+import socket
+from async_upnp_client import UpnpEventHandler, UpnpService, UpnpRequester
+from abc import ABCMeta, abstractmethod, abstractproperty
+from typing import Callable, Awaitable, Mapping
+from datetime import timedelta
+import http
+import asyncio
+
+_logger = logging.getLogger(__name__)
+
+NotifyReceivedCallable = Callable[[Mapping[str, str], str], Awaitable[http.HTTPStatus]]
+
+
+class NotificationEndpointBase(metaclass=ABCMeta):
+    """
+    Abstract base class to receive upnp device event messages
+    by providing a callback endpoint.
+
+    Implement `callback_url` so the URL of the notifcation endpoint can be
+    retrieved.
+    Clients using that class may set a callable which will be invoked when
+    a event message has been received.
+
+
+    See [1]_ (Section 4: Eventing) for more information,
+
+    .. [1] UPnP Device Architecture 2.0, 2015
+    """
+    @abstractmethod
+    async def start(self, callback: NotifyReceivedCallable) -> str:
+        """
+        Start the notifcation endpoint.
+
+        The `callback` will be called from now on for every notify event.
+        
+        :param callback: The callback will be called with the request body and header fields
+            for each `NOTIFY` http request received by the endpoint.
+        :return: URL of the endpoint where requests will be accepted.
+            This URL can be passed to upnp devices when subscribing to receive events.
+        """
+        pass
+
+    @abstractmethod
+    async def stop(self) -> None:
+        """
+        Stop the notifcation endpoint.
+        """
+        pass
+
+    @abstractproperty
+    def callback_url(self):
+        return None
+
+
+class AiohttpNotificationEndpoint(NotificationEndpointBase):
+    """
+    Notifcation receiver implemented using `aiohttp`.
+    """
+    DEFAULT_PORT = 51234
+
+    def __init__(self, port: int = DEFAULT_PORT):
+        self._port = port
+        self._ip = socket.gethostbyname(socket.getfqdn())
+        self._app = web.Application()
+        self._app.router.add_route('NOTIFY', '/', self._async_handle_notify)
+        self._runner = web.AppRunner(self._app)
+        self._site = None
+        self._notify_callback = None
+
+    async def _async_handle_notify(self, request):
+        _logger.debug('NOTIFY: %s', request.headers)
+        body = await request.content.read()
+        body = body.decode('utf-8')
+        _logger.debug('body: %s', body)
+        if self._notify_callback:
+            status = await self._notify_callback(request.headers, body)
+            return web.Response(status=status.value)
+        return web.Response(status=200)
+
+    async def start(self, callback: NotifyReceivedCallable):
+        await self._runner.setup()
+        self._site = web.TCPSite(self._runner, "0.0.0.0", self._port)
+        self._notify_callback = callback
+        await self._site.start()
+
+    async def stop(self):
+        await self._runner.shutdown()
+        self._notify_callback = None
+
+    @property
+    def callback_url(self):
+        return f'http://{self._ip}:{self._port}/'
+
+
+class NotificationBackend(object):
+    def __init__(self, endpoint: NotificationEndpointBase, requester: UpnpRequester):
+        self._endpoint = endpoint
+        self._handler = UpnpEventHandler(self._endpoint.callback_url, requester)
+        self._subscription_timeout = timedelta(seconds=1800)
+        # time until subscription renewals are send, a little bit less then the
+        # timeout so we have some time for the renewal process _before_ the subscription
+        # actually times out
+        self._subscription_renewal_time = self._subscription_timeout / 2
+
+    async def run(self):
+        """
+        Run the notifcation backend, meaning that it will also start the notification
+        endpoint and then renew any event subscriptions as neccessary.
+        """
+        await self._endpoint.start(self._handler.handle_notify)
+        _logger.info('Started NotificationEndpoint listending on %s', self._endpoint.callback_url)
+        while True:
+            _logger.debug('Renewing all event subscriptons')
+            await asyncio.sleep(self._subscription_renewal_time.total_seconds())
+            await self._handler.async_resubscribe_all()
+        _logger.info('Unsubscribing from all service events')
+        await self._handler.async_unsubscribe_all()
+        _logger.info()
+        await self._endpoint.stop()
+        _logger.info('NotificationEndpoint stopped')
+
+    async def subscribe(self, service: UpnpService):
+        success, sid = await self._handler.async_subscribe(service, self._subscription_timeout)
+        if success:
+            _logger.info('Subscribed service %s upnp events (sid: %s)', service, sid)
+        else:
+            _logger.error('Failed to subscribe to service upnp events')
+
+    async def unsubscribe(self, service: UpnpService):
+        await self._handler.async_unsubscribe(service)

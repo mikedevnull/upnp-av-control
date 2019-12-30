@@ -9,7 +9,7 @@ from .discovery_mocks import ssdp_alive_renderer_device_data
 from .discovery_mocks import ssdp_byebye_renderer_device_data
 from .discovery_mocks import ssdp_alive_server_device_data
 from .discovery_mocks import ssdp_alive_printer_device_data
-from . import upnp_device_mocks
+from . import upnp_device_mocks, upnp_event_mocks
 import functools
 import asyncio
 
@@ -58,10 +58,17 @@ def mock_scanned_devices(monkeypatch):
 
 
 @pytest.fixture
-async def testing_av_control_point(mocked_device_registry):
+def mocked_notification_backend(event_loop):
+    return upnp_event_mocks.create_test_notification_backend()
+
+
+@pytest.fixture
+async def testing_av_control_point(event_loop, mocked_device_registry, mocked_notification_backend):
     from upnpavcontrol.core import AVControlPoint
-    test_control_point = AVControlPoint(mocked_device_registry)
-    return test_control_point
+    test_control_point = AVControlPoint(device_registry=mocked_device_registry,
+                                        notifcation_backend=mocked_notification_backend)
+
+    yield test_control_point
 
 
 @pytest.fixture

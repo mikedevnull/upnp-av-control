@@ -22,7 +22,8 @@ class _UpnpDeviceMock(object):
 
 
 class _UpnpServiceMock(object):
-    def __init__(self):
+    def __init__(self, event_sub_url=None):
+        self.event_sub_url = event_sub_url
         self._actions = {}
 
     def action(self, name):
@@ -41,8 +42,8 @@ class _AsyncActionMock(object):
 
 
 class RenderingControlService(_UpnpServiceMock):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, event_sub_url):
+        super().__init__(event_sub_url)
         self.add_action_mock('GetVolume')
         self.add_action_mock('SetVolume')
 
@@ -55,13 +56,13 @@ class UpnpMediaRendererDevice(_UpnpDeviceMock):
     def __init__(self):
         super().__init__(friendly_name="FooRenderer",
                          udn="uuid:e094faa8-c2bb-11e9-b72e-705681aa5dfd",
-                         location="http:://localhost:12342")
+                         location="http://localhost:12342")
 
-        self.add_service_mock(RenderingControlService())
+        self.add_service_mock(RenderingControlService(f'{self.location}/rcs'))
 
 
 class UpnpMediaServerDevice(_UpnpDeviceMock):
     def __init__(self):
         super().__init__(friendly_name='Footech Media Server [MyFancyCollection]',
                          udn='uuid:f5b1b596-c1d2-11e9-af8b-705681aa5dfd',
-                         location='http:://localhost:12343')
+                         location='http://localhost:12343')
