@@ -1,6 +1,20 @@
+import logging
+from .notification_backend import NotificationBackend
+from async_upnp_client import UpnpStateVariable, UpnpDevice, UpnpService
+from typing import Iterable
+import defusedxml.ElementTree as DET
+import asyncio
+
+
 class MediaRenderer(object):
-    def __init__(self, device):
+    def __init__(self, device: UpnpDevice):
         self._device = device
+        self._notify_backend = None
+        self.rendering_control.on_event = self.notify
+
+    def notify(self, service: UpnpService, variables: Iterable[UpnpStateVariable]):
+        for variable in variables:
+            logging.info('%s -> %s', variable.name, variable.value)
 
     def __repr__(self):
         return '<MediaRenderer {}>'.format(self.friendly_name)
@@ -13,6 +27,27 @@ class MediaRenderer(object):
         return await self.rendering_control.action('SetVolume').async_call(InstanceID=0,
                                                                            Channel='Master',
                                                                            DesiredVolume=value)
+
+    async def enable_notifications(self, backend: NotificationBackend):
+        if self._notify_backend == backend:
+            return
+        if self._notify_backend is not None:
+            self.disable_notifications()
+        self._notify_backend = backend
+        if self._notify_backend is not None:
+            if self.rendering_control:
+                await self._notify_backend.subscribe(self.rendering_control)
+
+    async def disable_notifications(self):
+        try:
+            if self._notify_backend is not None:
+                if self.rendering_control:
+                    await self._notify_backend.unsubscribe(self.rendering_control)
+        except asyncio.TimeoutError:
+            logging.warning('Failed to unsubscribe from notifications from %s', self.friendly_name)
+        finally:
+            # this is required to ensure notifications can be re-enabled
+            self._notify_backend = None
 
     @property
     def udn(self):
