@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import colorlog
 import argparse
 from upnpavcontrol.core import AVControlPoint
 from upnpavcontrol.web import run_web_api
@@ -33,7 +34,7 @@ def main():
         const=logging.INFO,
     )
     args = parser.parse_args()
-    logging.basicConfig(level=args.loglevel)
+    colorlog.basicConfig(level=args.loglevel, format='%(log_color)s%(levelname)s:%(name)s:%(message)s')
     logging.getLogger('async_upnp_client').setLevel(logging.INFO)
     loop = asyncio.get_event_loop()
     loop.run_until_complete(run_web_control_point(loop))
