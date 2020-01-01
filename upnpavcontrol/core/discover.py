@@ -70,20 +70,27 @@ async def async_scan(factory, timeout: int = 3):
         device_task = asyncio.create_task(create_device_entry(description_url, device_type))
         device_tasks.append(device_task)
 
-    _logger.debug('Start scan for media renderers')
-    renderer_search = async_search(handle_discovery,
-                                   timeout=timeout,
-                                   service_type='urn:schemas-upnp-org:device:MediaRenderer:1')
+    try:
+        _logger.debug('Start scan for media renderers')
+        renderer_search = asyncio.create_task(
+            async_search(handle_discovery, timeout=timeout, service_type='urn:schemas-upnp-org:device:MediaRenderer:1'))
 
-    _logger.debug('Start scan for media servers')
-    server_search = async_search(handle_discovery,
-                                 timeout=timeout,
-                                 service_type='urn:schemas-upnp-org:device:MediaServer:1')
+        _logger.debug('Start scan for media servers')
+        server_search = asyncio.create_task(
+            async_search(handle_discovery, timeout=timeout, service_type='urn:schemas-upnp-org:device:MediaServer:1'))
 
-    await asyncio.wait([renderer_search, server_search])
-    devices = await asyncio.gather(*device_tasks)
+        await asyncio.wait([renderer_search, server_search])
+        devices = await asyncio.gather(*device_tasks)
+        return devices
+    except asyncio.CancelledError:
+        _logger.debug('Device scan cancelled')
+        for task in device_tasks:
+            task.cancel()
+        renderer_search.cancel()
+        server_search.cancel()
+        await asyncio.gather(renderer_search, server_search, *device_tasks, return_exceptions=True)
 
-    return devices
+    return []
 
 
 def create_aiohttp_requester():
@@ -122,8 +129,9 @@ class DeviceRegistry(object):
     async def start(self):
         _logger.info("Starting device registry")
         loop = asyncio.get_running_loop()
-        loop.create_task(self.scan())
-        loop.create_task(self._listener.async_start())
+        scan_task = loop.create_task(self.scan())
+        await self._listener.async_start()
+        await asyncio.gather(scan_task)
 
     async def scan(self):
         _logger.info('Searching for AV devices')
