@@ -40,5 +40,11 @@ class AVControlPoint(object):
             raise KeyError('Device not found')
 
     async def run(self):
-        loop = asyncio.get_running_loop()
-        loop.create_task(self._devices.start())
+        try:
+            loop = asyncio.get_running_loop()
+            scan_start = loop.create_task(self._devices.start())
+            await asyncio.gather(scan_start)
+        except asyncio.CancelledError:
+            logging.debug('AV Control point cancelled')
+            scan_start.cancel()
+            await asyncio.gather(scan_start, return_exceptions=True)
