@@ -41,13 +41,17 @@ async def testing_av_control_point(mocked_device_registry):
 
 
 @pytest.fixture
-async def webapi_client(testing_av_control_point):
+async def webapi_client(event_loop, testing_av_control_point):
     from upnpavcontrol.web import application
     from async_asgi_testclient import TestClient
     application.app.av_control_point = testing_av_control_point
+    av_cp_task = event_loop.create_task(testing_av_control_point.run())
 
     async with TestClient(application.app) as test_client:
         yield test_client
+
+    av_cp_task.cancel()
+    await av_cp_task
 
 
 @pytest.fixture
