@@ -1,17 +1,19 @@
-import asyncio
 import logging
 import colorlog
 import argparse
 from upnpavcontrol.core import AVControlPoint
-from upnpavcontrol.web import run_web_api
+from upnpavcontrol.web import app as web_app
+import uvicorn
+
 _logger = logging.getLogger(__name__)
 
 
-async def run_web_control_point(loop):
-    cp = AVControlPoint()
-    upnp_task = loop.create_task(cp.run())
-    web_task = loop.create_task(run_web_api(cp))
-    await asyncio.wait([upnp_task, web_task])
+def run_web_control_point():
+    av_control_point = AVControlPoint()
+    web_app.av_control_point = av_control_point
+    config = uvicorn.Config(web_app, log_config=None, debug=True, reload=True, host='127.0.0.1', port=8000)
+    server = uvicorn.Server(config)
+    server.run()
 
 
 def main():
@@ -36,9 +38,8 @@ def main():
     args = parser.parse_args()
     colorlog.basicConfig(level=args.loglevel, format='%(log_color)s%(levelname)s:%(name)s:%(message)s')
     logging.getLogger('async_upnp_client').setLevel(logging.INFO)
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(run_web_control_point(loop))
-    loop.close()
+    run_web_control_point()
+    logging.info('Successfully shutdown UPnP-AV WebControlPoint')
 
 
 if __name__ == '__main__':

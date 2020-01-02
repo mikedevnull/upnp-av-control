@@ -6,12 +6,14 @@ from upnpavcontrol.core.discover import is_media_server
 from .broadcast_event_bus import BroadcastEventBus
 import urllib.parse
 from .models import DiscoveryEvent
+import asyncio
 
 
 class AVControlPointAPI(FastAPI):
     def __init__(self, *args, **kwargs):
         super().__init__(self, *args, **kwargs)
         self._av_control_point = None
+        self._av_control_task = None
         self.event_bus = BroadcastEventBus()
 
     @property
@@ -140,5 +142,15 @@ async def websocket_endpoint(websocket: WebSocket):
 
 @app.on_event("startup")
 async def init_event_bus():
+    loop = asyncio.get_running_loop()
+    app._av_control_task = loop.create_task(app.av_control_point.run())
     # Prime the push notification generator
     await app.event_bus.queue.asend(None)
+
+
+@app.on_event("shutdown")
+async def stop_av_control_point():
+    if app._av_control_task:
+        app._av_control_task.cancel()
+        await app._av_control_task
+        app._av_control_task = None
