@@ -1,5 +1,4 @@
 from .discover import DeviceRegistry, is_media_renderer, is_media_server
-import asyncio
 import logging
 from .notification_backend import NotificationBackend, AiohttpNotificationEndpoint
 from async_upnp_client.aiohttp import AiohttpRequester
@@ -50,8 +49,8 @@ class AVControlPoint(object):
 
     async def async_start(self):
         await self._devices.async_start()
-        self._receiver_task = asyncio.create_task(self._notify_receiver.run())
+        await self._notify_receiver.async_start()
 
     async def async_stop(self):
         await self._devices.async_stop()
-        await self._receiver_task.cancel()
+        await self._notify_receiver.async_stop()
