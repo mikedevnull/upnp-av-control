@@ -10,22 +10,46 @@ from .discovery_mocks import ssdp_byebye_renderer_device_data
 from .discovery_mocks import ssdp_alive_server_device_data
 from .discovery_mocks import ssdp_alive_printer_device_data
 from . import upnp_device_mocks
-
 import functools
+import asyncio
+
+
+async def trigger_alive_and_wait(listener, queue, data):
+    await listener.trigger_alive(data)
+    await asyncio.sleep(0)
+    await queue.join()
+    return data
+
+
+async def trigger_byebye_and_wait(listener, queue, data):
+    await listener.trigger_byebye(data)
+    await asyncio.sleep(0)
+    await queue.join()
+    return data
 
 
 @pytest.fixture
-def mocked_device_registry():
+async def mocked_device_registry():
     registry = discover.DeviceRegistry(create_advertisement_listener=create_test_advertisement_listener,
                                        create_requester=create_test_requester)
 
-    registry.trigger_renderer_alive = functools.partial(registry._listener.trigger_alive,
-                                                        ssdp_alive_renderer_device_data)
-    registry.trigger_renderer_byebye = functools.partial(registry._listener.trigger_byebye,
-                                                         ssdp_byebye_renderer_device_data)
-    registry.trigger_server_alive = functools.partial(registry._listener.trigger_alive, ssdp_alive_server_device_data)
-    registry.trigger_printer_alive = functools.partial(registry._listener.trigger_alive, ssdp_alive_printer_device_data)
+    registry.trigger_renderer_alive = functools.partial(trigger_alive_and_wait, registry._listener,
+                                                        registry._event_queue, ssdp_alive_renderer_device_data)
+    registry.trigger_renderer_byebye = functools.partial(trigger_byebye_and_wait, registry._listener,
+                                                         registry._event_queue, ssdp_byebye_renderer_device_data)
+    registry.trigger_server_alive = functools.partial(trigger_alive_and_wait, registry._listener, registry._event_queue,
+                                                      ssdp_alive_server_device_data)
+    registry.trigger_printer_alive = functools.partial(trigger_alive_and_wait, registry._listener,
+                                                       registry._event_queue, ssdp_alive_printer_device_data)
+
     return registry
+
+
+@pytest.fixture
+async def started_mocked_device_registry(mocked_device_registry):
+    await mocked_device_registry.async_start()
+    yield mocked_device_registry
+    await mocked_device_registry.async_stop()
 
 
 @pytest.fixture

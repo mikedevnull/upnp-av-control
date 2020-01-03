@@ -21,6 +21,9 @@ class UpnpTestAdvertisementListener(object):
     async def async_start(self):
         pass
 
+    async def async_stop(self):
+        pass
+
 
 def _read_data_file(filename):
     filepath = os.path.join('tests', 'data', filename)

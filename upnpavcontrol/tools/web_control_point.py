@@ -1,7 +1,6 @@
 import logging
 import colorlog
 import argparse
-from upnpavcontrol.core import AVControlPoint
 from upnpavcontrol.web import app as web_app
 import uvicorn
 
@@ -9,8 +8,7 @@ _logger = logging.getLogger(__name__)
 
 
 def run_web_control_point():
-    av_control_point = AVControlPoint()
-    web_app.av_control_point = av_control_point
+
     config = uvicorn.Config(web_app, log_config=None, debug=True, reload=True, host='127.0.0.1', port=8000)
     server = uvicorn.Server(config)
     server.run()

@@ -3,10 +3,10 @@ from pydantic import BaseModel, validator
 from starlette.websockets import WebSocket, WebSocketDisconnect
 import logging
 from upnpavcontrol.core.discover import is_media_server
+from upnpavcontrol.core import AVControlPoint
 from .broadcast_event_bus import BroadcastEventBus
 import urllib.parse
 from .models import DiscoveryEvent
-import asyncio
 
 
 class AVControlPointAPI(FastAPI):
@@ -142,15 +142,17 @@ async def websocket_endpoint(websocket: WebSocket):
 
 @app.on_event("startup")
 async def init_event_bus():
-    loop = asyncio.get_running_loop()
-    app._av_control_task = loop.create_task(app.av_control_point.run())
+    # Use an existing control point instance, if any
+    # This may be the case during testing, when
+    # the control point might have been preconfigured and mocked
+    if app.av_control_point is None:
+        app.av_control_point = AVControlPoint()
+    await app.av_control_point.async_start()
     # Prime the push notification generator
     await app.event_bus.queue.asend(None)
 
 
 @app.on_event("shutdown")
 async def stop_av_control_point():
-    if app._av_control_task:
-        app._av_control_task.cancel()
-        await app._av_control_task
-        app._av_control_task = None
+    if app._av_control_point:
+        await app.av_control_point.async_stop()

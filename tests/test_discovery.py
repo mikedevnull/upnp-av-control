@@ -6,8 +6,8 @@ from unittest.mock import Mock
 
 
 @pytest.mark.asyncio
-async def test_discover_by_alive(mocked_device_registry):
-    registry = mocked_device_registry
+async def test_discover_by_alive(started_mocked_device_registry):
+    registry = started_mocked_device_registry
 
     discovery_callback = Mock(name='registry_event_callback')
     registry.set_event_callback(discovery_callback)
@@ -50,6 +50,7 @@ async def test_discover_by_alive(mocked_device_registry):
 @pytest.mark.asyncio
 async def test_ignore_non_av_devices(mocked_device_registry):
     registry = mocked_device_registry
+    await registry.async_start()
 
     discovery_callback = Mock(name='registry_event_callback')
     registry.set_event_callback(discovery_callback)
@@ -62,11 +63,13 @@ async def test_ignore_non_av_devices(mocked_device_registry):
     assert len(registry.mediarenderers) == 0
     assert len(registry.mediaservers) == 0
     discovery_callback.assert_not_called()
+    await registry.async_stop()
 
 
 @pytest.mark.asyncio
 async def test_remove_by_byebye(mocked_device_registry):
     registry = mocked_device_registry
+    await registry.async_start()
 
     await registry.trigger_renderer_alive()
     await registry.trigger_server_alive()
@@ -85,10 +88,12 @@ async def test_remove_by_byebye(mocked_device_registry):
         discover.DiscoveryEventType.DEVICE_LOST,
         discover.udn_from_usn(renderer_ssdp_data['USN'], renderer_ssdp_data['NT']))
 
+    await registry.async_stop()
+
 
 @pytest.mark.asyncio
-async def test_scan_av_devices(mocked_device_registry, mock_scanned_devices):
-    registry = mocked_device_registry
+async def test_scan_av_devices(mock_scanned_devices, started_mocked_device_registry):
+    registry = started_mocked_device_registry
     discovery_callback = Mock(name='registry_event_callback')
     registry.set_event_callback(discovery_callback)
 
