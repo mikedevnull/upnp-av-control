@@ -165,6 +165,7 @@ async def scan_devices(event_queue: asyncio.Queue, device_type: str, timeout: in
 
         _logger.debug('Got scan result %s at %s', device_type, description_url)
         await event_queue.put(event)
+        _logger.debug('Sent scan result %s to queue', description_url)
 
     await async_search(handle_discovery, timeout=timeout, service_type=device_type)
 
@@ -390,9 +391,16 @@ class DeviceRegistry(object):
         _logger.info("Device registry stopped")
 
     async def _periodic_scan(self):
-        while True:
-            await self._scan()
-            await asyncio.sleep(5 * 60)  # repeat every 5 minutes
+        try:
+            while True:
+                await self._scan()
+                await asyncio.sleep(5 * 60)  # repeat every 5 minutes
+        except asyncio.CancelledError:
+            logging.debug('Searching for AV devices cancelled')
+            return
+        except Exception:
+            logging.exception('Searching for AV devices failed')
+            raise
 
     async def _scan(self):
         try:
@@ -405,15 +413,15 @@ class DeviceRegistry(object):
         except Exception:
             server_scan.cancel()
             renderer_scan.cancel()
-            logging.exception('Searching for AV devices failed')
-            await asyncio.gather(server_scan, renderer_scan)
+            await asyncio.gather(server_scan, renderer_scan, return_exceptions=True)
             raise
 
     async def _consume_events(self):
         """
         Task that processes event queue entries.
         """
-        while True:
+        running = True
+        while running:
             try:
                 event = await self._event_queue.get()
                 if event.event_type == DiscoveryEventType.NEW_DEVICE:
@@ -438,9 +446,13 @@ class DeviceRegistry(object):
                 self._event_queue.task_done()
             except RuntimeError:
                 logging.exception('Failed to process discovery event %s', event)
+            except asyncio.CancelledError:
+                logging.debug('Discovery event processing cancelled')
+                running = False
             except Exception:
                 logging.exception('Failed to process discovery events, shutting down')
                 raise
+        _logger.debug('Discovery event processing stopped')
 
     async def _trigger_client_callback(self, event, udn):
         """
