@@ -3,6 +3,9 @@ from .mediaserver import MediaServer
 from .mediarenderer import MediaRenderer
 import re
 import async_upnp_client
+import async_upnp_client.advertisement
+import async_upnp_client.aiohttp
+from async_upnp_client.search import async_search
 import asyncio
 import typing
 from attr import attrs, attrib
@@ -137,22 +140,23 @@ class DeviceEntry(object):
     expires_at = attrib(default=None)
 
 
-async def _create_device_entry(factory, location):
-    device = await factory.async_create_device(location)
-    device_type = device._device_info.device_type
-    if is_media_server(device_type):
-        server = MediaServer(device)
-        return DeviceEntry(device=server, device_type=device_type)
-    elif is_media_renderer(device_type):
-        renderer = MediaRenderer(device)
-        return DeviceEntry(device=renderer, device_type=device_type)
+async def scan_devices(event_queue: asyncio.Queue, device_type: str, timeout: int = 3):
+    """
+    Search for new UPnP (AV) devices of a given device type.
 
+    Sends a search request to the network and waits until `timeout` for responses.
+    Valid responses will be converted to DeviceDiscoverEvent events and pushed
+    into the target event queue for another consumer.
 
-async def async_scan(factory, timeout: int = 3):
-    device_tasks = []
-    devices = []
-
-    # create_device_entry = functools.partial(_create_device_entry, factory)
+    Parameters
+    ---------
+    event_queue : asyncio.Queue
+        Target queue where events about found devices will be pushed.
+    device_type : str
+        UPnP device type descriptor that will be used as search target
+    timeout : int
+        Time in seconds that will be waited for av devices to respond
+    """
     async def handle_discovery(description):
         description_url = description['Location']
         device_type = description['ST']
@@ -160,35 +164,9 @@ async def async_scan(factory, timeout: int = 3):
         event = DeviceDiscoveryEvent(DiscoveryEventType.NEW_DEVICE, device_type, device_udn, description_url)
 
         _logger.debug('Got scan result %s at %s', device_type, description_url)
-        # device_task = asyncio.create_task(create_device_entry(description_url))
-        devices.append(event)
-        # device_tasks.append(device_task)
+        await event_queue.put(event)
 
-    try:
-        _logger.debug('Start scan for media renderers')
-        renderer_search = asyncio.create_task(
-            async_upnp_client.search.async_search(handle_discovery,
-                                                  timeout=timeout,
-                                                  service_type='urn:schemas-upnp-org:device:MediaRenderer:1'))
-
-        _logger.debug('Start scan for media servers')
-        server_search = asyncio.create_task(
-            async_upnp_client.search.async_search(handle_discovery,
-                                                  timeout=timeout,
-                                                  service_type='urn:schemas-upnp-org:device:MediaServer:1'))
-
-        await asyncio.gather(renderer_search, server_search)
-        # devices = await asyncio.gather(*device_tasks)
-        return devices
-    except asyncio.CancelledError:
-        _logger.debug('Device scan cancelled')
-        for task in device_tasks:
-            task.cancel()
-        renderer_search.cancel()
-        server_search.cancel()
-        await asyncio.gather(renderer_search, server_search, return_exceptions=True)
-
-    return []
+    await async_search(handle_discovery, timeout=timeout, service_type=device_type)
 
 
 class DeviceAdvertisementHandler(object):
@@ -235,6 +213,33 @@ class DeviceAdvertisementHandler(object):
         device_udn = udn_from_usn(resource['USN'], device_type)
         event = DeviceDiscoveryEvent(DiscoveryEventType.DEVICE_UPDATE, device_type, device_udn, device_location)
         await self.queue.put(event)
+
+
+async def _create_device_entry(factory: async_upnp_client.UpnpFactory,
+                               location: str) -> typing.Union[MediaServer, MediaRenderer, None]:
+    """
+    Creates a AV device instance by downloading and processing the device description.
+
+    Parameters
+    ----------
+    factory : async_upnp_client.UpnpFactory
+        Factory instance used to create the low-level async_upnp_client instance.
+    location : str
+        URL where the device description can be downloaded
+
+    Returns
+    -------
+    MediaServer, MediaRenderer
+        A renderer or server instance on success or None otherwise.
+    """
+    device = await factory.async_create_device(location)
+    device_type = device._device_info.device_type
+    if is_media_server(device_type):
+        server = MediaServer(device)
+        return DeviceEntry(device=server, device_type=device_type)
+    elif is_media_renderer(device_type):
+        renderer = MediaRenderer(device)
+        return DeviceEntry(device=renderer, device_type=device_type)
 
 
 AdvertisementListenerCallback = typing.Callable[[typing.Mapping[str, str]], typing.Awaitable]
@@ -369,7 +374,7 @@ class DeviceRegistry(object):
         """
         _logger.info("Starting device registry")
         loop = asyncio.get_running_loop()
-        self._scan_task = loop.create_task(self.scan())
+        self._scan_task = loop.create_task(self._periodic_scan())
         self._process_task = loop.create_task(self._consume_events())
         await self._listener.async_start()
 
@@ -384,44 +389,58 @@ class DeviceRegistry(object):
         await asyncio.gather(self._scan_task, self._process_task, return_exceptions=True)
         _logger.info("Device registry stopped")
 
-    async def scan(self):
-        _logger.info('Searching for AV devices')
-        device_entries = await async_scan(self._factory)
-        for entry in device_entries:
-            _logger.info("Scan foundg device: %s", entry.location)
-            await self._event_queue.put(entry)
-            _logger.info('enqued')
-            usn = entry.udn
-            if usn not in self._av_devices:
-                _logger.info("Scan found new device: %s", entry.location)
-        if len(device_entries) > 0:
-            await self._trigger_client_callback(DiscoveryEventType.NEW_DEVICE, usn)
+    async def _periodic_scan(self):
+        while True:
+            await self._scan()
+            await asyncio.sleep(5 * 60)  # repeat every 5 minutes
+
+    async def _scan(self):
+        try:
+            _logger.debug('Searching for AV devices')
+            server_scan = asyncio.create_task(
+                scan_devices(self._event_queue, 'urn:schemas-upnp-org:device:MediaServer:1'))
+            renderer_scan = asyncio.create_task(
+                scan_devices(self._event_queue, 'urn:schemas-upnp-org:device:MediaRenderer:1'))
+            await asyncio.gather(server_scan, renderer_scan)
+        except Exception:
+            server_scan.cancel()
+            renderer_scan.cancel()
+            logging.exception('Searching for AV devices failed')
+            await asyncio.gather(server_scan, renderer_scan)
+            raise
 
     async def _consume_events(self):
         """
         Task that processes event queue entries.
         """
         while True:
-            event = await self._event_queue.get()
-            if event.event_type == DiscoveryEventType.NEW_DEVICE:
-                if event.udn not in self._av_devices:
-                    entry = await _create_device_entry(self._factory, event.location)
-                    _logger.info("Found new device: %s", entry.device)
-                    self._av_devices[event.udn] = entry
-                    await self._trigger_client_callback(DiscoveryEventType.NEW_DEVICE, event.udn)
-                else:
-                    entry = self._av_devices[event.udn]
-                    _logger.debug("Got a sign of life from: %s", entry.device)
-                    # todo: update last_seen timestamp
-            elif event.event_type == DiscoveryEventType.DEVICE_UPDATE:
-                # TODO
-                pass
-            elif event.event_type == DiscoveryEventType.DEVICE_LOST:
-                if event.udn in self._av_devices:
-                    entry = self._av_devices.pop(event.udn)
-                    _logger.info("ByeBye: %s", entry.device)
-                    await self._trigger_client_callback(DiscoveryEventType.DEVICE_LOST, event.udn)
-            self._event_queue.task_done()
+            try:
+                event = await self._event_queue.get()
+                if event.event_type == DiscoveryEventType.NEW_DEVICE:
+                    if event.udn not in self._av_devices:
+                        entry = await _create_device_entry(self._factory, event.location)
+                        if entry is not None:
+                            _logger.info("Found new device: %s", entry.device)
+                            self._av_devices[event.udn] = entry
+                            await self._trigger_client_callback(DiscoveryEventType.NEW_DEVICE, event.udn)
+                    else:
+                        entry = self._av_devices[event.udn]
+                        _logger.debug("Got a sign of life from: %s", entry.device)
+                        # todo: update last_seen timestamp
+                elif event.event_type == DiscoveryEventType.DEVICE_UPDATE:
+                    # TODO
+                    pass
+                elif event.event_type == DiscoveryEventType.DEVICE_LOST:
+                    if event.udn in self._av_devices:
+                        entry = self._av_devices.pop(event.udn)
+                        _logger.info("ByeBye: %s", entry.device)
+                        await self._trigger_client_callback(DiscoveryEventType.DEVICE_LOST, event.udn)
+                self._event_queue.task_done()
+            except RuntimeError:
+                logging.exception('Failed to process discovery event %s', event)
+            except Exception:
+                logging.exception('Failed to process discovery events, shutting down')
+                raise
 
     async def _trigger_client_callback(self, event, udn):
         """

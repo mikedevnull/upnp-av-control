@@ -97,7 +97,7 @@ async def test_scan_av_devices(mock_scanned_devices, started_mocked_device_regis
     discovery_callback = Mock(name='registry_event_callback')
     registry.set_event_callback(discovery_callback)
 
-    await registry.scan()
+    await registry._event_queue.join()
 
     assert len(registry._av_devices) == 2
     assert len(registry.mediarenderers) == 1
