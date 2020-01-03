@@ -7,10 +7,10 @@ class NotificationTestEndpoint(NotificationEndpointBase):
     def callback_url(self):
         return 'http://localhost:12345'
 
-    async def start(self, callback):
+    async def async_start(self, callback):
         pass
 
-    async def stop(self):
+    async def async_stop(self):
         pass
 
 

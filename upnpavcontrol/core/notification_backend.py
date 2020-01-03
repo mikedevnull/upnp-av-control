@@ -29,12 +29,12 @@ class NotificationEndpointBase(metaclass=ABCMeta):
     .. [1] UPnP Device Architecture 2.0, 2015
     """
     @abstractmethod
-    async def start(self, callback: NotifyReceivedCallable) -> str:
+    async def async_start(self, callback: NotifyReceivedCallable) -> str:
         """
         Start the notifcation endpoint.
 
         The `callback` will be called from now on for every notify event.
-        
+
         :param callback: The callback will be called with the request body and header fields
             for each `NOTIFY` http request received by the endpoint.
         :return: URL of the endpoint where requests will be accepted.
@@ -43,7 +43,7 @@ class NotificationEndpointBase(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    async def stop(self) -> None:
+    async def async_stop(self) -> None:
         """
         Stop the notifcation endpoint.
         """
@@ -79,13 +79,13 @@ class AiohttpNotificationEndpoint(NotificationEndpointBase):
             return web.Response(status=status.value)
         return web.Response(status=200)
 
-    async def start(self, callback: NotifyReceivedCallable):
+    async def async_start(self, callback: NotifyReceivedCallable):
         await self._runner.setup()
         self._site = web.TCPSite(self._runner, "0.0.0.0", self._port)
         self._notify_callback = callback
         await self._site.start()
 
-    async def stop(self):
+    async def async_stop(self):
         await self._runner.shutdown()
         self._notify_callback = None
 
@@ -103,23 +103,43 @@ class NotificationBackend(object):
         # timeout so we have some time for the renewal process _before_ the subscription
         # actually times out
         self._subscription_renewal_time = self._subscription_timeout / 2
+        self._renew_subscriptions_task = None
 
-    async def run(self):
+    async def async_start(self):
         """
         Run the notifcation backend, meaning that it will also start the notification
         endpoint and then renew any event subscriptions as neccessary.
         """
-        await self._endpoint.start(self._handler.handle_notify)
-        _logger.info('Started NotificationEndpoint listending on %s', self._endpoint.callback_url)
-        while True:
-            _logger.debug('Renewing all event subscriptons')
-            await asyncio.sleep(self._subscription_renewal_time.total_seconds())
-            await self._handler.async_resubscribe_all()
-        _logger.info('Unsubscribing from all service events')
-        await self._handler.async_unsubscribe_all()
-        _logger.info()
-        await self._endpoint.stop()
-        _logger.info('NotificationEndpoint stopped')
+        if self._renew_subscriptions_task is not None:
+            # assume we're already running
+            return
+        await self._endpoint.async_start(self._handler.handle_notify)
+        _logger.debug('Started NotificationEndpoint listending on %s', self._endpoint.callback_url)
+        self._renew_subscriptions_task = asyncio.create_task(self._resubscription_loop())
+        _logger.info('NotificationBackend started (%s)', self._endpoint.callback_url)
+
+    async def async_stop(self):
+        if self._renew_subscriptions_task is not None:
+            _logger.debug('Unsubscribing from all service events')
+            await self._handler.async_unsubscribe_all()
+
+            self._renew_subscriptions_task.cancel()
+            await self._renew_subscriptions_task
+            self._renew_subscriptions_task = None
+            await self._endpoint.async_stop()
+            _logger.info('NotificationBackend stopped')
+
+    async def _resubscription_loop(self):
+        try:
+            while True:
+                _logger.debug('Renewing all event subscriptons')
+                await asyncio.sleep(self._subscription_renewal_time.total_seconds())
+                await self._handler.async_resubscribe_all()
+        except asyncio.CancelledError:
+            _logger.debug('Resubscription loop cancelled')
+        except Exception:
+            _logger.exception('Resubscription loop failed')
+            raise
 
     async def subscribe(self, service: UpnpService):
         success, sid = await self._handler.async_subscribe(service, self._subscription_timeout)
