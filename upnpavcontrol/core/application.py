@@ -41,7 +41,7 @@ class AVControlPoint(object):
 
     async def async_start(self):
         try:
-            await self._devices.start()
+            await self._devices.async_start()
         except asyncio.CancelledError:
             logging.debug('AV Control point cancelled')
 

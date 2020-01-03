@@ -247,8 +247,6 @@ class DeviceRegistry(object):
     def set_event_callback(self, callback):
         self._event_callback = callback
 
-    async def start(self):
-        await self.async_start()
 
     async def async_start(self):
         print("starting registry")
