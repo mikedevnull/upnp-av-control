@@ -2,9 +2,6 @@ import logging
 from .mediaserver import MediaServer
 from .mediarenderer import MediaRenderer
 import re
-from async_upnp_client.search import async_search
-from async_upnp_client.aiohttp import AiohttpRequester
-from async_upnp_client.advertisement import UpnpAdvertisementListener
 import async_upnp_client
 import asyncio
 import typing
@@ -17,6 +14,9 @@ _logger = logging.getLogger(__name__)
 
 
 class DiscoveryEventType(Enum):
+    """
+    Different type of upnp events that might occur
+    """
     NEW_DEVICE = 'NEW_DEVICE'
     DEVICE_UPDATE = 'DEVICE_UPDATE'
     DEVICE_LOST = 'DEVICE_LOST'
@@ -50,23 +50,15 @@ class DeviceDiscoveryEvent:
 
 DiscoveryEventCallback = typing.Callable[[DiscoveryEventType, str], None]
 
-media_server_regex = re.compile(r'urn:schemas-upnp-org:device:MediaServer:[1-9]')
-media_renderer_regex = re.compile(r'urn:schemas-upnp-org:device:MediaRenderer:[1-9]')
-media_device_type_regex = re.compile(r'urn:schemas-upnp-org:device:Media(Server|Renderer):[1-9]')
+_media_server_regex = re.compile(r'urn:schemas-upnp-org:device:MediaServer:[1-9]')
+_media_renderer_regex = re.compile(r'urn:schemas-upnp-org:device:MediaRenderer:[1-9]')
+_media_device_type_regex = re.compile(r'urn:schemas-upnp-org:device:Media(Server|Renderer):[1-9]')
 
 
-def is_media_server(device_type):
-    return media_server_regex.match(device_type)
-
-
-def is_media_renderer(device_type):
-    return media_renderer_regex.match(device_type)
-
-
-def is_media_device(device_type: str) -> bool:
+def is_media_server(device_type: str) -> bool:
     """
     Check if the device type descriptor (e.g. from a Notification Type or Search Target)
-    is for either a MediaRenderer or MediaServer
+    is a MediaServer.
 
     Parameters
     ----------
@@ -76,9 +68,45 @@ def is_media_device(device_type: str) -> bool:
     Returns
     -------
     bool
-        True if a MediaServer of MediaRenderer device, False otherwise
+        True if a MediaServer device, False otherwise
     """
-    return media_device_type_regex.match(device_type)
+    return _media_server_regex.match(device_type)
+
+
+def is_media_renderer(device_type: str) -> bool:
+    """
+    Check if the device type descriptor (e.g. from a Notification Type or Search Target)
+    is a MediaRenderer.
+
+    Parameters
+    ----------
+    device_type : str
+        Descriptor, e.g. from an advertisement or search result
+
+    Returns
+    -------
+    bool
+        True if a MediaRenderer device, False otherwise
+    """
+    return _media_renderer_regex.match(device_type)
+
+
+def is_media_device(device_type: str) -> bool:
+    """
+    Check if the device type descriptor (e.g. from a Notification Type or Search Target)
+    is either a MediaRenderer or MediaServer
+
+    Parameters
+    ----------
+    device_type : str
+        Descriptor, e.g. from an advertisement or search result
+
+    Returns
+    -------
+    bool
+        True if a MediaServer or MediaRenderer device, False otherwise
+    """
+    return _media_device_type_regex.match(device_type)
 
 
 def udn_from_usn(usn: str, device_type: str):
@@ -109,18 +137,13 @@ class DeviceEntry(object):
     expires_at = attrib(default=None)
 
 
-async def quick_scan(timeout: int = 3):
-    factory = async_upnp_client.UpnpFactory(AiohttpRequester())
-    return await async_scan(factory, timeout)
-
-
 async def _create_device_entry(factory, location):
     device = await factory.async_create_device(location)
     device_type = device._device_info.device_type
-    if media_server_regex.match(device_type):
+    if is_media_server(device_type):
         server = MediaServer(device)
         return DeviceEntry(device=server, device_type=device_type)
-    elif media_renderer_regex.match(device_type):
+    elif is_media_renderer(device_type):
         renderer = MediaRenderer(device)
         return DeviceEntry(device=renderer, device_type=device_type)
 
@@ -144,11 +167,15 @@ async def async_scan(factory, timeout: int = 3):
     try:
         _logger.debug('Start scan for media renderers')
         renderer_search = asyncio.create_task(
-            async_search(handle_discovery, timeout=timeout, service_type='urn:schemas-upnp-org:device:MediaRenderer:1'))
+            async_upnp_client.search.async_search(handle_discovery,
+                                                  timeout=timeout,
+                                                  service_type='urn:schemas-upnp-org:device:MediaRenderer:1'))
 
         _logger.debug('Start scan for media servers')
         server_search = asyncio.create_task(
-            async_search(handle_discovery, timeout=timeout, service_type='urn:schemas-upnp-org:device:MediaServer:1'))
+            async_upnp_client.search.async_search(handle_discovery,
+                                                  timeout=timeout,
+                                                  service_type='urn:schemas-upnp-org:device:MediaServer:1'))
 
         await asyncio.gather(renderer_search, server_search)
         # devices = await asyncio.gather(*device_tasks)
@@ -164,17 +191,9 @@ async def async_scan(factory, timeout: int = 3):
     return []
 
 
-def create_aiohttp_requester():
-    return AiohttpRequester()
-
-
-def create_upnp_advertisement_listener(on_alive, on_byebye, on_update):
-    return UpnpAdvertisementListener(on_alive=on_alive, on_byebye=on_byebye, on_update=on_update)
-
-
 class DeviceAdvertisementHandler(object):
     """
-    Handles advertisement messages produced by a `UpnpAdvertisementListener`
+    Handles advertisement messages produced by a `async_upnp_client.UpnpAdvertisementListener`
     and transforms them into `DeviceDiscoveryEvents`.
 
     These discovery events are put into a queue so they can be processed
@@ -218,38 +237,136 @@ class DeviceAdvertisementHandler(object):
         await self.queue.put(event)
 
 
+AdvertisementListenerCallback = typing.Callable[[typing.Mapping[str, str]], typing.Awaitable]
+""" Type of the callbacks for `async_upnp_client.UpnpAdvertisementListener """
+
+AdvertisementListenerFactory = typing.Callable[
+    [AdvertisementListenerCallback, AdvertisementListenerCallback, AdvertisementListenerCallback],
+    async_upnp_client.advertisement.UpnpAdvertisementListener]
+""" Type of a factory to create an `async_upnp_client.UpnpAdvertisementListener` """
+
+UpnpRequesterFactory = typing.Callable[[], async_upnp_client.UpnpRequester]
+""" Factory function for implementations of `async_upnp_client.UpnpRequester` """
+
+
+def create_aiohttp_requester() -> async_upnp_client.UpnpRequester:
+    """ Default factory for `async_upnp_client.UpnpRequester` instances
+
+    Returns
+    -------
+    async_upnp_client.AiohttpRequester
+    """
+    return async_upnp_client.aiohttp.AiohttpRequester()
+
+
+def create_upnp_advertisement_listener(
+        on_alive: AdvertisementListenerCallback, on_byebye: AdvertisementListenerCallback,
+        on_update: AdvertisementListenerCallback) -> async_upnp_client.advertisement.UpnpAdvertisementListener:
+    """
+    Default factory to create `UpnpAdvertisementListener` instances
+    """
+    return async_upnp_client.advertisement.UpnpAdvertisementListener(on_alive=on_alive,
+                                                                     on_byebye=on_byebye,
+                                                                     on_update=on_update)
+
+
 class DeviceRegistry(object):
+    """
+    Upnp device registry, main point that handles discovery of upnp av devices.
+
+    The device registry will react on upnp advertisement messages.
+    Furthermore, it will initiate a search request for upnp av devices on the network.
+    This search can be repeated in regular intervals. This is optional, but has proven to be
+    usefull in some cases where new upnp devices on the network don't advertise their presence on
+    the network correctly.
+
+    It's possible to access the current list of detected av devices.
+    Additionally, clients can register a discovery event callback so they will be notified about
+    new, updated or lost devices.
+
+    This class uses `asyncio` and *must* be constructed from within a running event loop to function properly.
+    `async_start()` must be called to start the actual discovery.
+    `async_stop()` must be called to ensure all async operations are cleaned up properly.
+
+    Notes
+    -----
+    Currently, only a single event callback can be registered at a given time.
+    """
     def __init__(self,
-                 create_advertisement_listener=create_upnp_advertisement_listener,
-                 create_requester=create_aiohttp_requester):
+                 advertisement_listener_factory: AdvertisementListenerFactory = create_upnp_advertisement_listener,
+                 http_requester_factory: UpnpRequesterFactory = create_aiohttp_requester):
+        """
+        Constructor
+
+        Parameters
+        ----------
+        advertisement_listener_factory : AdvertisementListenerFactory
+            Factory function to define how the underlying advertisement listener should be created.
+            This is mostly useful for testing or similar purposes, as other implementations can be injected.
+        http_requester_factory : UpnpRequesterFactory
+            Factory function to define how the underlying http requester used by the
+            `async_upnp_client` framework should be created.
+            This is mostly useful for testing or similar purposes, as other implementations can be injected.
+        """
         self._event_queue = asyncio.Queue()
         self._advertisement_handler = DeviceAdvertisementHandler(self._event_queue)
-        self._listener = create_advertisement_listener(on_alive=self._advertisement_handler.on_alive,
-                                                       on_byebye=self._advertisement_handler.on_byebye,
-                                                       on_update=self._advertisement_handler.on_update)
+        self._listener = advertisement_listener_factory(on_alive=self._advertisement_handler.on_alive,
+                                                        on_byebye=self._advertisement_handler.on_byebye,
+                                                        on_update=self._advertisement_handler.on_update)
         self._av_devices = {}
-        self._factory = async_upnp_client.UpnpFactory(create_requester())
+        self._factory = async_upnp_client.UpnpFactory(http_requester_factory())
         self._event_callback = None
         self._scan_task = None
         self._process_task = None
 
     @property
-    def mediaservers(self):
+    def mediaservers(self) -> typing.Iterable[MediaServer]:
+        """ Currently available av media servers """
         return [entity.device for entity in self._av_devices.values() if is_media_server(entity.device_type)]
 
     @property
-    def mediarenderers(self):
+    def mediarenderers(self) -> typing.Iterable[MediaRenderer]:
+        """ Currently available av media renderers """
         return [entity.device for entity in self._av_devices.values() if is_media_renderer(entity.device_type)]
 
-    def get_device(self, udn: str):
+    def get_device(self, udn: str) -> typing.Union[MediaRenderer, MediaServer]:
+        """
+        Get an instance for a specific devices
+
+        Parameters
+        ----------
+        udn : str
+            UDN of the requested device
+
+        Returns
+        -------
+        MediaRenderer or MediaServer instance
+
+        Raises
+        ------
+        Raises an exception if no device with the given UDN is known to the registry
+        """
         return self._av_devices[udn]
 
-    def set_event_callback(self, callback):
+    def set_event_callback(self, callback: typing.Union[DeviceDiscoveryEvent, None]):
+        """
+        Set client callback to be notified about discovery events.
+        If another callback has already been set it will be replaced.
+        Use `None` as callback paremet to unset the event callback.
+
+        The callback can be either a coroutine or a normal callable.
+
+        The callback will receive the type of event (new, lost, update) and the UDN of
+        the affected device.
+
+        The DeviceRegistry itself has already been updated when this callback is triggered.
+        """
         self._event_callback = callback
 
-
     async def async_start(self):
-        print("starting registry")
+        """
+        Start device registry operation, listen for advertisements and search for devices
+        """
         _logger.info("Starting device registry")
         loop = asyncio.get_running_loop()
         self._scan_task = loop.create_task(self.scan())
@@ -257,11 +374,15 @@ class DeviceRegistry(object):
         await self._listener.async_start()
 
     async def async_stop(self):
-        print("stopping registry")
+        """
+        Stop device registry operation and cancel all pending tasks
+        """
+        _logger.debug("Begin device registry shutdown")
         self._scan_task.cancel()
         self._process_task.cancel()
         await self._listener.async_stop()
         await asyncio.gather(self._scan_task, self._process_task, return_exceptions=True)
+        _logger.info("Device registry stopped")
 
     async def scan(self):
         _logger.info('Searching for AV devices')
@@ -274,9 +395,12 @@ class DeviceRegistry(object):
             if usn not in self._av_devices:
                 _logger.info("Scan found new device: %s", entry.location)
         if len(device_entries) > 0:
-            await self._notify_on_update(DiscoveryEventType.NEW_DEVICE, usn)
+            await self._trigger_client_callback(DiscoveryEventType.NEW_DEVICE, usn)
 
     async def _consume_events(self):
+        """
+        Task that processes event queue entries.
+        """
         while True:
             event = await self._event_queue.get()
             if event.event_type == DiscoveryEventType.NEW_DEVICE:
@@ -284,7 +408,7 @@ class DeviceRegistry(object):
                     entry = await _create_device_entry(self._factory, event.location)
                     _logger.info("Found new device: %s", entry.device)
                     self._av_devices[event.udn] = entry
-                    await self._notify_on_update(DiscoveryEventType.NEW_DEVICE, event.udn)
+                    await self._trigger_client_callback(DiscoveryEventType.NEW_DEVICE, event.udn)
                 else:
                     entry = self._av_devices[event.udn]
                     _logger.debug("Got a sign of life from: %s", entry.device)
@@ -296,10 +420,13 @@ class DeviceRegistry(object):
                 if event.udn in self._av_devices:
                     entry = self._av_devices.pop(event.udn)
                     _logger.info("ByeBye: %s", entry.device)
-                    await self._notify_on_update(DiscoveryEventType.DEVICE_LOST, event.udn)
+                    await self._trigger_client_callback(DiscoveryEventType.DEVICE_LOST, event.udn)
             self._event_queue.task_done()
 
-    async def _notify_on_update(self, event, udn):
+    async def _trigger_client_callback(self, event, udn):
+        """
+        Invoke the client event callback, if set.
+        """
         if self._event_callback:
             if inspect.iscoroutinefunction(self._event_callback):
                 await self._event_callback(event, udn)

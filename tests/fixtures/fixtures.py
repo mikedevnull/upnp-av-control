@@ -30,8 +30,8 @@ async def trigger_byebye_and_wait(listener, queue, data):
 
 @pytest.fixture
 async def mocked_device_registry():
-    registry = discover.DeviceRegistry(create_advertisement_listener=create_test_advertisement_listener,
-                                       create_requester=create_test_requester)
+    registry = discover.DeviceRegistry(advertisement_listener_factory=create_test_advertisement_listener,
+                                       http_requester_factory=create_test_requester)
 
     registry.trigger_renderer_alive = functools.partial(trigger_alive_and_wait, registry._listener,
                                                         registry._event_queue, ssdp_alive_renderer_device_data)
