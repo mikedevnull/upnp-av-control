@@ -11,7 +11,7 @@ from .models import DiscoveryEvent
 
 class AVControlPointAPI(FastAPI):
     def __init__(self, *args, **kwargs):
-        super().__init__(self, *args, **kwargs)
+        super(AVControlPointAPI, self).__init__(*args, **kwargs)
         self._av_control_point = None
         self._av_control_task = None
         self.event_bus = BroadcastEventBus()
