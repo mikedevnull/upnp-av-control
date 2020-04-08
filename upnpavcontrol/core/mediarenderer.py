@@ -2,7 +2,6 @@ import logging
 from .notification_backend import NotificationBackend
 from async_upnp_client import UpnpStateVariable, UpnpDevice, UpnpService
 from typing import Iterable
-import defusedxml.ElementTree as DET
 import asyncio
 
 
