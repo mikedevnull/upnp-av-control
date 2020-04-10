@@ -2,11 +2,10 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, validator
 from starlette.websockets import WebSocket, WebSocketDisconnect
 import logging
-from upnpavcontrol.core.discover import is_media_server
 from upnpavcontrol.core import AVControlPoint
 from .broadcast_event_bus import BroadcastEventBus
-import urllib.parse
 from .models import DiscoveryEvent
+from . import api
 
 
 class AVControlPointAPI(FastAPI):
@@ -35,6 +34,8 @@ class AVControlPointAPI(FastAPI):
 
 app = AVControlPointAPI()
 
+app.include_router(api.router)
+
 
 class RendererDevice(BaseModel):
     udn: str
@@ -47,30 +48,6 @@ class PlaybackInfo(BaseModel):
 
 def _format_device(device):
     return {'name': device.upnp_device.friendly_name, 'udn': device.udn}
-
-
-def _format_server(device):
-    return {'name': device.friendly_name, 'udn': device.udn, 'links': {'browse': _format_browse_url(device.udn)}}
-
-
-def _format_browse_url(udn: str, objectId: str = None):
-    browseUrl = app.url_path_for('browse_library', udn=udn)
-    if objectId is not None:
-        query = urllib.parse.urlencode({'objectID': objectId})
-        browseUrl = browseUrl + '?' + query
-    return browseUrl
-
-
-def _format_didl_entry(udn: str, entry):
-    data = {values[1]: getattr(entry, values[1]) for values in entry.didl_properties_defs if hasattr(entry, values[1])}
-    data['tag'] = entry.tag
-    if entry.tag == 'container':
-        data['browseChildren'] = _format_browse_url(udn, entry.id)
-    return data
-
-
-def _format_didl_entries(udn, entries):
-    return [_format_didl_entry(udn, x) for x in entries]
 
 
 @app.get('/player/devices')
@@ -112,21 +89,6 @@ async def current_playback_info():
     else:
         volume = await app.av_control_point.mediarenderer.get_volume()
         return {'player': app.av_control_point.mediarenderer.udn, 'volume': volume}
-
-
-@app.get('/library/devices')
-def get_media_library_devices():
-    return {'data': [_format_server(x) for x in app.av_control_point.mediaservers]}
-
-
-@app.get('/library/browse/{udn}')
-async def browse_library(udn: str, objectID: str = '0'):
-    if udn not in app.av_control_point.devices or not \
-            is_media_server(app._av_control_point.devices[udn].device_type):
-        raise HTTPException(status_code=404)
-    server = app.av_control_point.devices[udn].device
-    result = await server.browse(objectID)
-    return _format_didl_entries(udn, result)
 
 
 @app.websocket('/ws/events')
