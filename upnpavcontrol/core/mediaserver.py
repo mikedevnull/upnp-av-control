@@ -1,6 +1,6 @@
 import enum
 import re
-from didl_lite import didl_lite
+from . import didllite
 
 
 class BrowseFlags(enum.Enum):
@@ -50,7 +50,7 @@ class MediaServer(object):
                                                                  Filter='*')
         regex = re.compile(r"&(?!amp;|lt;|gt;)")
         didl = regex.sub("&amp;", payload['Result'])
-        result = didl_lite.from_xml_string(didl)
+        result = didllite.from_xml_string(didl)
         return result
 
     def __repr__(self):

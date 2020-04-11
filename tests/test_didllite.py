@@ -30,25 +30,57 @@ didl_musictrack = """
 """  # noqa 501
 
 
+def test_etree_adapter():
+    import defusedxml.ElementTree as etree
+    xml = list(etree.fromstring(didl_musictrack))
+    mapping = {'id': '@id', 'upnpclass': 'upnp:class', 'foo': 'bar'}
+    adapter = didllite._create_xml_adapter(xml[0], mapping)
+    assert len(adapter) == 3
+    assert adapter['id'] == '26$40260$@40260'
+    assert adapter.get('id') == '26$40260$@40260'
+    assert adapter['upnpclass'] == 'object.item.audioItem.musicTrack'
+    assert adapter.get('upnpclass') == 'object.item.audioItem.musicTrack'
+    assert adapter['foo'] is None
+    assert adapter.get('foo') is None
+    assert adapter.get('foo', 42) == 42
+
+    assert list(adapter.values()) == ['26$40260$@40260', 'object.item.audioItem.musicTrack', None]
+    assert list(adapter.items()) == [('id', '26$40260$@40260'), ('upnpclass', 'object.item.audioItem.musicTrack'),
+                                     ('foo', None)]
+    assert 'id' in adapter
+    assert 'bar' not in adapter
+
+
+def test_mapping_to_pydantic():
+    import defusedxml.ElementTree as etree
+    xml = list(etree.fromstring(didl_musictrack))
+    mapping = {'id': '@id', 'parentID': '@parentID', 'upnpclass': 'upnp:class', 'title': 'dc:title'}
+    adapter = didllite._create_xml_adapter(xml[0], mapping)
+    container = didllite.DidlContainer.parse_obj(adapter)
+    assert container.id == '26$40260$@40260'
+    assert container.parentID == '26$40260'
+    assert container.upnpclass == 'object.item.audioItem.musicTrack'
+
+
 def test_didl_container_parse():
-    result = list(didllite.parse(didl1))
+    result = list(didllite.from_xml_string(didl1))
     assert len(result) == 3
-    assert result[0] == didllite.BaseObject(id='29$40850$0',
-                                            parentID='29$40850',
-                                            title='= All Songs =',
-                                            upnpclass='object.container.album.musicAlbum')
-    assert result[1] == didllite.BaseObject(id='29$40850$40862',
-                                            parentID='29$40850',
-                                            title='Album1',
-                                            upnpclass='object.container.album.musicAlbum')
-    assert result[2] == didllite.BaseObject(id='29$40850$40850',
-                                            parentID='29$40850',
-                                            title='Album2',
-                                            upnpclass='object.container.album.musicAlbum')
+    assert result[0].id == '29$40850$0'
+    assert result[0].parentID == '29$40850'
+    assert result[0].title == '= All Songs ='
+    assert result[0].upnpclass == 'object.container.album.musicAlbum'
+    assert result[1].id == '29$40850$40862'
+    assert result[1].parentID == '29$40850'
+    assert result[1].title == 'Album1'
+    assert result[1].upnpclass == 'object.container.album.musicAlbum'
+    assert result[2].id == '29$40850$40850'
+    assert result[2].parentID == '29$40850'
+    assert result[2].title == 'Album2'
+    assert result[2].upnpclass == 'object.container.album.musicAlbum'
 
 
 def test_didl_musictrack_parse():
-    result = list(didllite.parse(didl_musictrack))
+    result = list(didllite.from_xml_string(didl_musictrack))
     assert len(result) == 1
     track = result[0]
     assert track.id == '26$40260$@40260'
