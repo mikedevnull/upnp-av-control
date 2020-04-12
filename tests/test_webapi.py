@@ -1,4 +1,5 @@
 import pytest
+import urllib.parse
 
 
 @pytest.mark.asyncio
@@ -63,10 +64,9 @@ async def test_set_volume(webapi_client, mocked_renderer_device):
 async def test_server_device_list(webapi_client, mocked_server_device):
     response = await webapi_client.get('/library/devices')
     assert response.status_code == 200
-    devices = response.json()['data']
+    devices = response.json()
     assert len(devices) == 1
     device = devices[0]
-    assert device['name'] == mocked_server_device.friendly_name
-    assert device['udn'] == mocked_server_device.udn
-    device_links = device['links']
-    assert device_links['browse'] == webapi_client.application.url_path_for('browse_library', udn=device['udn'])
+    assert device['friendly_name'] == mocked_server_device.friendly_name
+    udn = urllib.parse.unquote_plus(device['udn'])
+    assert udn == mocked_server_device.udn
