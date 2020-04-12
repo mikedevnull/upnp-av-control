@@ -21,9 +21,10 @@ class AVControlPoint(object):
         return [entity.device for entity in self._devices._av_devices.values() if is_media_server(entity.device_type)]
 
     def getMediaServerByUDN(self, udn: str):
-        device = self.devices[udn]
-        if not is_media_server(device):
+        device_entry = self.devices[udn]
+        if not is_media_server(device_entry.device_type):
             raise KeyError('No mediaserver with given UDN found')
+        return device_entry.device
 
     @property
     def mediarenderers(self):
