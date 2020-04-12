@@ -1,50 +1,49 @@
 from fastapi import APIRouter, Request, HTTPException
+from pydantic import BaseModel
+from typing import List
 import urllib.parse
-from upnpavcontrol.core.discover import is_media_server
+import logging
 
 router = APIRouter()
+_logger = logging.getLogger(__name__)
 
 
-def _format_server(device, request):
-    return {
-        'name': device.friendly_name,
-        'udn': device.udn,
-        'links': {
-            'browse': _format_browse_url(device.udn, None, request)
-        }
-    }
+class MediaServer(BaseModel):
+    friendly_name: str
+    udn: str
+
+    class Config:
+        orm_mode = True
 
 
-def _format_browse_url(udn: str, objectId: str, request):
-    browseUrl = request.app.url_path_for('browse_library', udn=udn)
-    if objectId is not None:
-        query = urllib.parse.urlencode({'objectID': objectId})
-        browseUrl = browseUrl + '?' + query
-    return browseUrl
+def _fixup_media_server(x):
+    x.udn = urllib.parse.quote_plus(x.udn)
+    return x
 
 
-def _format_didl_entry(udn: str, entry, request):
-    data = {values[1]: getattr(entry, values[1]) for values in entry.didl_properties_defs if hasattr(entry, values[1])}
-    data['tag'] = entry.tag
-    if entry.tag == 'container':
-        data['browseChildren'] = _format_browse_url(udn, entry.id, request)
-    return data
+def _fixup_didl_item(item):
+    item.id = urllib.parse.quote_plus(item.id)
+    item.parentID = urllib.parse.quote_plus(item.parentID)
+    return item
 
 
-def _format_didl_entries(udn, entries, request):
-    return [_format_didl_entry(udn, x, request) for x in entries]
+def _fixup_didl_items(items):
+    return (_fixup_didl_item(x) for x in items)
 
 
-@router.get('/devices')
+@router.get('/devices', response_model=List[MediaServer])
 def get_media_library_devices(request: Request):
-    return {'data': [_format_server(x, request) for x in request.app.av_control_point.mediaservers]}
+    return [_fixup_media_server(MediaServer.from_orm(x)) for x in request.app.av_control_point.mediaservers]
 
 
-@router.get('/browse/{udn}')
+@router.get('/{udn}/browse')
 async def browse_library(request: Request, udn: str, objectID: str = '0'):
-    if udn not in request.app.av_control_point.devices or not \
-            is_media_server(request.app._av_control_point.devices[udn].device_type):
+    try:
+        udn = urllib.parse.unquote_plus(udn)
+        objectID = urllib.parse.unquote_plus(objectID)
+        server = request.app.av_control_point.getMediaServerByUDN(udn)
+        result = await server.browse(objectID)
+        return _fixup_didl_items(result)
+    except Exception as e:
+        _logger.exception(e)
         raise HTTPException(status_code=404)
-    server = request.app.av_control_point.devices[udn].device
-    result = await server.browse(objectID)
-    return _format_didl_entries(udn, result, request)

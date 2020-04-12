@@ -8,7 +8,6 @@ _logger = logging.getLogger(__name__)
 
 
 def run_web_control_point():
-
     config = uvicorn.Config(web_app, log_config=None, debug=True, reload=True, host='127.0.0.1', port=8000)
     server = uvicorn.Server(config)
     server.run()
