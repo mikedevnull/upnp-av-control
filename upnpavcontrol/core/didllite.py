@@ -19,6 +19,19 @@ class DidlContainer(DidlObject):
     pass
 
 
+class MusikAlbum(DidlContainer):
+    albumArtURI: typing.Optional[str]
+    artist: typing.Optional[str]
+    genre: typing.Optional[str]
+    producer: typing.Optional[str]
+    toc: typing.Optional[str]
+
+
+class MusikArtist(DidlContainer):
+    genre: typing.Optional[str]
+    artistDiscographyURI: typing.Optional[str]
+
+
 class MusicTrack(DidlItem):
     artist: typing.Optional[str]
     album: typing.Optional[str]
@@ -27,6 +40,7 @@ class MusicTrack(DidlItem):
     storageMedium: typing.Optional[str]
     contributor: typing.Optional[str]
     date: typing.Optional[str]
+    albumArtURI: typing.Optional[str]
 
 
 # Not all fields are present in all models, but
@@ -40,6 +54,8 @@ _field_to_didl_mapping = {
     'title': 'dc:title',
     'artist': 'upnp:artist',
     'album': 'upnp:album',
+    'albumArtURI': 'upnp:albumArtURI',
+    'artistDiscographyURI': 'upnp:artistDiscographyURI',
     'originalTrackNumber': 'upnp:originalTrackNumber',
     'playlist': 'upnp:playlist',
     'storageMedium': 'upnp:storageMedium',
@@ -117,11 +133,18 @@ def from_xml_string(xmldata):
         yield _to_didl_element(child)
 
 
+_class_to_element_mapping = {
+    'object.item.audioItem.musicTrack': MusicTrack,
+    'object.container.album.musicAlbum': MusikAlbum,
+    'object.container.person.musicArtist': MusikArtist
+}
+
+
 def _to_didl_element(xmlElement):
     upnpclass = xmlElement.findtext('upnp:class', namespaces=_nsmap)
     # mapping logic should be improved/refactored when more types are supported
-    if upnpclass.startswith('object.item.audioItem.musicTrack'):
-        cls = MusicTrack
+    if upnpclass in _class_to_element_mapping:
+        cls = _class_to_element_mapping[upnpclass]
     elif upnpclass.startswith('object.item'):
         cls = DidlItem
     elif upnpclass.startswith('object.container'):
