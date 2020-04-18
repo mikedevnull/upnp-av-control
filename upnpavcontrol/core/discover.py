@@ -130,7 +130,7 @@ def udn_from_usn(usn: str, device_type: str):
     str
         Device UUID
     """
-    return usn.replace(f'::{device_type}', '')
+    return usn.replace(f'::{device_type}', '').lstrip('uuid:')
 
 
 @attrs

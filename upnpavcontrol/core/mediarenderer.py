@@ -50,7 +50,7 @@ class MediaRenderer(object):
 
     @property
     def udn(self):
-        return self.upnp_device.udn
+        return self.upnp_device.udn.lstrip('uuid:')
 
     @property
     def rendering_control(self):
