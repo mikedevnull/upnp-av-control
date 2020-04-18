@@ -38,8 +38,10 @@ async def bytes_provider(data):
 @router.get('/{token}')
 async def proxy_request(request: Request, token):
     url = decode_url_proxy_token(token)
-
+    _logger.info('Forwarding request to %s', url)
     async with request.app.aio_client_session.get(url) as resp:
         data = await resp.content.read()
-        _logger.info(resp)
-        return StreamingResponse(bytes_provider(data), media_type=resp.content_type)
+        _logger.debug('Got response from %s', url)
+        return StreamingResponse(bytes_provider(data),
+                                 media_type=resp.content_type,
+                                 headers={'Cache-Control': 'max-age=3600'})
