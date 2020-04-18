@@ -2,6 +2,7 @@
 import defusedxml.ElementTree as etree
 from pydantic import BaseModel
 import typing
+import html
 
 
 class DidlObject(BaseModel):
@@ -89,7 +90,7 @@ class DictAdapter():
             value = self._xml.findtext(mapped_key, namespaces=self._nsmap)
             if value is None:
                 return default
-            return value
+            return html.unescape(value)
 
     def __getitem__(self, key: str) -> typing.Any:
         return self._get_from_xml(key)
