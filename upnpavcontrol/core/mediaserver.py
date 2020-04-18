@@ -1,6 +1,15 @@
 import enum
 import re
 from . import didllite
+import logging
+import xml.dom.minidom
+
+_logger = logging.getLogger(__name__)
+
+
+def prettify_xml(xml_frame):
+    dom = xml.dom.minidom.parseString(xml_frame)  # or xml.dom.minidom.parseString(xml_string)
+    return dom.toprettyxml()
 
 
 class BrowseFlags(enum.Enum):
@@ -50,6 +59,7 @@ class MediaServer(object):
                                                                  Filter='*')
         regex = re.compile(r"&(?!amp;|lt;|gt;)")
         didl = regex.sub("&amp;", payload['Result'])
+        _logger.debug(prettify_xml(didl))
         result = didllite.from_xml_string(didl)
         return result
 
