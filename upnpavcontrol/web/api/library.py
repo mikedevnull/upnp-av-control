@@ -52,6 +52,14 @@ async def browse_library(request: Request, udn: str, objectID: str = '0'):
         server = request.app.av_control_point.getMediaServerByUDN(udn)
         result = await server.browse(objectID)
         return _fixup_didl_items(result)
+@router.get('/{udn}/metadata')
+async def get_object_metadata(request: Request, udn: str, objectID: str = '0'):
+    try:
+        udn = urllib.parse.unquote_plus(udn)
+        objectID = urllib.parse.unquote_plus(objectID)
+        server = request.app.av_control_point.getMediaServerByUDN(udn)
+        result = await server.browse(objectID, browse_flag=BrowseFlags.BrowseMetadata)
+        return _fixup_didl_items(result)
     except Exception as e:
         _logger.exception(e)
         raise HTTPException(status_code=404)
