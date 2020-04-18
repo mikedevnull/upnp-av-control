@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from typing import List
 import urllib.parse
 import logging
+import asyncio
 
 router = APIRouter()
 _logger = logging.getLogger(__name__)
@@ -52,6 +53,14 @@ async def browse_library(request: Request, udn: str, objectID: str = '0'):
         server = request.app.av_control_point.getMediaServerByUDN(udn)
         result = await server.browse(objectID)
         return _fixup_didl_items(result)
+    except asyncio.TimeoutError:
+        _logger.error('Mediaserver browse request timed out')
+        raise HTTPException(status_code=504, detail="Request to mediaserver timed out")
+    except Exception as e:
+        _logger.exception(e)
+        raise HTTPException(status_code=404)
+
+
 @router.get('/{udn}/metadata')
 async def get_object_metadata(request: Request, udn: str, objectID: str = '0'):
     try:
@@ -60,6 +69,9 @@ async def get_object_metadata(request: Request, udn: str, objectID: str = '0'):
         server = request.app.av_control_point.getMediaServerByUDN(udn)
         result = await server.browse(objectID, browse_flag=BrowseFlags.BrowseMetadata)
         return _fixup_didl_items(result)
+    except asyncio.TimeoutError:
+        _logger.error('Mediaserver metadata request timed out')
+        raise HTTPException(status_code=504, detail="Request to mediaserver timed out")
     except Exception as e:
         _logger.exception(e)
         raise HTTPException(status_code=404)
