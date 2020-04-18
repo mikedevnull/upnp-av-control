@@ -1,3 +1,5 @@
+from .media_proxy import get_media_proxy_url
+from ...core.mediaserver import BrowseFlags
 from fastapi import APIRouter, Request, HTTPException
 from pydantic import BaseModel
 from typing import List
@@ -24,6 +26,12 @@ def _fixup_media_server(x):
 def _fixup_didl_item(item):
     item.id = urllib.parse.quote_plus(item.id)
     item.parentID = urllib.parse.quote_plus(item.parentID)
+    albumArtURI = getattr(item, 'albumArtURI', None)
+    if albumArtURI is not None:
+        item.albumArtURI = get_media_proxy_url(albumArtURI)
+    artistDiscographyURI = getattr(item, 'artistDiscographyURI', None)
+    if artistDiscographyURI is not None:
+        item.artistDiscographyURI = get_media_proxy_url(artistDiscographyURI)
     return item
 
 
