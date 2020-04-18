@@ -4,6 +4,7 @@ from upnpavcontrol.core import AVControlPoint
 from .broadcast_event_bus import BroadcastEventBus
 from .models import DiscoveryEvent
 from . import api
+import aiohttp
 
 
 class AVControlPointAPI(FastAPI):
@@ -12,6 +13,13 @@ class AVControlPointAPI(FastAPI):
         self._av_control_point = None
         self._av_control_task = None
         self.event_bus = BroadcastEventBus()
+        self._aio_client_session = None
+
+    @property
+    def aio_client_session(self):
+        if self._aio_client_session is None:
+            self._aio_client_session = aiohttp.ClientSession()
+        return self._aio_client_session
 
     @property
     def av_control_point(self):
