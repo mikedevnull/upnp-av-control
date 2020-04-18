@@ -31,7 +31,7 @@ class MediaServer(object):
 
     @property
     def udn(self):
-        return self._device.udn
+        return self._device.udn.lstrip('uuid:')
 
     @property
     def av_transport(self):
