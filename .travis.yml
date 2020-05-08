@@ -5,6 +5,7 @@ script:
   - pytest
 install:
   - pip install .[test]
+  - pip install --upgrade pytest
   - pip install codecov
 script:
   - pytest --cov=upnpavcontrol
