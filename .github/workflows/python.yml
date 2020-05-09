@@ -16,7 +16,8 @@ jobs:
     strategy:
       matrix:
         python-version: [3.7, 3.8]
-
+    env:
+      PYTHON: ${{ matrix.python-version }}
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python ${{ matrix.python-version }}
@@ -32,4 +33,11 @@ jobs:
         flake8 upnpavcontrol --statistics
     - name: Test with pytest
       run: |
-        pytest
+        pytest --cov=./ --cov-report=xml
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v1
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        env_vars: PYTHON
+        fail_ci_if_error: true
