@@ -1,5 +1,5 @@
 UPnP AV Control
-[![Build Status](https://travis-ci.org/mikedevnull/upnp-av-control.svg?branch=master)](https://travis-ci.org/mikedevnull/upnp-av-control)
+![Build Status](https://github.com/mikedevnull/upnp-av-control/workflows/Python%20package/badge.svg)
 [![codecov](https://codecov.io/gh/mikedevnull/upnp-av-control/branch/master/graph/badge.svg)](https://codecov.io/gh/mikedevnull/upnp-av-control)
 ====
 
