@@ -3,7 +3,7 @@ import logging
 import socket
 from async_upnp_client import UpnpEventHandler, UpnpService, UpnpRequester
 from abc import ABCMeta, abstractmethod, abstractproperty
-from typing import Callable, Awaitable, Mapping
+from typing import Callable, Awaitable, Mapping, Optional
 from datetime import timedelta
 import http
 import asyncio
@@ -60,9 +60,12 @@ class AiohttpNotificationEndpoint(NotificationEndpointBase):
     """
     DEFAULT_PORT = 51234
 
-    def __init__(self, port: int = DEFAULT_PORT):
+    def __init__(self, port: int = DEFAULT_PORT, public_ip: Optional[str] = None):
         self._port = port
-        self._ip = socket.gethostbyname(socket.getfqdn())
+        if public_ip is None:
+            self._ip = socket.gethostbyname(socket.getfqdn())
+        else:
+            self._ip = public_ip
         self._app = web.Application()
         self._app.router.add_route('NOTIFY', '/', self._async_handle_notify)
         self._runner = web.AppRunner(self._app)
@@ -114,7 +117,6 @@ class NotificationBackend(object):
             # assume we're already running
             return
         await self._endpoint.async_start(self._handler.handle_notify)
-        _logger.debug('Started NotificationEndpoint listending on %s', self._endpoint.callback_url)
         self._renew_subscriptions_task = asyncio.create_task(self._resubscription_loop())
         _logger.info('NotificationBackend started (%s)', self._endpoint.callback_url)
 

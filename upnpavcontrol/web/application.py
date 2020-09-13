@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from starlette.websockets import WebSocket, WebSocketDisconnect
 from upnpavcontrol.core import AVControlPoint
+from upnpavcontrol.core import notification_backend
+from async_upnp_client.aiohttp import AiohttpRequester
 from .broadcast_event_bus import BroadcastEventBus
 from .models import DiscoveryEvent
 from . import api
@@ -55,6 +57,14 @@ async def websocket_endpoint(websocket: WebSocket):
         app.event_bus.remove_connection(websocket)
 
 
+def create_control_point_from_settings():
+    endpoint = notification_backend.AiohttpNotificationEndpoint(port=settings.EVENT_CALLBACK_PORT,
+                                                                public_ip=settings.PUBLIC_IP)
+    notification = notification_backend.NotificationBackend(endpoint, AiohttpRequester())
+    cp = AVControlPoint(notifcation_backend=notification)
+    return cp
+
+
 @app.on_event("startup")
 def setup_logging():
     import colorlog
@@ -72,7 +82,7 @@ async def init_event_bus():
     # This may be the case during testing, when
     # the control point might have been preconfigured and mocked
     if app.av_control_point is None:
-        app.av_control_point = AVControlPoint()
+        app.av_control_point = create_control_point_from_settings()
     await app.av_control_point.async_start()
     # Prime the push notification generator
     await app.event_bus.queue.asend(None)
