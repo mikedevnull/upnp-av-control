@@ -4,6 +4,7 @@ from upnpavcontrol.core import AVControlPoint
 from .broadcast_event_bus import BroadcastEventBus
 from .models import DiscoveryEvent
 from . import api
+from . import settings
 import aiohttp
 
 
@@ -52,6 +53,17 @@ async def websocket_endpoint(websocket: WebSocket):
             await websocket.receive_text()
     except WebSocketDisconnect:
         app.event_bus.remove_connection(websocket)
+
+
+@app.on_event("startup")
+def setup_logging():
+    import colorlog
+    import logging
+    level = logging.WARNING if settings.QUIET else logging.INFO
+    level = logging.DEBUG if settings.DEBUG else level
+    colorlog.basicConfig(level=level,
+                         format='%(log_color)s%(levelname)s%(reset)s:%(yellow)s%(name)s%(reset)s: %(message)s')
+    logging.getLogger('async_upnp_client').setLevel(logging.INFO)
 
 
 @app.on_event("startup")
