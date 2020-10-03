@@ -1,12 +1,11 @@
 UPnP AV Control
-![Build Status](https://github.com/mikedevnull/upnp-av-control/workflows/Python%20package/badge.svg)
+![Build Status](https://github.com/mikedevnull/upnp-av-control/workflows/Tests/badge.svg)
 [![codecov](https://codecov.io/gh/mikedevnull/upnp-av-control/branch/master/graph/badge.svg)](https://codecov.io/gh/mikedevnull/upnp-av-control)
 ====
 
-Web API to control UPnP AV devices.
+Web frontend and API to control UPnP AV devices.
 
-Implementation of an UPnP AV ControlPoint that exposes a Web API and can be controlloed via HTTP.
-It's probably most useful with its sibling project that provides a frontend application that uses this API.
+Implementation of an UPnP AV ControlPoint. It consists of a backend written in python that exposes a web API over HTTP, and a simple HTML/JS/CSS frontend.
 
 ## A word of warning
 
@@ -22,38 +21,82 @@ These instructions will get you a copy of the project up and running on your loc
 
 ### Prerequisites
 
-A working Python 3.6+ interpreter is required.
+A working Python 3.7+ interpreter is required.
 
 It is also probably a good idea (though not neccessary) to create and use a [virtual environment](https://docs.python-guide.org/dev/virtualenvs/) for testing and development.
 
-### Installing
+When building from source or for development, a reasonably recent version of [Node.js](https://nodejs.org/) (e.g. 12.x) is required for the web frontend.
 
-The control point can be installed directly using `pip`:
+### Installation and building from source
 
-```bash
-pip install git+https://github.com/mikedevnull/upnp-av-control
-```
-
-#### Development mode
-
-For active development it might be more reasonable to clone a local copy first
+Clone a copy of the repository
 
 ```bash
 git clone git+https://github.com/mikedevnull/upnp-av-control
+cd upnp-av-control
 ```
 
-and install the software in development mode:
+One can choose to build the frontend, the backend or both.
 
+#### Backend
+
+To install the backend in development mode:
 ```bash
-cd upnp-av-control
 pip install -e .[dev,test]
-````
+```
 
 The above command will also install the extra components useful for development (`dev`) and required for testing (`test`).
 
 Please refer to the [pip documentation](https://pip.pypa.io/en/stable/reference/pip_install/#editable-installs) for more details.
 
+
+#### Frontend
+
+Install the required node modules with `npm:
+```
+npm install
+```
+
+#### Development server
+
+Both the backend and frontend can be run with a development server, including (hot-)reloading and other nice features useful during development.
+
+For active development, both development servers can be started with the `dev` npm script:
+
+```bash
+npm run dev
+```
+
+This will start a  `webpack-dev-server` on port `8080` serving the frontend, proxying all backend requests to a backend `uvicorn` server in development mode on port `8000` , both configured to work together nicely.
+
+The result should be accessible on `http://localhost:8080`.
+
+### Running the tests
+
+#### Backend
+
+If the `test` extra requirements have been installed, running the tests is as simple as executing `pytest`
+
+```bash
+pytest
+```
+
+#### Frontend
+
+The frontend tests can be run with the npm `test` script
+
+```bash
+npm run test
+```
+
 ## Usage
+
+First, the frontend should be build
+```bash
+npm run build
+```
+
+If you are only interested in using the backend web API, you may obmit this step.
 
 To start the control point server, simply run
 
@@ -61,7 +104,7 @@ To start the control point server, simply run
 upnp-av-web-cp
 ```
 
-This will start a [uvicorn](https://github.com/encode/uvicorn)-based local development server with hot reloading listening on `http://127.0.0.1:8000`.
+This will start a [uvicorn](https://github.com/encode/uvicorn)-based local  server on `http://127.0.0.1:8000`.
 
 Direct your browser to `http://127.0.0.1:8000/docs` for the interactive API documentation.
 
@@ -72,26 +115,20 @@ upnp-av-web-cp --help
 
 to see all available options.
 
-## Running the tests
-
-If the `test` extra requirements have been installed, running the tests is as simple as executing `pytest`
-
-```bash
-pytest
-```
 
 ## Deployment
 
 Due to the lack of functionality there's no deployment documentation yet.
 
-> **WARNING**: As with UPnP services in general, exposing this web service to the public (i.e. the internal) **might pose a severe security risk** and is not the intendend use case.
+> **WARNING**: As with UPnP services in general, exposing this web service to the public (i.e. the internet) **might pose a severe security risk** and is not the intendend use case.
 
 > **WARNING**: The development server startet by `upnp-av-web-cp` is configured for development and **not** ready for production use.
 
 ## Built With
 
-* [FastAPI]() - The web framework used
-* [async-upnp-aclient](https://maven.apache.org/) - Async UPnP framework that does the actual heavy lifting
+* [FastAPI](https://fastapi.tiangolo.com/) - The web framework used
+* [async-upnp-aclient](https://github.com/StevenLooman/async_upnp_client) - Async UPnP framework that does the actual heavy lifting
+* [Vue.js](https://www.vuejs.org) - The frontend web framework
 
 ## Contributing
 
