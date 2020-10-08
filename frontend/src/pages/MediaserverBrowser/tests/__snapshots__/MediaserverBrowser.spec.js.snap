@@ -1,0 +1,118 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`CoverImageGrid.vue renders correctly 1`] = `
+<div>
+  <span
+    class="browser-view__section-heading"
+  >
+    My heading
+  </span>
+   
+  <ul
+    class="mdc-image-list cover-image-grid mdc-image-list--with-text-protection"
+  >
+    <li
+      class="mdc-image-list__item cover-image-grid__item"
+      item="[object Object]"
+    >
+      <a>
+        <div
+          class="mdc-image-list__image-aspect-container"
+        >
+          <img
+            class="mdc-image-list__image"
+            src="src/assets/music_note-black-24dp.svg"
+          />
+        </div>
+         
+        <div
+          class="mdc-image-list__supporting"
+        >
+          <span
+            class="mdc-image-list__label"
+          >
+            foo
+          </span>
+        </div>
+      </a>
+    </li>
+    <li
+      class="mdc-image-list__item cover-image-grid__item"
+      item="[object Object]"
+    >
+      <a>
+        <div
+          class="mdc-image-list__image-aspect-container"
+        >
+          <img
+            class="mdc-image-list__image"
+            src="/api/bar.png"
+          />
+        </div>
+         
+        <div
+          class="mdc-image-list__supporting"
+        >
+          <span
+            class="mdc-image-list__label"
+          >
+            bar
+          </span>
+        </div>
+      </a>
+    </li>
+  </ul>
+</div>
+`;
+
+exports[`TrackList.vue renders correctly 1`] = `
+<div>
+  <span
+    class="browser-view__section-heading"
+  >
+    My heading
+  </span>
+   
+  <ul
+    class="mdc-list"
+  >
+    <li
+      class="mdc-list-item"
+      tabindex="0"
+    >
+      <span
+        class="mdc-list-item__graphic"
+      >
+        <img
+          class="mdc-image-list__image"
+          src="src/assets/music_note-black-24dp.svg"
+        />
+      </span>
+       
+      <span
+        class="mdc-list-item__text"
+      >
+        foo
+      </span>
+    </li>
+    <li
+      class="mdc-list-item"
+    >
+      <span
+        class="mdc-list-item__graphic"
+      >
+        <img
+          class="mdc-image-list__image"
+          src="/api/bar.png"
+        />
+      </span>
+       
+      <span
+        class="mdc-list-item__text"
+      >
+        bar
+      </span>
+    </li>
+  </ul>
+</div>
+`;
