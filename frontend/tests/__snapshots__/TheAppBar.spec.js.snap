@@ -1,0 +1,47 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`TheAppBar.vue renders correctly 1`] = `
+<header
+  class="mdc-top-app-bar"
+>
+  <div
+    class="mdc-top-app-bar__row"
+  >
+    <section
+      class="mdc-top-app-bar__section mdc-top-app-bar__section--align-start"
+    >
+      <span
+        class="mdc-top-app-bar__title"
+      >
+        UPnP AV controller
+      </span>
+    </section>
+     
+    <section
+      class="mdc-top-app-bar__section mdc-top-app-bar__section--align-end"
+      role="toolbar"
+    >
+      <a
+        class="mdc-button top-bar__nav-button"
+      >
+        <div
+          class="mdc-button__ripple"
+        />
+         
+        <span
+          class="mdc-button__label"
+        >
+          Musik library
+        </span>
+         
+        <i
+          aria-hidden="true"
+          class="material-icons mdc-button__icon"
+        >
+          library_music
+        </i>
+      </a>
+    </section>
+  </div>
+</header>
+`;

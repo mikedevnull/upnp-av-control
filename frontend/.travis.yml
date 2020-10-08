@@ -1,0 +1,16 @@
+language: node_js
+node_js:
+ - "node"
+install:
+  - npm ci
+  - npm install -g codecov
+cache: npm
+jobs:
+  include:
+    - stage: test
+      script:
+        - npm run test
+        - codecov
+    - stage: build
+      script:
+        - npm run build
