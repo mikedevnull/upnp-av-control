@@ -1,11 +1,13 @@
 {
-  "name": "web-frontend",
+  "name": "upnp-av-control-frontend",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "webpack  --config config/webpack.prod.js",
-    "dev": "webpack-dev-server --config config/webpack.dev.js",
-    "test": "jest"
+    "build": "webpack  --config frontend/config/webpack.prod.js",
+    "dev-frontend": "webpack-dev-server --config frontend/config/webpack.dev.js",
+    "dev-backend": "uvicorn upnpavcontrol.web:app --debug --reload",
+    "dev": "concurrently \"npm run dev-frontend\" \"npm run dev-backend\"",
+    "test": "cd frontend && jest"
   },
   "dependencies": {
     "axios": "^0.19.2",
@@ -20,6 +22,7 @@
     "babel-core": "^7.0.0-bridge.0",
     "babel-jest": "^25.3.0",
     "babel-loader": "^8.1.0",
+    "concurrently": "^5.3.0",
     "css-loader": "^3.5.1",
     "eslint": "^6.8.0",
     "eslint-plugin-jest": "^23.8.2",

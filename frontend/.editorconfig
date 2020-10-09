@@ -2,7 +2,7 @@
 # EditorConfig is awesome: https://EditorConfig.org
 
 # top-most EditorConfig file
-root = true
+root = false
 
 # Unix-style newlines with a newline ending every file
 [*]
