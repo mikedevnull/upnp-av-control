@@ -1,7 +1,4 @@
-# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
-# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
-
-name: Python package
+name: Tests
 
 on:
   push:
@@ -10,8 +7,7 @@ on:
     branches: [ master ]
 
 jobs:
-  build:
-
+  test-backend:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -38,6 +34,26 @@ jobs:
       uses: codecov/codecov-action@v1
       with:
         file: ./coverage.xml
-        flags: unittests
+        flags: backend
         env_vars: PYTHON
+        fail_ci_if_error: true
+  test-frontend:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js 12.x
+      uses: actions/setup-node@v1
+      with:
+        node-version: 12.x
+    - name: Install dependencies
+      run: npm ci
+    - name: Build frontend
+      run: npm run build 
+    - name: Run tests 
+      run: npm run test
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v1
+      with:
+        directory: ./frontend
+        flags: frontend
         fail_ci_if_error: true
