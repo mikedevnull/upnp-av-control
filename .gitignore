@@ -46,6 +46,7 @@ coverage.xml
 *.cover
 .hypothesis/
 .pytest_cache/
+frontend/coverage/*
 
 # Translations
 *.mo
@@ -97,6 +98,12 @@ venv.bak/
 # Rope project settings
 .ropeproject
 
+# Node / npm / yarn
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
 # mkdocs documentation
 /site
 
@@ -111,3 +118,7 @@ venv.bak/
 
 # vim
 *.swp
+
+# frontend build results
+/static/*
+!/static/.gitkeep

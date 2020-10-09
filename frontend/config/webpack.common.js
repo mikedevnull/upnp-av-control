@@ -4,9 +4,9 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
 const config = {
-  entry: { app: './src/main.js' },
+  entry: { app: path.resolve(__dirname, '../src/main.js') },
   output: {
-    path: path.resolve(__dirname, '../dist'),
+    path: path.resolve(__dirname, '../../static'),
     filename: '[name].[contenthash].js'
   },
 
