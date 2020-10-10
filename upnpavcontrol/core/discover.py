@@ -451,6 +451,7 @@ class DeviceRegistry(object):
                 running = False
             except Exception:
                 logging.exception('Failed to process discovery events, shutting down')
+                running = False
                 raise
         _logger.debug('Discovery event processing stopped')
 
