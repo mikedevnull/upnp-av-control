@@ -233,14 +233,18 @@ async def _create_device_entry(factory: async_upnp_client.UpnpFactory,
     MediaServer, MediaRenderer
         A renderer or server instance on success or None otherwise.
     """
-    device = await factory.async_create_device(location)
-    device_type = device._device_info.device_type
-    if is_media_server(device_type):
-        server = MediaServer(device)
-        return DeviceEntry(device=server, device_type=device_type)
-    elif is_media_renderer(device_type):
-        renderer = MediaRenderer(device)
-        return DeviceEntry(device=renderer, device_type=device_type)
+    try:
+        device = await factory.async_create_device(location)
+        device_type = device._device_info.device_type
+        if is_media_server(device_type):
+            server = MediaServer(device)
+            return DeviceEntry(device=server, device_type=device_type)
+        elif is_media_renderer(device_type):
+            renderer = MediaRenderer(device)
+            return DeviceEntry(device=renderer, device_type=device_type)
+    except Exception:
+        logging.exception('Failed to process discovery events, shutting down')
+    return None
 
 
 AdvertisementListenerCallback = typing.Callable[[typing.Mapping[str, str]], typing.Awaitable]
