@@ -20,7 +20,7 @@ export default {};
   height: 70px;
   border: 3px solid rgba(255, 255, 255, 0.3);
   border-radius: 50%;
-  @include theme.prop(border-top-color, secondary);
+  @include theme.property(border-top-color, secondary);
   animation: spin 1s ease-in-out infinite;
   -webkit-animation: spin 1s ease-in-out infinite;
 }
