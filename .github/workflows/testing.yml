@@ -47,13 +47,17 @@ jobs:
         node-version: 12.x
     - name: Install dependencies
       run: npm ci
+      working-directory: ./frontend      
     - name: Build frontend
       run: npm run build 
+      working-directory: ./frontend
     - name: Run tests 
-      run: npm run test
+      run: npm run test:unit
+      working-directory: ./frontend
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v1
       with:
-        directory: ./frontend
         flags: frontend
         fail_ci_if_error: true
+        directory: ./frontend
+
