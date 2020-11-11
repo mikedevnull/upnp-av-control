@@ -43,6 +43,6 @@ export default {
 @use '@material/theme';
 
 .top-bar__nav-button {
-  @include button.ink-color(theme.prop-value(on-primary));
+  @include button.ink-color(theme.$on-primary);
 }
 </style>

@@ -57,7 +57,7 @@
 }
 .browser-view__artwork {
   border: 1px solid;
-  border-color: rgba(theme.prop-value(on-surface), .3);
+  border-color: rgba(theme.$on-surface, .3);
   border-radius: shape.$medium-component-radius;
   border-radius: 8px;
   
