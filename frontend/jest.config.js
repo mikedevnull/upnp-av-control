@@ -6,5 +6,9 @@ module.exports = {
   ],
   transform: {
     "^.+\\.svg$": "<rootDir>/tests/svgTransform.js"
-  }
+  },
+  collectCoverage: true,
+  collectCoverageFrom: ["src/**/*.{js,ts,vue}", "!**/node_modules/**"],
+  coverageReporters: ["lcov", "html", "text-summary"],
+  moduleFileExtensions: ["js", "ts", "json", "vue"]
 };
