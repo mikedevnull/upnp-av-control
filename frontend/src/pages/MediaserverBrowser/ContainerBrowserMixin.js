@@ -2,7 +2,7 @@ import ControlPoint from "@/upnpapi.js";
 import utils from "./container-type-utils";
 
 export default {
-  props: ['item', 'udn'],
+  props: ["item", "udn"],
   data() {
     return {
       children: []
@@ -13,10 +13,16 @@ export default {
       return this.children !== undefined;
     },
     musicAlbums() {
-      return utils.filterByUpnpClass(this.children, "object.container.album.musicAlbum");
+      return utils.filterByUpnpClass(
+        this.children,
+        "object.container.album.musicAlbum"
+      );
     },
     musicTracks() {
-      return utils.filterByUpnpClass(this.children, "object.item.audioItem.musicTrack");
+      return utils.filterByUpnpClass(
+        this.children,
+        "object.item.audioItem.musicTrack"
+      );
     }
   },
   methods: {
@@ -31,11 +37,11 @@ export default {
     }
   },
   watch: {
-    item: async function () {
+    item: async function() {
       await this.loadData();
     }
   },
-  mounted: function () {
+  mounted: function() {
     this.loadData();
   }
-}
+};

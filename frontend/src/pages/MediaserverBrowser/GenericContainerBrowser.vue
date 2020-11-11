@@ -1,11 +1,14 @@
 <template>
   <div class="browser-view">
-    <LoadSpinner v-if="!ready" class="browser-view__load-indicator"></LoadSpinner>
+    <LoadSpinner
+      v-if="!ready"
+      class="browser-view__load-indicator"
+    ></LoadSpinner>
     <template v-else>
       <div class="browser-view__details">
         <img class="browser-view__artwork" :src="folderIcon" />
-        <span class="browser-view-typography--title">{{item.title}}</span>
-        <span class="browser-view-typography--subtitle">{{title}}</span>
+        <span class="browser-view-typography--title">{{ item.title }}</span>
+        <span class="browser-view-typography--subtitle">{{ title }}</span>
       </div>
       <div class="browser-view__children">
         <ul class="mdc-list">
@@ -14,11 +17,14 @@
             :key="child.id"
             :tabindex="index == 0 ? index : false"
           >
-            <router-link class="mdc-list-item" :to="itemBrowseChildrenRoute(udn, child.id)">
+            <router-link
+              class="mdc-list-item"
+              :to="itemBrowseChildrenRoute(udn, child.id)"
+            >
               <span class="mdc-list-item__graphic">
                 <img class="mdc-image-list__image" :src="iconForItem(child)" />
               </span>
-              <span class="mdc-list-item__text">{{child.title}}</span>
+              <span class="mdc-list-item__text">{{ child.title }}</span>
             </router-link>
           </li>
         </ul>
@@ -33,19 +39,14 @@ import { MDCList } from "@material/list";
 import LoadSpinner from "@/components/LoadSpinner";
 
 export default {
-  mixins: [ContainerBrowserMixin],
   components: { LoadSpinner },
+  mixins: [ContainerBrowserMixin],
   data() {
     return {
       mdcList: undefined,
       folderIcon: utils.folderIcon,
       mediaserver: undefined
     };
-  },
-  methods: {
-    iconForItem(item) {
-      return utils.imageForItem(item);
-    }
   },
   computed: {
     title() {
@@ -68,6 +69,11 @@ export default {
     if (this.mdcList !== undefined) {
       this.mdcList.destroy();
       this.mdcList = undefined;
+    }
+  },
+  methods: {
+    iconForItem(item) {
+      return utils.imageForItem(item);
     }
   }
 };

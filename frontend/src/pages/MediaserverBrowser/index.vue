@@ -1,7 +1,7 @@
 <template>
   <div>
     <LoadSpinner v-if="!ready"></LoadSpinner>
-    <component v-else :is="browseComponent" :item="item" :udn="udn"></component>
+    <component :is="browseComponent" v-else :item="item" :udn="udn"></component>
   </div>
 </template>
 <script>
@@ -20,7 +20,7 @@ export default {
     AlbumBrowser
   },
   props: {
-    udn: { type: String },
+    udn: { type: String, default: undefined },
     objectID: { type: String, default: undefined }
   },
   data: function() {
@@ -54,6 +54,9 @@ export default {
       await this.loadData();
     }
   },
+  mounted: function() {
+    this.loadData();
+  },
   methods: {
     loadData: function() {
       this.item = undefined;
@@ -61,11 +64,7 @@ export default {
         this.item = data[0];
       });
     }
-  },
-  mounted: function() {
-    this.loadData();
   }
 };
 </script>
-<style lang="scss">
-</style>
+<style lang="scss"></style>

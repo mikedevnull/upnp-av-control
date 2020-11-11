@@ -1,9 +1,11 @@
 <template>
   <div>
     <h3>Mediaservers</h3>
-    <ol v-for="server in available_servers" :key="server.udn">
-      <li>
-        <router-link :to="{name: 'browse', params: {udn: server.udn}}">{{server.friendly_name}}</router-link>
+    <ol>
+      <li v-for="server in availableServers" :key="server.udn">
+        <router-link :to="{ name: 'browse', params: { udn: server.udn } }">{{
+          server.friendlyName
+        }}</router-link>
       </li>
     </ol>
   </div>
@@ -14,7 +16,7 @@ import { mapState } from "vuex";
 
 export default {
   data: () => ({}),
-  methods: {},
-  computed: { ...mapState(["available_servers"]) }
+  computed: { ...mapState(["availableServers"]) },
+  methods: {}
 };
 </script>
