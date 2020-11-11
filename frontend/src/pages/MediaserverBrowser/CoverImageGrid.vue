@@ -1,11 +1,13 @@
 <template>
   <div>
-    <span class="browser-view__section-heading">{{heading}}</span>
-    <ul class="mdc-image-list cover-image-grid mdc-image-list--with-text-protection">
+    <span class="browser-view__section-heading">{{ heading }}</span>
+    <ul
+      class="mdc-image-list cover-image-grid mdc-image-list--with-text-protection"
+    >
       <li
         v-for="item in items"
-        :item="item"
         :key="item.id"
+        :item="item"
         class="mdc-image-list__item cover-image-grid__item"
       >
         <router-link :to="itemBrowseChildrenRoute(udn, item.id)">
@@ -13,7 +15,7 @@
             <img class="mdc-image-list__image" :src="imageForItem(item)" />
           </div>
           <div class="mdc-image-list__supporting">
-            <span class="mdc-image-list__label">{{item.title}}</span>
+            <span class="mdc-image-list__label">{{ item.title }}</span>
           </div>
         </router-link>
       </li>
@@ -25,8 +27,8 @@ import utils from "./container-type-utils";
 export default {
   components: {},
   props: {
-    items: {},
-    udn: { type: String },
+    items: { type: Array, default: () => [] },
+    udn: { type: String, default: undefined },
     heading: { type: String, default: "Albums" }
   },
   methods: {

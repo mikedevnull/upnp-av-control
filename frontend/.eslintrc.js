@@ -23,7 +23,7 @@ module.exports = {
         "**/__tests__/*.{j,t}s?(x)",
         "src/**/tests/*.spec.{j,t}s?(x)",
         "**/tests/**/*.spec.{j,t}s?(x)",
-        "**/tests/__mocks__/*.{j,t}s?(x)",
+        "**/tests/__mocks__/*.{j,t}s?(x)"
       ],
       env: {
         jest: true

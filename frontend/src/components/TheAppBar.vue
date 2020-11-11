@@ -1,14 +1,24 @@
 <template>
   <header class="mdc-top-app-bar">
     <div class="mdc-top-app-bar__row">
-      <section class="mdc-top-app-bar__section mdc-top-app-bar__section--align-start">
+      <section
+        class="mdc-top-app-bar__section mdc-top-app-bar__section--align-start"
+      >
         <span class="mdc-top-app-bar__title">UPnP AV controller</span>
       </section>
-      <section class="mdc-top-app-bar__section mdc-top-app-bar__section--align-end" role="toolbar">
-        <router-link :to="{ name: 'media'}" class="mdc-button top-bar__nav-button">
+      <section
+        class="mdc-top-app-bar__section mdc-top-app-bar__section--align-end"
+        role="toolbar"
+      >
+        <router-link
+          :to="{ name: 'media' }"
+          class="mdc-button top-bar__nav-button"
+        >
           <div class="mdc-button__ripple"></div>
           <span class="mdc-button__label">Musik library</span>
-          <i class="material-icons mdc-button__icon" aria-hidden="true">library_music</i>
+          <i class="material-icons mdc-button__icon" aria-hidden="true"
+            >library_music</i
+          >
         </router-link>
       </section>
     </div>
@@ -20,12 +30,12 @@ import { MDCTopAppBar } from "@material/top-app-bar";
 
 export default {
   components: {},
-  computed: {},
   data() {
     return {
       mdcAppBar: undefined
     };
   },
+  computed: {},
   mounted() {
     this.mdcAppBar = MDCTopAppBar.attachTo(this.$el);
   },

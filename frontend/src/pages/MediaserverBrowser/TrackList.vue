@@ -1,17 +1,17 @@
 <template>
   <div>
-    <span class="browser-view__section-heading">{{heading}}</span>
+    <span class="browser-view__section-heading">{{ heading }}</span>
     <ul class="mdc-list">
       <li
-        class="mdc-list-item"
         v-for="(item, index) in items"
         :key="item.id"
+        class="mdc-list-item"
         :tabindex="index == 0 ? index : false"
       >
         <span class="mdc-list-item__graphic">
           <img class="mdc-image-list__image" :src="imageForItem(item)" />
         </span>
-        <span class="mdc-list-item__text">{{item.title}}</span>
+        <span class="mdc-list-item__text">{{ item.title }}</span>
       </li>
     </ul>
   </div>
@@ -21,8 +21,8 @@ import utils from "./container-type-utils";
 export default {
   components: {},
   props: {
-    items: {},
-    udn: { type: String },
+    items: { type: Array, default: () => [] },
+    udn: { type: String, default: undefined },
     heading: { type: String, default: "Tracks" }
   },
   methods: {
@@ -32,5 +32,4 @@ export default {
   }
 };
 </script>
-<style lang="scss" scoped>
-</style>
+<style lang="scss" scoped></style>
