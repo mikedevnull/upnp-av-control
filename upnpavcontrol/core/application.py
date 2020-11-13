@@ -1,4 +1,5 @@
-from .discover import DeviceRegistry, is_media_renderer, is_media_server
+from .discovery import DeviceRegistry
+from .mediarenderer import MediaRenderer
 import logging
 from .notification_backend import NotificationBackend, AiohttpNotificationEndpoint
 from async_upnp_client.aiohttp import AiohttpRequester
@@ -18,17 +19,14 @@ class AVControlPoint(object):
 
     @property
     def mediaservers(self):
-        return [entity.device for entity in self._devices._av_devices.values() if is_media_server(entity.device_type)]
+        return self._devices.mediaservers
 
-    def getMediaServerByUDN(self, udn: str):
-        device_entry = self.devices[udn]
-        if not is_media_server(device_entry.device_type):
-            raise KeyError('No mediaserver with given UDN found')
-        return device_entry.device
+    def get_mediaserver_by_UDN(self, udn: str):
+        return self._devices.get_device(udn)
 
     @property
     def mediarenderers(self):
-        return [entity.device for entity in self._devices._av_devices.values() if is_media_renderer(entity.device_type)]
+        return self._devices.mediarenderers
 
     @property
     def devices(self):
@@ -43,7 +41,7 @@ class AVControlPoint(object):
             if self._active_renderer is not None:
                 await self._active_renderer.disable_notifications()
             entry = self._devices._av_devices[deviceUDN]
-            if is_media_renderer(entry.device_type):
+            if isinstance(entry.device, MediaRenderer):
                 self._active_renderer = entry.device
                 await self._active_renderer.enable_notifications(self._notify_receiver)
             else:

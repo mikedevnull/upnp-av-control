@@ -1,136 +1,22 @@
 import logging
-from .mediaserver import MediaServer
-from .mediarenderer import MediaRenderer
-import re
+from ..mediaserver import MediaServer
+from ..mediarenderer import MediaRenderer
+from .utils import is_media_server, is_media_renderer
+from .advertisement import AdvertisementListenerFactory, create_upnp_advertisement_listener, DeviceAdvertisementHandler
+from .scan import scan_devices
 import async_upnp_client
 import async_upnp_client.advertisement
 import async_upnp_client.aiohttp
-from async_upnp_client.search import async_search
+
 import asyncio
 import typing
 from attr import attrs, attrib
-from enum import Enum
+from .events import DiscoveryEventType
 import inspect
-from dataclasses import dataclass
 
 _logger = logging.getLogger(__name__)
 
-
-class DiscoveryEventType(Enum):
-    """
-    Different type of upnp events that might occur
-    """
-    NEW_DEVICE = 'NEW_DEVICE'
-    DEVICE_UPDATE = 'DEVICE_UPDATE'
-    DEVICE_LOST = 'DEVICE_LOST'
-
-
-@dataclass(frozen=True)
-class DeviceDiscoveryEvent:
-    """
-    Provides all required information to handle discovery
-    events in a uniform way.
-    This includes advertisements via SSDP (alive, update, bybye) and
-    but also responses to search requests.
-
-    Attributes
-    ----------
-    event_type : DiscoveryEventType
-        The type of discovery represented by this event
-    device_type : str
-        A UPnP device type descriptor of the form 'urn:schemas-upnp-org:device:{deviceType}:{ver}'
-    udn : str
-        UUID of the device
-    location: str or None
-        URL to the UPnP description of the device. Only available for `NEW_DEVICE` or `DEVICE_UPDATE`
-        event types.
-    """
-    event_type: DiscoveryEventType
-    device_type: str
-    udn: str
-    location: typing.Optional[str] = None
-
-
 DiscoveryEventCallback = typing.Callable[[DiscoveryEventType, str], None]
-
-_media_server_regex = re.compile(r'urn:schemas-upnp-org:device:MediaServer:[1-9]')
-_media_renderer_regex = re.compile(r'urn:schemas-upnp-org:device:MediaRenderer:[1-9]')
-_media_device_type_regex = re.compile(r'urn:schemas-upnp-org:device:Media(Server|Renderer):[1-9]')
-
-
-def is_media_server(device_type: str) -> bool:
-    """
-    Check if the device type descriptor (e.g. from a Notification Type or Search Target)
-    is a MediaServer.
-
-    Parameters
-    ----------
-    device_type : str
-        Descriptor, e.g. from an advertisement or search result
-
-    Returns
-    -------
-    bool
-        True if a MediaServer device, False otherwise
-    """
-    return _media_server_regex.match(device_type)
-
-
-def is_media_renderer(device_type: str) -> bool:
-    """
-    Check if the device type descriptor (e.g. from a Notification Type or Search Target)
-    is a MediaRenderer.
-
-    Parameters
-    ----------
-    device_type : str
-        Descriptor, e.g. from an advertisement or search result
-
-    Returns
-    -------
-    bool
-        True if a MediaRenderer device, False otherwise
-    """
-    return _media_renderer_regex.match(device_type)
-
-
-def is_media_device(device_type: str) -> bool:
-    """
-    Check if the device type descriptor (e.g. from a Notification Type or Search Target)
-    is either a MediaRenderer or MediaServer
-
-    Parameters
-    ----------
-    device_type : str
-        Descriptor, e.g. from an advertisement or search result
-
-    Returns
-    -------
-    bool
-        True if a MediaServer or MediaRenderer device, False otherwise
-    """
-    return _media_device_type_regex.match(device_type)
-
-
-def udn_from_usn(usn: str, device_type: str):
-    """
-    Extract the device UUID from a Unique Service Name.
-
-    This only works for USNs that describe devices include the device type, not services or root devices
-
-    Parameters
-    -----------
-    usn : str
-        Unique Service Name in the form 'uuid:{device-UUID}::rn:schemas-upnp-org:device:{deviceType}:{ver}'
-    device_type : str
-        Device type descriptor in the form 'urn:schemas-upnp-org:device:{deviceType}:{ver}'
-
-    Returns
-    -------
-    str
-        Device UUID
-    """
-    return usn.replace(f'::{device_type}', '').lstrip('uuid:')
 
 
 @attrs
@@ -138,82 +24,6 @@ class DeviceEntry(object):
     device = attrib()
     device_type = attrib()
     expires_at = attrib(default=None)
-
-
-async def scan_devices(event_queue: asyncio.Queue, device_type: str, timeout: int = 3):
-    """
-    Search for new UPnP (AV) devices of a given device type.
-
-    Sends a search request to the network and waits until `timeout` for responses.
-    Valid responses will be converted to DeviceDiscoverEvent events and pushed
-    into the target event queue for another consumer.
-
-    Parameters
-    ---------
-    event_queue : asyncio.Queue
-        Target queue where events about found devices will be pushed.
-    device_type : str
-        UPnP device type descriptor that will be used as search target
-    timeout : int
-        Time in seconds that will be waited for av devices to respond
-    """
-    async def handle_discovery(description):
-        description_url = description['Location']
-        device_type = description['ST']
-        device_udn = udn_from_usn(description['USN'], device_type)
-        event = DeviceDiscoveryEvent(DiscoveryEventType.NEW_DEVICE, device_type, device_udn, description_url)
-
-        _logger.debug('Got scan result %s at %s', device_type, description_url)
-        await event_queue.put(event)
-        _logger.debug('Sent scan result %s to queue', description_url)
-
-    await async_search(handle_discovery, timeout=timeout, service_type=device_type)
-
-
-class DeviceAdvertisementHandler(object):
-    """
-    Handles advertisement messages produced by a `async_upnp_client.UpnpAdvertisementListener`
-    and transforms them into `DeviceDiscoveryEvents`.
-
-    These discovery events are put into a queue so they can be processed
-    by a consumer.
-    """
-    def __init__(self, event_queue: asyncio.Queue):
-        """
-        Constructor
-
-        Parameters
-        ----------
-        event_queue : asyncio.Queue
-            Target queue, will be used to push discovery events
-        """
-        self.queue = event_queue
-
-    async def on_alive(self, resource: typing.Mapping[str, str]):
-        device_type = resource['NT']
-        if not is_media_device(device_type):
-            return
-        device_location = resource['Location']
-        device_udn = udn_from_usn(resource['USN'], device_type)
-        event = DeviceDiscoveryEvent(DiscoveryEventType.NEW_DEVICE, device_type, device_udn, device_location)
-        await self.queue.put(event)
-
-    async def on_byebye(self, resource: typing.Mapping[str, str]):
-        device_type = resource['NT']
-        if not is_media_device(device_type):
-            return
-        device_udn = udn_from_usn(resource['USN'], device_type)
-        event = DeviceDiscoveryEvent(DiscoveryEventType.DEVICE_LOST, device_type, device_udn)
-        await self.queue.put(event)
-
-    async def on_update(self, resource: typing.Mapping[str, str]):
-        device_type = resource['NT']
-        if not is_media_device(device_type):
-            return
-        device_location = resource['Location']
-        device_udn = udn_from_usn(resource['USN'], device_type)
-        event = DeviceDiscoveryEvent(DiscoveryEventType.DEVICE_UPDATE, device_type, device_udn, device_location)
-        await self.queue.put(event)
 
 
 async def _create_device_entry(factory: async_upnp_client.UpnpFactory,
@@ -243,14 +53,6 @@ async def _create_device_entry(factory: async_upnp_client.UpnpFactory,
         return DeviceEntry(device=renderer, device_type=device_type)
 
 
-AdvertisementListenerCallback = typing.Callable[[typing.Mapping[str, str]], typing.Awaitable]
-""" Type of the callbacks for `async_upnp_client.UpnpAdvertisementListener """
-
-AdvertisementListenerFactory = typing.Callable[
-    [AdvertisementListenerCallback, AdvertisementListenerCallback, AdvertisementListenerCallback],
-    async_upnp_client.advertisement.UpnpAdvertisementListener]
-""" Type of a factory to create an `async_upnp_client.UpnpAdvertisementListener` """
-
 UpnpRequesterFactory = typing.Callable[[], async_upnp_client.UpnpRequester]
 """ Factory function for implementations of `async_upnp_client.UpnpRequester` """
 
@@ -263,17 +65,6 @@ def create_aiohttp_requester() -> async_upnp_client.UpnpRequester:
     async_upnp_client.AiohttpRequester
     """
     return async_upnp_client.aiohttp.AiohttpRequester()
-
-
-def create_upnp_advertisement_listener(
-        on_alive: AdvertisementListenerCallback, on_byebye: AdvertisementListenerCallback,
-        on_update: AdvertisementListenerCallback) -> async_upnp_client.advertisement.UpnpAdvertisementListener:
-    """
-    Default factory to create `UpnpAdvertisementListener` instances
-    """
-    return async_upnp_client.advertisement.UpnpAdvertisementListener(on_alive=on_alive,
-                                                                     on_byebye=on_byebye,
-                                                                     on_update=on_update)
 
 
 class DeviceRegistry(object):
@@ -354,7 +145,7 @@ class DeviceRegistry(object):
         """
         return self._av_devices[udn]
 
-    def set_event_callback(self, callback: typing.Union[DeviceDiscoveryEvent, None]):
+    def set_event_callback(self, callback: typing.Union[DiscoveryEventCallback, None]):
         """
         Set client callback to be notified about discovery events.
         If another callback has already been set it will be replaced.
