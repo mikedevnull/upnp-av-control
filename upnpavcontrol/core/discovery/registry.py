@@ -53,20 +53,6 @@ async def _create_device_entry(factory: async_upnp_client.UpnpFactory,
         return DeviceEntry(device=renderer, device_type=device_type)
 
 
-UpnpRequesterFactory = typing.Callable[[], async_upnp_client.UpnpRequester]
-""" Factory function for implementations of `async_upnp_client.UpnpRequester` """
-
-
-def create_aiohttp_requester() -> async_upnp_client.UpnpRequester:
-    """ Default factory for `async_upnp_client.UpnpRequester` instances
-
-    Returns
-    -------
-    async_upnp_client.AiohttpRequester
-    """
-    return async_upnp_client.aiohttp.AiohttpRequester()
-
-
 class DeviceRegistry(object):
     """
     Upnp device registry, main point that handles discovery of upnp av devices.
@@ -91,7 +77,7 @@ class DeviceRegistry(object):
     """
     def __init__(self,
                  advertisement_listener_factory: AdvertisementListenerFactory = create_upnp_advertisement_listener,
-                 http_requester_factory: UpnpRequesterFactory = create_aiohttp_requester):
+                 upnp_requester: async_upnp_client.UpnpRequester = None):
         """
         Constructor
 
@@ -100,9 +86,9 @@ class DeviceRegistry(object):
         advertisement_listener_factory : AdvertisementListenerFactory
             Factory function to define how the underlying advertisement listener should be created.
             This is mostly useful for testing or similar purposes, as other implementations can be injected.
-        http_requester_factory : UpnpRequesterFactory
-            Factory function to define how the underlying http requester used by the
-            `async_upnp_client` framework should be created.
+        upnp_requester : async_upnp_client.UpnpRequester
+            Instance of an UpnpRequester that will be used to issue http requests.
+            If `None`, a default `async_upnp_client.aiohttp.AiohttpRequester` will be created.
             This is mostly useful for testing or similar purposes, as other implementations can be injected.
         """
         self._event_queue = asyncio.Queue()
@@ -111,7 +97,9 @@ class DeviceRegistry(object):
                                                         on_byebye=self._advertisement_handler.on_byebye,
                                                         on_update=self._advertisement_handler.on_update)
         self._av_devices = {}
-        self._factory = async_upnp_client.UpnpFactory(http_requester_factory())
+        if upnp_requester is None:
+            upnp_requester = async_upnp_client.aiohttp.AiohttpRequester()
+        self._factory = async_upnp_client.UpnpFactory(upnp_requester)
         self._event_callback = None
         self._scan_task = None
         self._process_task = None
