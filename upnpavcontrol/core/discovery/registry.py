@@ -7,23 +7,23 @@ from .scan import scan_devices
 import async_upnp_client
 import async_upnp_client.advertisement
 import async_upnp_client.aiohttp
-
+from dataclasses import dataclass
 import asyncio
 import typing
-from attr import attrs, attrib
 from .events import DiscoveryEventType
 import inspect
+import datetime
 
 _logger = logging.getLogger(__name__)
 
 DiscoveryEventCallback = typing.Callable[[DiscoveryEventType, str], None]
 
 
-@attrs
+@dataclass
 class DeviceEntry(object):
-    device = attrib()
-    device_type = attrib()
-    expires_at = attrib(default=None)
+    device: async_upnp_client.UpnpDevice
+    device_type: str
+    expires_at: typing.Optional[datetime.datetime] = None
 
 
 async def _create_device_entry(factory: async_upnp_client.UpnpFactory,
