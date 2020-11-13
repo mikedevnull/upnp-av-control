@@ -1,6 +1,7 @@
 import pytest
-from upnpavcontrol.core import discover
-from upnpavcontrol.core.discover import DeviceEntry
+from upnpavcontrol.core import discovery
+import upnpavcontrol.core.discovery.scan
+from upnpavcontrol.core.discovery.registry import DeviceEntry
 from upnpavcontrol.core.mediarenderer import MediaRenderer
 from upnpavcontrol.core.mediaserver import MediaServer
 from .discovery_mocks import create_test_advertisement_listener  # noqa
@@ -11,27 +12,24 @@ from .discovery_mocks import ssdp_alive_server_device_data
 from .discovery_mocks import ssdp_alive_printer_device_data
 from . import upnp_device_mocks, upnp_event_mocks
 import functools
-import asyncio
 
 
 async def trigger_alive_and_wait(listener, queue, data):
     await listener.trigger_alive(data)
-    await asyncio.sleep(0)
     await queue.join()
     return data
 
 
 async def trigger_byebye_and_wait(listener, queue, data):
     await listener.trigger_byebye(data)
-    await asyncio.sleep(0)
     await queue.join()
     return data
 
 
 @pytest.fixture
 async def mocked_device_registry():
-    registry = discover.DeviceRegistry(advertisement_listener_factory=create_test_advertisement_listener,
-                                       http_requester_factory=create_test_requester)
+    registry = discovery.DeviceRegistry(advertisement_listener_factory=create_test_advertisement_listener,
+                                        http_requester_factory=create_test_requester)
 
     registry.trigger_renderer_alive = functools.partial(trigger_alive_and_wait, registry._listener,
                                                         registry._event_queue, ssdp_alive_renderer_device_data)
@@ -54,7 +52,7 @@ async def started_mocked_device_registry(mocked_device_registry):
 
 @pytest.fixture
 def mock_scanned_devices(monkeypatch):
-    monkeypatch.setattr(discover, 'async_search', mock_async_search)
+    monkeypatch.setattr(upnpavcontrol.core.discovery.scan, 'async_search', mock_async_search)
 
 
 @pytest.fixture

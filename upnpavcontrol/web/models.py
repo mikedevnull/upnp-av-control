@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from ..core.discover import DiscoveryEventType
+from ..core.discovery.registry import DiscoveryEventType
 
 
 class DiscoveryEvent(BaseModel):

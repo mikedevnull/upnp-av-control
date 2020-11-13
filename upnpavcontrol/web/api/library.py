@@ -50,7 +50,7 @@ async def browse_library(request: Request, udn: str, objectID: str = '0'):
     try:
         udn = urllib.parse.unquote_plus(udn)
         objectID = urllib.parse.unquote_plus(objectID)
-        server = request.app.av_control_point.getMediaServerByUDN(udn)
+        server = request.app.av_control_point.get_mediaserver_by_UDN(udn)
         result = await server.browse(objectID)
         return _fixup_didl_items(result)
     except asyncio.TimeoutError:
@@ -66,7 +66,7 @@ async def get_object_metadata(request: Request, udn: str, objectID: str = '0'):
     try:
         udn = urllib.parse.unquote_plus(udn)
         objectID = urllib.parse.unquote_plus(objectID)
-        server = request.app.av_control_point.getMediaServerByUDN(udn)
+        server = request.app.av_control_point.get_mediaserver_by_UDN(udn)
         result = await server.browse(objectID, browse_flag=BrowseFlags.BrowseMetadata)
         return _fixup_didl_items(result)
     except asyncio.TimeoutError:

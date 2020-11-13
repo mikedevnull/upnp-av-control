@@ -1,7 +1,7 @@
 import os.path
 from async_upnp_client import UpnpRequester
 import asyncio
-from upnpavcontrol.core import discover
+from upnpavcontrol.core.discovery import utils
 
 
 class UpnpTestAdvertisementListener(object):
@@ -127,9 +127,9 @@ ssdp_scan_renderer_device_data = {
 
 
 async def mock_async_search(async_callback, timeout, service_type):
-    if discover.is_media_renderer(service_type):
+    if utils.is_media_renderer(service_type):
         await async_callback(ssdp_scan_renderer_device_data)
-    elif discover.is_media_server(service_type):
+    elif utils.is_media_server(service_type):
         await async_callback(ssdp_scan_server_device_data)
 
 
