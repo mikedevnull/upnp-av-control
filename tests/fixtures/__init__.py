@@ -1,8 +1,19 @@
-from .fixtures import webapi_client  # noqa
-from .fixtures import mock_scanned_devices  # noqa
-from .fixtures import started_mocked_device_registry  # noqa
-from .fixtures import mocked_device_registry  # noqa
-from .fixtures import mocked_renderer_device  # noqa
-from .fixtures import mocked_server_device  # noqa
-from .fixtures import mocked_notification_backend  # noqa
-from .fixtures import testing_av_control_point  # noqa
+from .fixtures import webapi_client
+from .fixtures import mock_scanned_devices
+from .fixtures import started_mocked_device_registry
+from .fixtures import mocked_device_registry
+from .fixtures import mocked_renderer_device
+from .fixtures import mocked_server_device
+from .fixtures import mocked_notification_backend
+from .fixtures import testing_av_control_point
+
+__all__ = [
+    'webapi_client',
+    'mock_scanned_devices',
+    'started_mocked_device_registry',
+    'mocked_device_registry',
+    'mocked_renderer_device',
+    'mocked_server_device',
+    'mocked_notification_backend',
+    'testing_av_control_point',
+]

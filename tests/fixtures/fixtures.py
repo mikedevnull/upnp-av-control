@@ -4,41 +4,21 @@ import upnpavcontrol.core.discovery.scan
 from upnpavcontrol.core.discovery.registry import DeviceEntry
 from upnpavcontrol.core.mediarenderer import MediaRenderer
 from upnpavcontrol.core.mediaserver import MediaServer
-from .discovery_mocks import create_test_advertisement_listener  # noqa
+from .discovery_mocks import TestingAdvertisementListener
 from .discovery_mocks import mock_async_search, create_test_requester  # noqa
-from .discovery_mocks import ssdp_alive_renderer_device_data
-from .discovery_mocks import ssdp_byebye_renderer_device_data
-from .discovery_mocks import ssdp_alive_server_device_data
-from .discovery_mocks import ssdp_alive_printer_device_data
 from . import upnp_device_mocks, upnp_event_mocks
-import functools
-
-
-async def trigger_alive_and_wait(listener, queue, data):
-    await listener.trigger_alive(data)
-    await queue.join()
-    return data
-
-
-async def trigger_byebye_and_wait(listener, queue, data):
-    await listener.trigger_byebye(data)
-    await queue.join()
-    return data
+import typing
 
 
 @pytest.fixture
 async def mocked_device_registry():
-    registry = discovery.DeviceRegistry(advertisement_listener_factory=create_test_advertisement_listener,
+    registry = discovery.DeviceRegistry(advertisement_listener=TestingAdvertisementListener,
                                         upnp_requester=create_test_requester())
 
-    registry.trigger_renderer_alive = functools.partial(trigger_alive_and_wait, registry._listener,
-                                                        registry._event_queue, ssdp_alive_renderer_device_data)
-    registry.trigger_renderer_byebye = functools.partial(trigger_byebye_and_wait, registry._listener,
-                                                         registry._event_queue, ssdp_byebye_renderer_device_data)
-    registry.trigger_server_alive = functools.partial(trigger_alive_and_wait, registry._listener, registry._event_queue,
-                                                      ssdp_alive_server_device_data)
-    registry.trigger_printer_alive = functools.partial(trigger_alive_and_wait, registry._listener,
-                                                       registry._event_queue, ssdp_alive_printer_device_data)
+    registry.trigger_renderer_alive = registry._listener.trigger_renderer_alive
+    registry.trigger_renderer_byebye = registry._listener.trigger_renderer_byebye
+    registry.trigger_server_alive = registry._listener.trigger_server_alive
+    registry.trigger_printer_alive = registry._listener.trigger_printer_alive
 
     return registry
 

@@ -8,7 +8,7 @@ _logger = logging.getLogger(__name__)
 
 
 def prettify_xml(xml_frame):
-    dom = xml.dom.minidom.parseString(xml_frame)  # or xml.dom.minidom.parseString(xml_string)
+    dom = xml.dom.minidom.parseString(xml_frame)
     return dom.toprettyxml()
 
 

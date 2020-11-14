@@ -22,7 +22,7 @@ class AVControlPoint(object):
         return self._devices.mediaservers
 
     def get_mediaserver_by_UDN(self, udn: str):
-        return self._devices.get_device(udn)
+        return self._devices.get_device_entry(udn).device
 
     @property
     def mediarenderers(self):
