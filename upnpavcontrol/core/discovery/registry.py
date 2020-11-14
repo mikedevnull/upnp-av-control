@@ -10,24 +10,24 @@ import async_upnp_client.aiohttp
 from dataclasses import dataclass
 import asyncio
 import typing
-from .events import DiscoveryEventType
+from .events import DeviceDiscoveryEvent, DiscoveryEventType
 import inspect
 import datetime
 
 _logger = logging.getLogger(__name__)
 
-DiscoveryEventCallback = typing.Callable[[DiscoveryEventType, str], None]
+DiscoveryEventCallback = typing.Union[typing.Callable[[DiscoveryEventType, str], typing.Awaitable],
+                                      typing.Callable[[DiscoveryEventType, str], None]]
 
 
 @dataclass
 class DeviceEntry(object):
-    device: async_upnp_client.UpnpDevice
+    device: typing.Union[MediaServer, MediaRenderer]
     device_type: str
     expires_at: typing.Optional[datetime.datetime] = None
 
 
-async def _create_device_entry(factory: async_upnp_client.UpnpFactory,
-                               location: str) -> typing.Union[MediaServer, MediaRenderer, None]:
+async def _create_device_entry(factory: async_upnp_client.UpnpFactory, location: str) -> typing.Optional[DeviceEntry]:
     """
     Creates a AV device instance by downloading and processing the device description.
 
@@ -100,9 +100,9 @@ class DeviceRegistry(object):
         if upnp_requester is None:
             upnp_requester = async_upnp_client.aiohttp.AiohttpRequester()
         self._factory = async_upnp_client.UpnpFactory(upnp_requester)
-        self._event_callback = None
-        self._scan_task = None
-        self._process_task = None
+        self._event_callback: typing.Optional[DiscoveryEventCallback] = None
+        self._scan_task: typing.Optional[asyncio.Task] = None
+        self._process_task: typing.Optional[asyncio.Task] = None
 
     @property
     def mediaservers(self) -> typing.Iterable[MediaServer]:
@@ -133,7 +133,7 @@ class DeviceRegistry(object):
         """
         return self._av_devices[udn]
 
-    def set_event_callback(self, callback: typing.Union[DiscoveryEventCallback, None]):
+    def set_event_callback(self, callback: typing.Optional[DiscoveryEventCallback]):
         """
         Set client callback to be notified about discovery events.
         If another callback has already been set it will be replaced.
@@ -163,10 +163,15 @@ class DeviceRegistry(object):
         Stop device registry operation and cancel all pending tasks
         """
         _logger.debug("Begin device registry shutdown")
-        self._scan_task.cancel()
-        self._process_task.cancel()
+        running_tasks = []
+        if self._scan_task is not None:
+            running_tasks.append(self._scan_task)
+            self._scan_task.cancel()
+        if self._process_task is not None:
+            running_tasks.append(self._process_task)
+            self._process_task.cancel()
         await self._listener.async_stop()
-        await asyncio.gather(self._scan_task, self._process_task, return_exceptions=True)
+        await asyncio.gather(*running_tasks, return_exceptions=True)
         _logger.info("Device registry stopped")
 
     async def _periodic_scan(self):
@@ -182,6 +187,8 @@ class DeviceRegistry(object):
             raise
 
     async def _scan(self):
+        server_scan: typing.Optional[asyncio.Task] = None
+        renderer_scan: typing.Optional[asyncio.Task] = None
         try:
             _logger.debug('Searching for AV devices')
             server_scan = asyncio.create_task(
@@ -190,9 +197,15 @@ class DeviceRegistry(object):
                 scan_devices(self._event_queue, 'urn:schemas-upnp-org:device:MediaRenderer:1'))
             await asyncio.gather(server_scan, renderer_scan)
         except Exception:
-            server_scan.cancel()
-            renderer_scan.cancel()
-            await asyncio.gather(server_scan, renderer_scan, return_exceptions=True)
+            running_tasks = []
+            if server_scan is not None:
+                running_tasks.append(server_scan)
+                server_scan.cancel()
+            if renderer_scan is not None:
+                running_tasks.append(renderer_scan)
+                renderer_scan.cancel()
+            if server_scan is not None and renderer_scan is not None:
+                await asyncio.gather(*running_tasks, return_exceptions=True)
             raise
 
     async def _consume_events(self):
@@ -201,9 +214,11 @@ class DeviceRegistry(object):
         """
         running = True
         while running:
+            event: typing.Optional[DeviceDiscoveryEvent] = None
             try:
                 event = await self._event_queue.get()
                 if event.event_type == DiscoveryEventType.NEW_DEVICE:
+                    assert event.location is not None
                     if event.udn not in self._av_devices:
                         entry = await _create_device_entry(self._factory, event.location)
                         if entry is not None:
@@ -237,8 +252,8 @@ class DeviceRegistry(object):
         """
         Invoke the client event callback, if set.
         """
-        if self._event_callback:
+        if self._event_callback is not None:
             if inspect.iscoroutinefunction(self._event_callback):
-                await self._event_callback(event, udn)
+                await self._event_callback(event, udn)  # type: ignore
             else:
                 self._event_callback(event, udn)
