@@ -1,28 +1,69 @@
 import os.path
 from async_upnp_client import UpnpRequester
 import asyncio
-from upnpavcontrol.core.discovery import utils
+from upnpavcontrol.core.discovery import utils, events
+from upnpavcontrol.core.discovery.advertisement import AdvertisementListenerInterface
 
 
-class UpnpTestAdvertisementListener(object):
-    def __init__(self, on_alive, on_byebye, on_update):
-        self._on_alive = on_alive
-        self._on_byebye = on_byebye
-        self._on_update = on_update
-
-    async def trigger_alive(self, payload):
-        await self._on_alive(payload)
-        return payload
-
-    async def trigger_byebye(self, payload):
-        await self._on_byebye(payload)
-        return payload
+class TestingAdvertisementListener(AdvertisementListenerInterface):
+    """
+    Does not actually listen to advertisement messages, instead provides
+    methods to manually trigger discovery events for testing
+    """
+    def __init__(self, event_queue):
+        self._queue = event_queue
 
     async def async_start(self):
         pass
 
     async def async_stop(self):
         pass
+
+    async def trigger_event_and_wait(self, event):
+        await self._queue.put(event)
+        # ensure the event has been processed
+        await self._queue.join()
+        return event
+
+    async def trigger_renderer_alive(self):
+        event = events.DeviceDiscoveryEvent(events.DiscoveryEventType.NEW_DEVICE,
+                                            'urn:schemas-upnp-org:device:MediaRenderer:1',
+                                            '13bf6358-00b8-101b-8000-74dfbfed7306', 'http://192.168.99.1:1234/dmr.xml')
+        return await self.trigger_event_and_wait(event)
+
+    async def trigger_renderer_byebye(self):
+        event = events.DeviceDiscoveryEvent(events.DiscoveryEventType.DEVICE_LOST,
+                                            'urn:schemas-upnp-org:device:MediaRenderer:1',
+                                            '13bf6358-00b8-101b-8000-74dfbfed7306', 'http://192.168.99.1:1234/dmr.xml')
+        return await self.trigger_event_and_wait(event)
+
+    async def trigger_server_alive(self):
+        event = events.DeviceDiscoveryEvent(events.DiscoveryEventType.NEW_DEVICE,
+                                            'urn:schemas-upnp-org:device:MediaServer:1',
+                                            'f5b1b596-c1d2-11e9-af8b-705681aa5dfd',
+                                            'http://192.168.99.2:9200/plugins/MediaServer.xml')
+        return await self.trigger_event_and_wait(event)
+
+    async def trigger_server_byebye(self):
+        event = events.DeviceDiscoveryEvent(events.DiscoveryEventType.DEVICE_LOST,
+                                            'urn:schemas-upnp-org:device:MediaServer:1',
+                                            'f5b1b596-c1d2-11e9-af8b-705681aa5dfd',
+                                            'http://192.168.99.2:9200/plugins/MediaServer.xml')
+        return await self.trigger_event_and_wait(event)
+
+    async def trigger_printer_alive(self):
+        event = events.DeviceDiscoveryEvent(events.DiscoveryEventType.NEW_DEVICE,
+                                            'urn:schemas-upnp-org:device:printer:1',
+                                            '92b65aa0-c1dc-11e9-8a7b-705681aa5dfd',
+                                            'http://192.168.99.3:1234/device.xml')
+        return await self.trigger_event_and_wait(event)
+
+    async def trigger_printer_byebye(self):
+        event = events.DeviceDiscoveryEvent(events.DiscoveryEventType.DEVICE_LOST,
+                                            'urn:schemas-upnp-org:device:printer:1',
+                                            '92b65aa0-c1dc-11e9-8a7b-705681aa5dfd',
+                                            'http://192.168.99.3:1234/device.xml')
+        return await self.trigger_event_and_wait(event)
 
 
 def _read_data_file(filename):
@@ -63,49 +104,7 @@ def create_test_requester():
     return UpnpTestRequester(_RESPONSES)
 
 
-def create_test_advertisement_listener(on_alive, on_byebye, on_update):
-    return UpnpTestAdvertisementListener(on_alive=on_alive, on_byebye=on_byebye, on_update=on_update)
-
-
-ssdp_alive_renderer_device_data = {
-    'Host': '239.255.255.250:1900',
-    'Cache-Control': 'max-age=1800',
-    'Location': 'http://192.168.99.1:1234/dmr.xml',
-    'NT': 'urn:schemas-upnp-org:device:MediaRenderer:1',
-    'NTS': 'ssdp:alive',
-    'Server': 'foonix/1.2 UPnP/1.0 FooRender/1.50',
-    'USN': 'uuid:13bf6358-00b8-101b-8000-74dfbfed7306::urn:schemas-upnp-org:device:MediaRenderer:1'  # noqa: E501
-}
-
-ssdp_alive_printer_device_data = {
-    'Host': '239.255.255.250:1900',
-    'Cache-Control': 'max-age=1800',
-    'Location': 'http://192.168.99.3:1234/device.xml',
-    'NT': 'urn:schemas-upnp-org:device:printer:1',
-    'Server': 'foonix/1.2 UPnP/1.0 FooPrinter/1.50',
-    'NTS': 'ssdp:alive',
-    'USN': 'uuid:92b65aa0-c1dc-11e9-8a7b-705681aa5dfd::urn:schemas-upnp-org:device:printer:1'  # noqa: E501
-}
-
-ssdp_alive_server_device_data = {
-    'Host': '239.255.255.250:1900',
-    'Cache-Control': 'max-age=1800',
-    'Location': 'http://192.168.99.2:9200/plugins/MediaServer.xml',
-    'NT': 'urn:schemas-upnp-org:device:MediaServer:1',
-    'NTS': 'ssdp:alive',
-    'Server': 'foonix/1.2 UPnP/1.0 FooServer/1.50',
-    'USN': 'uuid:f5b1b596-c1d2-11e9-af8b-705681aa5dfd::urn:schemas-upnp-org:device:MediaServer:1'  # noqa: E501
-}
-
-ssdp_byebye_renderer_device_data = {
-    'Host': '239.255.255.250:1900',
-    'Location': 'http://192.168.99.1:1234/dmr.xml',
-    'NT': 'urn:schemas-upnp-org:device:MediaRenderer:1',
-    'NTS': 'ssdp:byebye',
-    'USN': 'uuid:13bf6358-00b8-101b-8000-74dfbfed7306::urn:schemas-upnp-org:device:MediaRenderer:1'  # noqa: E501
-}
-
-ssdp_scan_server_device_data = {
+scan_server_ssdp = {
     'Host': '239.255.255.250:1900',
     'Cache-Control': 'max-age=1800',
     'Location': 'http://192.168.99.2:9200/plugins/MediaServer.xml',
@@ -115,7 +114,7 @@ ssdp_scan_server_device_data = {
     'USN': 'uuid:f5b1b596-c1d2-11e9-af8b-705681aa5dfd::urn:schemas-upnp-org:device:MediaServer:1'  # noqa: E501
 }
 
-ssdp_scan_renderer_device_data = {
+scan_renderer_ssdp = {
     'Cache-Control': 'max-age=1800',
     'Ext': None,
     'Location': 'http://192.168.99.1:1234/dmr.xml',
@@ -128,11 +127,6 @@ ssdp_scan_renderer_device_data = {
 
 async def mock_async_search(async_callback, timeout, service_type):
     if utils.is_media_renderer(service_type):
-        await async_callback(ssdp_scan_renderer_device_data)
+        await async_callback(scan_renderer_ssdp)
     elif utils.is_media_server(service_type):
-        await async_callback(ssdp_scan_server_device_data)
-
-
-async def find_dummy_renderer_server(av_control_point):
-    await av_control_point._devices._listener.trigger_alive(ssdp_alive_renderer_device_data)  # noqa: E501
-    await av_control_point._devices._listener.trigger_alive(ssdp_alive_server_device_data)  # noqa: E501
+        await async_callback(scan_server_ssdp)

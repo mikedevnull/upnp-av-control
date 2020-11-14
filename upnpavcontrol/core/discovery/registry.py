@@ -2,7 +2,7 @@ import logging
 from ..mediaserver import MediaServer
 from ..mediarenderer import MediaRenderer
 from .utils import is_media_server, is_media_renderer
-from .advertisement import AdvertisementListenerFactory, create_upnp_advertisement_listener, DeviceAdvertisementHandler
+from .advertisement import AdvertisementListener, AdvertisementListenerInterface
 from .scan import scan_devices
 import async_upnp_client
 import async_upnp_client.advertisement
@@ -76,15 +76,15 @@ class DeviceRegistry(object):
     Currently, only a single event callback can be registered at a given time.
     """
     def __init__(self,
-                 advertisement_listener_factory: AdvertisementListenerFactory = create_upnp_advertisement_listener,
+                 advertisement_listener: typing.Type[AdvertisementListenerInterface] = None,
                  upnp_requester: async_upnp_client.UpnpRequester = None):
         """
         Constructor
 
         Parameters
         ----------
-        advertisement_listener_factory : AdvertisementListenerFactory
-            Factory function to define how the underlying advertisement listener should be created.
+        advertisement_listener : AdvertisementListenerBase
+            Implementation of an advertisement listener.
             This is mostly useful for testing or similar purposes, as other implementations can be injected.
         upnp_requester : async_upnp_client.UpnpRequester
             Instance of an UpnpRequester that will be used to issue http requests.
@@ -92,10 +92,10 @@ class DeviceRegistry(object):
             This is mostly useful for testing or similar purposes, as other implementations can be injected.
         """
         self._event_queue = asyncio.Queue()
-        self._advertisement_handler = DeviceAdvertisementHandler(self._event_queue)
-        self._listener = advertisement_listener_factory(on_alive=self._advertisement_handler.on_alive,
-                                                        on_byebye=self._advertisement_handler.on_byebye,
-                                                        on_update=self._advertisement_handler.on_update)
+        if advertisement_listener is None:
+            self._listener = AdvertisementListener(self._event_queue)
+        else:
+            self._listener = advertisement_listener(self._event_queue)
         self._av_devices = {}
         if upnp_requester is None:
             upnp_requester = async_upnp_client.aiohttp.AiohttpRequester()
@@ -114,7 +114,7 @@ class DeviceRegistry(object):
         """ Currently available av media renderers """
         return [entity.device for entity in self._av_devices.values() if is_media_renderer(entity.device_type)]
 
-    def get_device(self, udn: str) -> typing.Union[MediaRenderer, MediaServer]:
+    def get_device_entry(self, udn: str) -> typing.Union[MediaRenderer, MediaServer]:
         """
         Get an instance for a specific devices
 
