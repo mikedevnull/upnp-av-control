@@ -1,13 +1,11 @@
 import pytest
 from upnpavcontrol.core import discovery
-import upnpavcontrol.core.discovery.scan
 from upnpavcontrol.core.discovery.registry import DeviceEntry
 from upnpavcontrol.core.mediarenderer import MediaRenderer
 from upnpavcontrol.core.mediaserver import MediaServer
 from .discovery_mocks import TestingAdvertisementListener
-from .discovery_mocks import mock_async_search, create_test_requester  # noqa
+from .discovery_mocks import create_test_requester  # noqa
 from . import upnp_device_mocks, upnp_event_mocks
-import typing
 
 
 @pytest.fixture
@@ -28,11 +26,6 @@ async def started_mocked_device_registry(mocked_device_registry):
     await mocked_device_registry.async_start()
     yield mocked_device_registry
     await mocked_device_registry.async_stop()
-
-
-@pytest.fixture
-def mock_scanned_devices(monkeypatch):
-    monkeypatch.setattr(upnpavcontrol.core.discovery.scan, 'async_search', mock_async_search)
 
 
 @pytest.fixture
