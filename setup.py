@@ -8,7 +8,9 @@ setup(name='upnpavcontrol',
       author_email='michael.meier@bluesheep.de',
       license='BSD-3-Clause',
       python_requires='>=3.7',
-      install_requires=['async_upnp_client', 'fastapi', 'defusedxml', 'uvicorn', 'colorlog', 'itsdangerous'],
+      install_requires=[
+          'async_upnp_client', 'fastapi', 'websockets', 'defusedxml', 'uvicorn', 'colorlog', 'itsdangerous'
+      ],
       extras_require={
           'test': ['pytest', 'pytest-cov', 'pytest-asyncio', 'async_asgi_testclient'],
           'dev': ['flake8', 'flake8-print', 'yapf'],
