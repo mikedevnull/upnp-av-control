@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
+from upnpavcontrol.core.discovery.events import DeviceDiscoveryEvent, DiscoveryEventType
 import pytest
 from upnpavcontrol.core.discovery.advertisement import _DeviceAdvertisementHandler
+import upnpavcontrol.core.discovery.scan
 from . import advertisement_data
 from unittest.mock import AsyncMock, Mock
 import asyncio
@@ -88,18 +90,41 @@ async def test_device_registry_event_processing(mocked_device_registry):
     assert len(registry.mediarenderers) == 0
 
 
+scan_server_ssdp = {
+    'Host': '239.255.255.250:1900',
+    'Cache-Control': 'max-age=1800',
+    'Location': 'http://192.168.99.2:9200/plugins/MediaServer.xml',
+    'ST': 'urn:schemas-upnp-org:device:MediaServer:1',
+    'NTS': 'ssdp:alive',
+    'Server': 'foonix/1.2 UPnP/1.0 FooServer/1.50',
+    'USN': 'uuid:f5b1b596-c1d2-11e9-af8b-705681aa5dfd::urn:schemas-upnp-org:device:MediaServer:1'  # noqa: E501
+}
+
+scan_renderer_ssdp = {
+    'Cache-Control': 'max-age=1800',
+    'Ext': None,
+    'Location': 'http://192.168.99.1:1234/dmr.xml',
+    'ST': 'urn:schemas-upnp-org:device:MediaRenderer:1',
+    'NTS': 'ssdp:alive',
+    'Server': 'foonix/1.2 UPnP/1.0 FooRender/1.50',
+    'USN': 'uuid:13bf6358-00b8-101b-8000-74dfbfed7306::urn:schemas-upnp-org:device:MediaRenderer:1'  # noqa: E501
+}
+
+
+async def mock_async_search(async_callback, timeout, service_type):
+    from upnpavcontrol.core.discovery import utils
+    if utils.is_media_renderer(service_type):
+        await async_callback(scan_renderer_ssdp)
+    elif utils.is_media_server(service_type):
+        await async_callback(scan_server_ssdp)
+
+
 @pytest.mark.asyncio
-async def test_scan_av_devices(started_mocked_device_registry, mock_scanned_devices):
-    registry = started_mocked_device_registry
-    discovery_callback = Mock(name='registry_event_callback')
-    registry.set_event_callback(discovery_callback)
-
-    # ensure all outstanding (i.e. simulated) discovery events have been processed
-    await registry._event_queue.join()
-
-    assert len(registry._av_devices) == 2
-    assert len(registry.mediarenderers) == 1
-    assert len(registry.mediaservers) == 1
-
-    discovery_callback.assert_called()
-    await registry.async_stop()
+async def test_scan_av_devices(monkeypatch, ):
+    monkeypatch.setattr(upnpavcontrol.core.discovery.scan, 'async_search', mock_async_search)
+    queue = AsyncMock(asyncio.Queue)
+    await upnpavcontrol.core.discovery.scan.scan_devices(queue, 'urn:schemas-upnp-org:device:MediaServer:1')
+    queue.put.assert_called_once_with(
+        DeviceDiscoveryEvent(DiscoveryEventType.NEW_DEVICE, 'urn:schemas-upnp-org:device:MediaServer:1',
+                             'f5b1b596-c1d2-11e9-af8b-705681aa5dfd',
+                             'http://192.168.99.2:9200/plugins/MediaServer.xml'))

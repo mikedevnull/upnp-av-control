@@ -1,7 +1,7 @@
 import os.path
 from async_upnp_client import UpnpRequester
 import asyncio
-from upnpavcontrol.core.discovery import utils, events
+from upnpavcontrol.core.discovery import events
 from upnpavcontrol.core.discovery.advertisement import AdvertisementListenerInterface
 
 
@@ -102,31 +102,3 @@ _RESPONSES = {
 
 def create_test_requester():
     return UpnpTestRequester(_RESPONSES)
-
-
-scan_server_ssdp = {
-    'Host': '239.255.255.250:1900',
-    'Cache-Control': 'max-age=1800',
-    'Location': 'http://192.168.99.2:9200/plugins/MediaServer.xml',
-    'ST': 'urn:schemas-upnp-org:device:MediaServer:1',
-    'NTS': 'ssdp:alive',
-    'Server': 'foonix/1.2 UPnP/1.0 FooServer/1.50',
-    'USN': 'uuid:f5b1b596-c1d2-11e9-af8b-705681aa5dfd::urn:schemas-upnp-org:device:MediaServer:1'  # noqa: E501
-}
-
-scan_renderer_ssdp = {
-    'Cache-Control': 'max-age=1800',
-    'Ext': None,
-    'Location': 'http://192.168.99.1:1234/dmr.xml',
-    'ST': 'urn:schemas-upnp-org:device:MediaRenderer:1',
-    'NTS': 'ssdp:alive',
-    'Server': 'foonix/1.2 UPnP/1.0 FooRender/1.50',
-    'USN': 'uuid:13bf6358-00b8-101b-8000-74dfbfed7306::urn:schemas-upnp-org:device:MediaRenderer:1'  # noqa: E501
-}
-
-
-async def mock_async_search(async_callback, timeout, service_type):
-    if utils.is_media_renderer(service_type):
-        await async_callback(scan_renderer_ssdp)
-    elif utils.is_media_server(service_type):
-        await async_callback(scan_server_ssdp)

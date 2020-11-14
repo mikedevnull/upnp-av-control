@@ -1,5 +1,4 @@
 from .fixtures import webapi_client
-from .fixtures import mock_scanned_devices
 from .fixtures import started_mocked_device_registry
 from .fixtures import mocked_device_registry
 from .fixtures import mocked_renderer_device
@@ -9,7 +8,6 @@ from .fixtures import testing_av_control_point
 
 __all__ = [
     'webapi_client',
-    'mock_scanned_devices',
     'started_mocked_device_registry',
     'mocked_device_registry',
     'mocked_renderer_device',
