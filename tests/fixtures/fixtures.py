@@ -4,14 +4,12 @@ from upnpavcontrol.core.discovery.registry import DeviceEntry
 from upnpavcontrol.core.mediarenderer import MediaRenderer
 from upnpavcontrol.core.mediaserver import MediaServer
 from .discovery_mocks import TestingAdvertisementListener
-from .discovery_mocks import create_test_requester  # noqa
 from . import upnp_device_mocks, upnp_event_mocks
 
 
 @pytest.fixture
 async def mocked_av_control_point(event_loop):
-    registry = discovery.DeviceRegistry(advertisement_listener=TestingAdvertisementListener,
-                                        upnp_requester=create_test_requester())
+    registry = discovery.DeviceRegistry(advertisement_listener=TestingAdvertisementListener)
 
     from upnpavcontrol.core import AVControlPoint
     test_control_point = AVControlPoint(device_registry=registry,

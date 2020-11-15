@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
-from upnpavcontrol.core.discovery.events import DeviceDiscoveryEvent, DiscoveryEventType
+from upnpavcontrol.core.discovery.events import SSDPEvent, DiscoveryEventType
 import pytest
 from upnpavcontrol.core.discovery.advertisement import _DeviceAdvertisementHandler
 import upnpavcontrol.core.discovery.scan
 from upnpavcontrol.core import discovery
 from . import advertisement_data
-from .fixtures.discovery_mocks import TestingAdvertisementListener, create_test_requester
-from unittest.mock import AsyncMock, Mock
+from .fixtures.discovery_mocks import TestingAdvertisementListener
+from unittest.mock import AsyncMock
 import asyncio
 
 ssdp_to_event_mapping = [(advertisement_data.alive_renderer_ssdp, advertisement_data.alive_renderer_event),
@@ -37,32 +37,27 @@ async def test_handle_advertisement_alive(test_input, expected_event):
 
 @pytest.mark.asyncio
 async def test_device_registry_event_processing():
-    registry = discovery.DeviceRegistry(advertisement_listener=TestingAdvertisementListener,
-                                        upnp_requester=create_test_requester())
-    discovery_callback = Mock(name='registry_event_callback')
+    registry = discovery.DeviceRegistry(advertisement_listener=TestingAdvertisementListener)
+    discovery_callback = AsyncMock(name='registry_event_callback')
     registry.set_event_callback(discovery_callback)
     await registry.async_start()
-    assert len(registry.mediaservers) == 0
-    assert len(registry.mediarenderers) == 0
+    assert len(registry.devices) == 0
 
     await registry._event_queue.put(advertisement_data.alive_renderer_event)
     await registry._event_queue.join()
 
-    assert len(registry.mediaservers) == 0
-    assert len(registry.mediarenderers) == 1
-
+    assert len(registry.devices) == 1
     discovery_callback.assert_called_once_with(advertisement_data.alive_renderer_event.event_type,
-                                               advertisement_data.alive_renderer_event.udn)
+                                               advertisement_data.renderer_entry)
 
     discovery_callback.reset_mock()
     await registry._event_queue.put(advertisement_data.alive_server_event)
     await registry._event_queue.join()
 
-    assert len(registry.mediaservers) == 1
-    assert len(registry.mediarenderers) == 1
+    assert len(registry.devices) == 2
 
     discovery_callback.assert_called_once_with(advertisement_data.alive_server_event.event_type,
-                                               advertisement_data.alive_server_event.udn)
+                                               advertisement_data.server_entry)
 
     # same event for already known device: callback not called
     discovery_callback.reset_mock()
@@ -70,8 +65,7 @@ async def test_device_registry_event_processing():
     await registry._event_queue.join()
 
     discovery_callback.assert_not_called()
-    assert len(registry.mediaservers) == 1
-    assert len(registry.mediarenderers) == 1
+    assert len(registry.devices) == 2
 
     # removal of known device
     discovery_callback.reset_mock()
@@ -79,9 +73,8 @@ async def test_device_registry_event_processing():
     await registry._event_queue.join()
 
     discovery_callback.assert_called_once_with(advertisement_data.byebye_renderer_event.event_type,
-                                               advertisement_data.byebye_renderer_event.udn)
-    assert len(registry.mediaservers) == 1
-    assert len(registry.mediarenderers) == 0
+                                               advertisement_data.renderer_entry)
+    assert len(registry.devices) == 1
 
     # removal of uknown device,
     discovery_callback.reset_mock()
@@ -89,8 +82,7 @@ async def test_device_registry_event_processing():
     await registry._event_queue.join()
 
     discovery_callback.assert_not_called()
-    assert len(registry.mediaservers) == 1
-    assert len(registry.mediarenderers) == 0
+    assert len(registry.devices) == 1
 
 
 scan_server_ssdp = {
@@ -128,6 +120,5 @@ async def test_scan_av_devices(monkeypatch, ):
     queue = AsyncMock(asyncio.Queue)
     await upnpavcontrol.core.discovery.scan.scan_devices(queue, 'urn:schemas-upnp-org:device:MediaServer:1')
     queue.put.assert_called_once_with(
-        DeviceDiscoveryEvent(DiscoveryEventType.NEW_DEVICE, 'urn:schemas-upnp-org:device:MediaServer:1',
-                             'f5b1b596-c1d2-11e9-af8b-705681aa5dfd',
-                             'http://192.168.99.2:9200/plugins/MediaServer.xml'))
+        SSDPEvent(DiscoveryEventType.NEW_DEVICE, 'urn:schemas-upnp-org:device:MediaServer:1',
+                  'f5b1b596-c1d2-11e9-af8b-705681aa5dfd', 'http://192.168.99.2:9200/plugins/MediaServer.xml'))

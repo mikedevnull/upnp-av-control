@@ -1,5 +1,5 @@
 from .utils import udn_from_usn
-from .events import DeviceDiscoveryEvent, DiscoveryEventType
+from .events import SSDPEvent, DiscoveryEventType
 from async_upnp_client.search import async_search
 import asyncio
 import logging
@@ -28,7 +28,7 @@ async def scan_devices(event_queue: asyncio.Queue, device_type: str, timeout: in
         description_url = description['Location']
         device_type = description['ST']
         device_udn = udn_from_usn(description['USN'], device_type)
-        event = DeviceDiscoveryEvent(DiscoveryEventType.NEW_DEVICE, device_type, device_udn, description_url)
+        event = SSDPEvent(DiscoveryEventType.NEW_DEVICE, device_type, device_udn, description_url)
 
         _logger.debug('Got scan result %s at %s', device_type, description_url)
         await event_queue.put(event)

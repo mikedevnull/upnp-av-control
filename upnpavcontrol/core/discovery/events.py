@@ -13,7 +13,7 @@ class DiscoveryEventType(Enum):
 
 
 @dataclass(frozen=True)
-class DeviceDiscoveryEvent:
+class SSDPEvent:
     """
     Provides all required information to handle discovery
     events in a uniform way.
@@ -32,6 +32,14 @@ class DeviceDiscoveryEvent:
         URL to the UPnP description of the device. Only available for `NEW_DEVICE` or `DEVICE_UPDATE`
         event types.
     """
+    event_type: DiscoveryEventType
+    device_type: str
+    udn: str
+    location: typing.Optional[str] = None
+
+
+@dataclass(frozen=True)
+class MediaDeviceDiscoveryEvent:
     event_type: DiscoveryEventType
     device_type: str
     udn: str

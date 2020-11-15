@@ -1,12 +1,17 @@
-from .discovery import DeviceRegistry
+from .discovery import DeviceRegistry, DeviceEntry, DiscoveryEventType
 from .mediarenderer import MediaRenderer
+from .mediaserver import MediaServer
 import logging
 from .notification_backend import NotificationBackend, AiohttpNotificationEndpoint
 from async_upnp_client.aiohttp import AiohttpRequester
+from typing import Callable, Union, Optional, List
 
 
 class AVControlPoint(object):
     def __init__(self, device_registry=None, notifcation_backend=None):
+        self._device_discovery_callback: Optional[Callable[[Union[MediaRenderer, MediaServer]], None]] = None
+        self._renderers: List[MediaRenderer] = []
+        self._servers: List[MediaServer] = []
         if device_registry is None:
             self._devices = DeviceRegistry()
         else:
@@ -19,22 +24,21 @@ class AVControlPoint(object):
 
     @property
     def mediaservers(self):
-        return self._devices.mediaservers
+        return self._servers
 
     def get_mediaserver_by_UDN(self, udn: str):
-        return self._devices.get_device_entry(udn).device
+        return [d for d in self._servers if d.udn == udn]
 
     @property
     def mediarenderers(self):
-        return self._devices.mediarenderers
-
-    @property
-    def devices(self):
-        return self._devices._av_devices
+        return self._renderers
 
     @property
     def mediarenderer(self):
         return self._active_renderer
+
+    def set_discovery_event_callback(self, callback):
+        self._device_discovery_callback = callback
 
     async def set_renderer(self, deviceUDN: str):
         if deviceUDN in self._devices._av_devices:
@@ -58,3 +62,6 @@ class AVControlPoint(object):
     async def async_stop(self):
         await self._devices.async_stop()
         await self._notify_receiver.async_stop()
+
+    def _handle_discovery_event(self, event_type: DiscoveryEventType, entry: DeviceEntry):
+        pass
