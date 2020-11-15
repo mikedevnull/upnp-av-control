@@ -1,7 +1,8 @@
 import asyncio
+import typing
 
 
-async def _create_async_notifier(callback):
+async def _create_async_notifier(callback) -> typing.AsyncGenerator[None, str]:
     while True:
         message = yield
         await callback(message)
