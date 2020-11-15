@@ -26,15 +26,13 @@ class TestingAdvertisementListener(AdvertisementListenerInterface):
         return event
 
     async def trigger_renderer_alive(self):
-        event = events.DeviceDiscoveryEvent(events.DiscoveryEventType.NEW_DEVICE,
-                                            'urn:schemas-upnp-org:device:MediaRenderer:1',
-                                            '13bf6358-00b8-101b-8000-74dfbfed7306', 'http://192.168.99.1:1234/dmr.xml')
+        event = events.SSDPEvent(events.DiscoveryEventType.NEW_DEVICE, 'urn:schemas-upnp-org:device:MediaRenderer:1',
+                                 '13bf6358-00b8-101b-8000-74dfbfed7306', 'http://192.168.99.1:1234/dmr.xml')
         return await self.trigger_event_and_wait(event)
 
     async def trigger_renderer_byebye(self):
-        event = events.DeviceDiscoveryEvent(events.DiscoveryEventType.DEVICE_LOST,
-                                            'urn:schemas-upnp-org:device:MediaRenderer:1',
-                                            '13bf6358-00b8-101b-8000-74dfbfed7306', 'http://192.168.99.1:1234/dmr.xml')
+        event = events.SSDPEvent(events.DiscoveryEventType.DEVICE_LOST, 'urn:schemas-upnp-org:device:MediaRenderer:1',
+                                 '13bf6358-00b8-101b-8000-74dfbfed7306', 'http://192.168.99.1:1234/dmr.xml')
         return await self.trigger_event_and_wait(event)
 
     async def trigger_server_alive(self):

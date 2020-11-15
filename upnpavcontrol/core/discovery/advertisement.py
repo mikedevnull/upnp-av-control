@@ -1,6 +1,6 @@
 import asyncio
 from .utils import is_media_device, udn_from_usn
-from .events import DeviceDiscoveryEvent, DiscoveryEventType
+from .events import SSDPEvent, DiscoveryEventType
 from abc import ABC, abstractmethod
 import typing
 from async_upnp_client.advertisement import UpnpAdvertisementListener
@@ -74,7 +74,7 @@ class _DeviceAdvertisementHandler(object):
             return
         device_location = resource['Location']
         device_udn = udn_from_usn(resource['USN'], device_type)
-        event = DeviceDiscoveryEvent(DiscoveryEventType.NEW_DEVICE, device_type, device_udn, device_location)
+        event = SSDPEvent(DiscoveryEventType.NEW_DEVICE, device_type, device_udn, device_location)
         await self.queue.put(event)
 
     async def on_byebye(self, resource: typing.Mapping[str, str]):
@@ -82,7 +82,7 @@ class _DeviceAdvertisementHandler(object):
         if not is_media_device(device_type):
             return
         device_udn = udn_from_usn(resource['USN'], device_type)
-        event = DeviceDiscoveryEvent(DiscoveryEventType.DEVICE_LOST, device_type, device_udn)
+        event = SSDPEvent(DiscoveryEventType.DEVICE_LOST, device_type, device_udn)
         await self.queue.put(event)
 
     async def on_update(self, resource: typing.Mapping[str, str]):
@@ -91,5 +91,5 @@ class _DeviceAdvertisementHandler(object):
             return
         device_location = resource['Location']
         device_udn = udn_from_usn(resource['USN'], device_type)
-        event = DeviceDiscoveryEvent(DiscoveryEventType.DEVICE_UPDATE, device_type, device_udn, device_location)
+        event = SSDPEvent(DiscoveryEventType.DEVICE_UPDATE, device_type, device_udn, device_location)
         await self.queue.put(event)

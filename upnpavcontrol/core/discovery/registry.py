@@ -1,56 +1,67 @@
 import logging
-from ..mediaserver import MediaServer
-from ..mediarenderer import MediaRenderer
-from .utils import is_media_server, is_media_renderer
+from .utils import is_media_renderer, is_media_server
 from .advertisement import AdvertisementListener, AdvertisementListenerInterface
 from .scan import scan_devices
-import async_upnp_client
-import async_upnp_client.advertisement
-import async_upnp_client.aiohttp
 from dataclasses import dataclass
 import asyncio
 import typing
-from .events import DeviceDiscoveryEvent, DiscoveryEventType
-import inspect
+from .events import SSDPEvent, DiscoveryEventType
 import datetime
+from enum import Enum
 
 _logger = logging.getLogger(__name__)
 
-DiscoveryEventCallback = typing.Union[typing.Callable[[DiscoveryEventType, str], typing.Awaitable],
-                                      typing.Callable[[DiscoveryEventType, str], None]]
+
+class MediaDeviceType(Enum):
+    MEDIASERVER = 'MediaServer'
+    MEDIARENDERER = 'MediaRenderer'
 
 
 @dataclass
 class DeviceEntry(object):
-    device: typing.Union[MediaServer, MediaRenderer]
-    device_type: str
+    location: str
+    udn: str
+    device_type: MediaDeviceType
     expires_at: typing.Optional[datetime.datetime] = None
 
 
-async def _create_device_entry(factory: async_upnp_client.UpnpFactory, location: str) -> typing.Optional[DeviceEntry]:
-    """
-    Creates a AV device instance by downloading and processing the device description.
+RegistryEventCallback = typing.Callable[[DiscoveryEventType, DeviceEntry], typing.Awaitable]
 
-    Parameters
-    ----------
-    factory : async_upnp_client.UpnpFactory
-        Factory instance used to create the low-level async_upnp_client instance.
-    location : str
-        URL where the device description can be downloaded
 
-    Returns
-    -------
-    MediaServer, MediaRenderer
-        A renderer or server instance on success or None otherwise.
-    """
-    device = await factory.async_create_device(location)
-    device_type = device._device_info.device_type
-    if is_media_server(device_type):
-        server = MediaServer(device)
-        return DeviceEntry(device=server, device_type=device_type)
-    elif is_media_renderer(device_type):
-        renderer = MediaRenderer(device)
-        return DeviceEntry(device=renderer, device_type=device_type)
+def _device_entry_from_event(event: SSDPEvent) -> typing.Optional[DeviceEntry]:
+    if event.location is None:
+        return None
+    if is_media_server(event.device_type):
+        media_device_type = MediaDeviceType.MEDIASERVER
+    elif is_media_renderer(event.device_type):
+        media_device_type = MediaDeviceType.MEDIARENDERER
+    else:
+        return None
+    return DeviceEntry(location=event.location, udn=event.udn, device_type=media_device_type)
+
+
+# async def _create_device_entry(factory: async_upnp_client.UpnpFactory, location: str) -> typing.Optional[DeviceEntry]:
+#     """
+#     Creates a AV device instance by downloading and processing the device description.
+
+#     Parameters
+#     ----------
+#     factory : async_upnp_client.UpnpFactory
+#         Factory instance used to create the low-level async_upnp_client instance.
+#     location : str
+#         URL where the device description can be downloaded
+
+#     Returns
+#     -------
+#     MediaServer, MediaRenderer
+#         A renderer or server instance on success or None otherwise.
+#     """
+#     raw_device = await factory.async_create_device(location)
+#     raw_device_type = raw_device._device_info.device_type
+#     if is_media_server(raw_device_type):
+#         return DeviceEntry(raw_device=raw_device, device_type=MediaDeviceType.MEDIASERVER)
+#     elif is_media_renderer(raw_device_type):
+#         return DeviceEntry(raw_device=raw_device, device_type=MediaDeviceType.MEDIARENDERER)
 
 
 class DeviceRegistry(object):
@@ -75,9 +86,7 @@ class DeviceRegistry(object):
     -----
     Currently, only a single event callback can be registered at a given time.
     """
-    def __init__(self,
-                 advertisement_listener: typing.Type[AdvertisementListenerInterface] = None,
-                 upnp_requester: async_upnp_client.UpnpRequester = None):
+    def __init__(self, advertisement_listener: typing.Type[AdvertisementListenerInterface] = None):
         """
         Constructor
 
@@ -96,25 +105,12 @@ class DeviceRegistry(object):
             self._listener = AdvertisementListener(self._event_queue)
         else:
             self._listener = advertisement_listener(self._event_queue)
-        self._av_devices = {}
-        if upnp_requester is None:
-            upnp_requester = async_upnp_client.aiohttp.AiohttpRequester()
-        self._factory = async_upnp_client.UpnpFactory(upnp_requester)
-        self._event_callback: typing.Optional[DiscoveryEventCallback] = None
+        self._av_devices: typing.Dict[str, DeviceEntry] = {}
+        self._event_callback: typing.Optional[RegistryEventCallback] = None
         self._scan_task: typing.Optional[asyncio.Task] = None
         self._process_task: typing.Optional[asyncio.Task] = None
 
-    @property
-    def mediaservers(self) -> typing.Iterable[MediaServer]:
-        """ Currently available av media servers """
-        return [entity.device for entity in self._av_devices.values() if is_media_server(entity.device_type)]
-
-    @property
-    def mediarenderers(self) -> typing.Iterable[MediaRenderer]:
-        """ Currently available av media renderers """
-        return [entity.device for entity in self._av_devices.values() if is_media_renderer(entity.device_type)]
-
-    def get_device_entry(self, udn: str) -> typing.Union[MediaRenderer, MediaServer]:
+    def get_device_entry(self, udn: str) -> DeviceEntry:
         """
         Get an instance for a specific devices
 
@@ -133,7 +129,11 @@ class DeviceRegistry(object):
         """
         return self._av_devices[udn]
 
-    def set_event_callback(self, callback: typing.Optional[DiscoveryEventCallback]):
+    @property
+    def devices(self):
+        return self._av_devices
+
+    def set_event_callback(self, callback: typing.Optional[RegistryEventCallback]):
         """
         Set client callback to be notified about discovery events.
         If another callback has already been set it will be replaced.
@@ -214,20 +214,21 @@ class DeviceRegistry(object):
         """
         running = True
         while running:
-            event: typing.Optional[DeviceDiscoveryEvent] = None
+            event: typing.Optional[SSDPEvent] = None
             try:
                 event = await self._event_queue.get()
+                if event is None:
+                    break
                 if event.event_type == DiscoveryEventType.NEW_DEVICE:
-                    assert event.location is not None
                     if event.udn not in self._av_devices:
-                        entry = await _create_device_entry(self._factory, event.location)
+                        entry = _device_entry_from_event(event)
                         if entry is not None:
-                            _logger.info("Found new device: %s", entry.device)
+                            _logger.info("Found new device: %s", entry.udn)
                             self._av_devices[event.udn] = entry
-                            await self._trigger_client_callback(DiscoveryEventType.NEW_DEVICE, event.udn)
+                            await self._trigger_client_callback(DiscoveryEventType.NEW_DEVICE, entry)
                     else:
                         entry = self._av_devices[event.udn]
-                        _logger.debug("Got a sign of life from: %s", entry.device)
+                        _logger.debug("Got a sign of life from: %s", entry.udn)
                         # todo: update last_seen timestamp
                 elif event.event_type == DiscoveryEventType.DEVICE_UPDATE:
                     # TODO
@@ -235,8 +236,8 @@ class DeviceRegistry(object):
                 elif event.event_type == DiscoveryEventType.DEVICE_LOST:
                     if event.udn in self._av_devices:
                         entry = self._av_devices.pop(event.udn)
-                        _logger.info("ByeBye: %s", entry.device)
-                        await self._trigger_client_callback(DiscoveryEventType.DEVICE_LOST, event.udn)
+                        _logger.info("ByeBye: %s", entry.udn)
+                        await self._trigger_client_callback(DiscoveryEventType.DEVICE_LOST, entry)
                 self._event_queue.task_done()
             except RuntimeError:
                 logging.exception('Failed to process discovery event %s', event)
@@ -248,12 +249,9 @@ class DeviceRegistry(object):
                 raise
         _logger.debug('Discovery event processing stopped')
 
-    async def _trigger_client_callback(self, event, udn):
+    async def _trigger_client_callback(self, event_type: DiscoveryEventType, entry: DeviceEntry):
         """
         Invoke the client event callback, if set.
         """
         if self._event_callback is not None:
-            if inspect.iscoroutinefunction(self._event_callback):
-                await self._event_callback(event, udn)  # type: ignore
-            else:
-                self._event_callback(event, udn)
+            await self._event_callback(event_type, entry)
