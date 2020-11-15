@@ -69,9 +69,5 @@ class MediaRenderer(object):
         return self._device.friendly_name
 
     @property
-    def location(self):
-        return self._device.location
-
-    @property
     def upnp_device(self):
         return self._device
