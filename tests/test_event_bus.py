@@ -1,8 +1,12 @@
+from upnpavcontrol.core.discovery.events import DiscoveryEventType
 import pytest
+from upnpavcontrol.web.models import DiscoveryEvent
 
 
 @pytest.mark.asyncio
-async def test_device_found_event(webapi_client, mocked_device_registry):
+async def test_device_found_event_broadcast(webapi_client):
+    app = webapi_client.application
+    event_bus = app.event_bus
     async with webapi_client.websocket_connect('/ws/events') as websocket1:
         event = await websocket1.receive_json()
         assert event == {'version': '0.0.1'}
@@ -10,11 +14,32 @@ async def test_device_found_event(webapi_client, mocked_device_registry):
             event = await websocket2.receive_json()
             assert event == {'version': '0.0.1'}
 
-            trigger_event = await mocked_device_registry.trigger_renderer_alive()
+            event = DiscoveryEvent(event_type=DiscoveryEventType.NEW_DEVICE, udn='1234-5678-9')
+            await event_bus.broadcast_event(event.json())
 
             event1 = await websocket1.receive_json()
             event2 = await websocket2.receive_json()
             assert event1['event_type'] == 'NEW_DEVICE'
-            assert event1['udn'] == trigger_event.udn
+            assert event1['udn'] == '1234-5678-9'
             assert event2['event_type'] == 'NEW_DEVICE'
-            assert event2['udn'] == trigger_event.udn
+            assert event2['udn'] == '1234-5678-9'
+
+
+@pytest.mark.asyncio
+async def test_device_found_event_callback(webapi_client):
+    app = webapi_client.application
+    async with webapi_client.websocket_connect('/ws/events') as websocket1:
+        event = await websocket1.receive_json()
+        assert event == {'version': '0.0.1'}
+        async with webapi_client.websocket_connect('/ws/events') as websocket2:
+            event = await websocket2.receive_json()
+            assert event == {'version': '0.0.1'}
+
+            await app._device_registry_callback(DiscoveryEventType.NEW_DEVICE, '1234-5678-9')
+
+            event1 = await websocket1.receive_json()
+            event2 = await websocket2.receive_json()
+            assert event1['event_type'] == 'NEW_DEVICE'
+            assert event1['udn'] == '1234-5678-9'
+            assert event2['event_type'] == 'NEW_DEVICE'
+            assert event2['udn'] == '1234-5678-9'
