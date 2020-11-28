@@ -10,7 +10,7 @@ class RendererDevice(BaseModel):
 
 
 def _format_device(device):
-    return {'name': device.upnp_device.friendly_name, 'udn': device.udn}
+    return {'name': device.friendly_name, 'udn': device.udn}
 
 
 class PlaybackInfo(BaseModel):
