@@ -15,22 +15,29 @@ async def test_renderer_device_list(webapi_client, mocked_renderer_device):
 
 
 @pytest.mark.asyncio
-@pytest.mark.xfail
-async def test_set_volume(webapi_client, mocked_renderer_device):
-    cp = webapi_client.application.av_control_point
-
-    # setting volume without an active player is an error
-    response = await webapi_client.put('/player/volume', json={'volume_percent': 21})
+async def test_get_volume(webapi_client, mocked_renderer_device):
+    response = await webapi_client.get('/player/unkown-device-udn/volume')
     assert response.status_code == 404
 
-    await cp.set_renderer(mocked_renderer_device.udn)
-    response = await webapi_client.put('/player/volume', json={'volume_percent': 21})
+    mocked_renderer_device.rendering_control.action('GetVolume').mock.return_value = {'CurrentVolume': 42}
+    volume_uri = f'/player/{mocked_renderer_device.udn}/volume'
+    response = await webapi_client.get(volume_uri)
+    assert response.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_set_volume(webapi_client, mocked_renderer_device):
+    response = await webapi_client.put('/player/unkown-device-udn/volume', json={'volume_percent': 21})
+    assert response.status_code == 404
+
+    volume_uri = f'/player/{mocked_renderer_device.udn}/volume'
+    response = await webapi_client.put(volume_uri, json={'volume_percent': 21})
     assert response.status_code == 204
     volume_action = mocked_renderer_device.rendering_control.action('SetVolume')
     volume_action.mock.assert_called_once_with(InstanceID=0, Channel='Master', DesiredVolume=21)
 
     volume_action.mock.reset_mock()
-    response = await webapi_client.put('/player/volume', json={'volume_percent': 101})
+    response = await webapi_client.put(volume_uri, json={'volume_percent': 101})
     assert response.status_code == 422
     volume_action.mock.assert_not_called()
 
