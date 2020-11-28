@@ -8,15 +8,15 @@ from .models import DiscoveryEvent
 from . import api
 from . import settings
 import aiohttp
+from typing import Optional, cast, Any
 
 
 class AVControlPointAPI(FastAPI):
     def __init__(self, *args, **kwargs):
         super(AVControlPointAPI, self).__init__(*args, **kwargs)
-        self._av_control_point = None
-        self._av_control_task = None
+        self._av_control_point: Optional[AVControlPoint] = None
         self.event_bus = BroadcastEventBus()
-        self._aio_client_session = None
+        self._aio_client_session: Optional[aiohttp.ClientSession] = None
 
     @property
     def aio_client_session(self):
@@ -42,7 +42,6 @@ class AVControlPointAPI(FastAPI):
 
 
 app = AVControlPointAPI()
-
 app.include_router(api.router)
 
 
@@ -85,10 +84,10 @@ async def init_event_bus():
         app.av_control_point = create_control_point_from_settings()
     await app.av_control_point.async_start()
     # Prime the push notification generator
-    await app.event_bus.queue.asend(None)
+    await app.event_bus.queue.asend(cast(Any, None))
 
 
 @app.on_event("shutdown")
 async def stop_av_control_point():
-    if app._av_control_point:
+    if app._av_control_point is not None:
         await app.av_control_point.async_stop()
