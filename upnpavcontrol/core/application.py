@@ -42,9 +42,8 @@ class AVControlPoint(object):
     def mediarenderers(self):
         return self._renderers.values()
 
-    @property
-    def mediarenderer(self):
-        return self._active_renderer
+    def get_mediarenderer_by_UDN(self, udn: str):
+        return self._renderers[udn]
 
     def set_discovery_event_callback(self, callback: Optional[DiscoveryEventCallback]):
         self._device_discovery_callback = callback
