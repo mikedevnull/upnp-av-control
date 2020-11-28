@@ -1,6 +1,7 @@
 from upnpavcontrol.web.api import media_proxy
 import pytest
 import itsdangerous
+import itsdangerous.exc
 
 
 def test_encode_decode():
