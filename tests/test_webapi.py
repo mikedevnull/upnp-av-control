@@ -16,33 +16,6 @@ async def test_renderer_device_list(webapi_client, mocked_renderer_device):
 
 @pytest.mark.asyncio
 @pytest.mark.xfail
-async def test_current_renderer(webapi_client, mocked_renderer_device):
-    mocked_renderer_device.rendering_control.action('GetVolume').mock.return_value = {'CurrentVolume': 42}
-
-    response = await webapi_client.get('/player')
-    assert response.status_code == 200
-    playbackInfo = response.json()
-    assert playbackInfo['player'] is None
-
-    response = await webapi_client.put('/player/device', json={'udn': mocked_renderer_device.udn})
-    assert response.status_code == 200
-    response = await webapi_client.get('/player')
-    assert response.status_code == 200
-    playbackInfo = response.json()
-    assert playbackInfo['player'] == mocked_renderer_device.udn
-    assert playbackInfo['volume'] == 42
-
-    response = await webapi_client.put('/player/device', json={'udn': "fake-unkown-invalid-uid"})
-    assert response.status_code == 400
-    response = await webapi_client.get('/player')
-    assert response.status_code == 200
-    playbackInfo = response.json()
-    assert playbackInfo['player'] == mocked_renderer_device.udn
-    assert playbackInfo['volume'] == 42
-
-
-@pytest.mark.asyncio
-@pytest.mark.xfail
 async def test_set_volume(webapi_client, mocked_renderer_device):
     cp = webapi_client.application.av_control_point
 

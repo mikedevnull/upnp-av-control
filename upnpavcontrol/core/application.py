@@ -49,21 +49,6 @@ class AVControlPoint(object):
     def set_discovery_event_callback(self, callback: Optional[DiscoveryEventCallback]):
         self._device_discovery_callback = callback
 
-    async def set_renderer(self, deviceUDN: str):
-        if deviceUDN in self._devices._av_devices:
-            if self._active_renderer is not None:
-                await self._active_renderer.disable_notifications()
-            entry = self._devices._av_devices[deviceUDN]
-            if isinstance(entry.device, MediaRenderer):
-                self._active_renderer = entry.device
-                await self._active_renderer.enable_notifications(self._notify_receiver)
-            else:
-                logging.error('%s is not a media renderer', entry.device.friendly_name)
-                raise KeyError('Not a media renderer')
-        else:
-            logging.error('Unkown device %s requested', deviceUDN)
-            raise KeyError('Device not found')
-
     async def async_start(self):
         await self._device_registry.async_start()
         await self._notify_receiver.async_start()
