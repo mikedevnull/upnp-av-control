@@ -4,8 +4,8 @@ import pytest
 from upnpavcontrol.core.discovery.advertisement import _DeviceAdvertisementHandler
 import upnpavcontrol.core.discovery.scan
 from upnpavcontrol.core import discovery
-from . import advertisement_data
-from .fixtures.discovery_mocks import TestingAdvertisementListener
+from .testsupport.null_advertisement_listener import NullAdvertisementListener
+from .testsupport import advertisement_data
 from unittest.mock import AsyncMock
 import asyncio
 
@@ -37,7 +37,7 @@ async def test_handle_advertisement_alive(test_input, expected_event):
 
 @pytest.mark.asyncio
 async def test_device_registry_event_processing():
-    registry = discovery.DeviceRegistry(advertisement_listener=TestingAdvertisementListener)
+    registry = discovery.DeviceRegistry(advertisement_listener=NullAdvertisementListener)
     discovery_callback = AsyncMock(name='registry_event_callback')
     registry.set_event_callback(discovery_callback)
     await registry.async_start()

@@ -1,7 +1,6 @@
 from async_upnp_client import UpnpRequester
 import os
 import asyncio
-import pytest
 
 
 def _read_data_file(filename):
