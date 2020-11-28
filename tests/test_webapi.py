@@ -3,7 +3,6 @@ import urllib.parse
 
 
 @pytest.mark.asyncio
-@pytest.mark.xfail
 async def test_renderer_device_list(webapi_client, mocked_renderer_device):
     response = await webapi_client.get('/player/devices')
     assert response.status_code == 200
@@ -64,7 +63,6 @@ async def test_set_volume(webapi_client, mocked_renderer_device):
 
 
 @pytest.mark.asyncio
-@pytest.mark.xfail
 async def test_server_device_list(webapi_client, mocked_server_device):
     response = await webapi_client.get('/library/devices')
     assert response.status_code == 200

@@ -31,13 +31,13 @@ class AVControlPointAPI(FastAPI):
     @av_control_point.setter
     def av_control_point(self, control_point):
         if self._av_control_point is not None:
-            self._av_control_point._devices.set_event_callback(None)
+            self._av_control_point.set_discovery_event_callback(None)
         self._av_control_point = control_point
         if self._av_control_point is not None:
-            self._av_control_point._devices.set_event_callback(self._device_registry_callback)
+            self._av_control_point.set_discovery_event_callback(self._device_registry_callback)
 
-    async def _device_registry_callback(self, event_type, device_udn):
-        event = DiscoveryEvent(event_type=event_type, udn=device_udn)
+    async def _device_registry_callback(self, event_type, device):
+        event = DiscoveryEvent(event_type=event_type, udn=device.udn)
         await self.event_bus.broadcast_event(event.json())
 
 

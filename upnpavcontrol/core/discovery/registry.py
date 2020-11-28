@@ -40,30 +40,6 @@ def _device_entry_from_event(event: SSDPEvent) -> typing.Optional[DeviceEntry]:
     return DeviceEntry(location=event.location, udn=event.udn, device_type=media_device_type)
 
 
-# async def _create_device_entry(factory: async_upnp_client.UpnpFactory, location: str) -> typing.Optional[DeviceEntry]:
-#     """
-#     Creates a AV device instance by downloading and processing the device description.
-
-#     Parameters
-#     ----------
-#     factory : async_upnp_client.UpnpFactory
-#         Factory instance used to create the low-level async_upnp_client instance.
-#     location : str
-#         URL where the device description can be downloaded
-
-#     Returns
-#     -------
-#     MediaServer, MediaRenderer
-#         A renderer or server instance on success or None otherwise.
-#     """
-#     raw_device = await factory.async_create_device(location)
-#     raw_device_type = raw_device._device_info.device_type
-#     if is_media_server(raw_device_type):
-#         return DeviceEntry(raw_device=raw_device, device_type=MediaDeviceType.MEDIASERVER)
-#     elif is_media_renderer(raw_device_type):
-#         return DeviceEntry(raw_device=raw_device, device_type=MediaDeviceType.MEDIARENDERER)
-
-
 class DeviceRegistry(object):
     """
     Upnp device registry, main point that handles discovery of upnp av devices.

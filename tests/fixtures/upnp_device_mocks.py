@@ -60,6 +60,10 @@ class UpnpMediaRendererDevice(_UpnpDeviceMock):
 
         self.add_service_mock(RenderingControlService(f'{self.location}/rcs'))
 
+    @property
+    def rendering_control(self):
+        return self.service('urn:schemas-upnp-org:service:RenderingControl:1')
+
 
 class UpnpMediaServerDevice(_UpnpDeviceMock):
     def __init__(self):
