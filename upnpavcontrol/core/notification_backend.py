@@ -50,8 +50,8 @@ class NotificationEndpointBase(metaclass=ABCMeta):
         pass
 
     @abstractproperty
-    def callback_url(self):
-        return None
+    def callback_url(self) -> str:
+        raise NotImplementedError("To be provided in derived classes")
 
 
 class AiohttpNotificationEndpoint(NotificationEndpointBase):
