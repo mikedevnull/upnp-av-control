@@ -98,7 +98,7 @@ class DictAdapter():
     def get(self, key: typing.Any, default: typing.Any = None) -> typing.Any:
         return self._get_from_xml(key, default)
 
-    def keys(self) -> typing.List[typing.Any]:
+    def keys(self) -> typing.AbstractSet[str]:
         """
         Keys of the pseudo dictionary, uses a list not set so order information can be maintained like python
         dictionaries.
