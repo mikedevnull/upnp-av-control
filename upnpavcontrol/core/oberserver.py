@@ -1,7 +1,9 @@
 from typing import Callable, Awaitable, TypeVar, Generic, Dict
 import asyncio
+import logging
 
 T = TypeVar('T')
+_logger = logging.getLogger(__name__)
 
 
 class Subscription(object):
@@ -69,6 +71,7 @@ class Observable(Generic[T]):
         results = await asyncio.gather(*tasks, return_exceptions=True)
         for idx, result in enumerate(results):
             if isinstance(result, Exception):
+                _logger.exception('Removing subscriber because of exception during execution')
                 await self.unsubscribe(subscriptions[idx])
 
     async def unsubscribe(self, subscription: Subscription):
