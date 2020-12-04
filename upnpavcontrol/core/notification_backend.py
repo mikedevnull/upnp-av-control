@@ -76,7 +76,6 @@ class AiohttpNotificationEndpoint(NotificationEndpointBase):
         _logger.debug('NOTIFY: %s', request.headers)
         body = await request.content.read()
         body = body.decode('utf-8')
-        _logger.debug('body: %s', body)
         if self._notify_callback:
             status = await self._notify_callback(request.headers, body)
             return web.Response(status=status.value)
