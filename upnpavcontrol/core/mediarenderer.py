@@ -1,5 +1,6 @@
 import logging
 from .notification_backend import NotificationBackend
+from .oberserver import Observable, Subscription
 from async_upnp_client import UpnpStateVariable, UpnpDevice, UpnpService
 import defusedxml.ElementTree as etree
 from typing import Iterable, Optional, cast
@@ -47,14 +48,24 @@ async def create_media_renderer(device: UpnpDevice, notification_backend: Option
 
 
 class MediaRenderer(object):
-    def __init__(self, device: UpnpDevice):
+    def __init__(self, device: UpnpDevice, notification_backend: Optional[NotificationBackend] = None):
         self._device = device
-        self._notify_backend = None
-        self.rendering_control.on_event = self.notify
+        self._notify_backend = notification_backend
+        self._notifications_enabled = False
+        self.rendering_control.on_event = self._on_event
+        if self.av_transport is not None:
+            self.av_transport.on_event = self._on_event
+        self._playback_info = PlaybackInfo()
+        self._playback_observable = Observable[PlaybackInfo]()
+        self._playback_observable.on_subscription_change = self._handle_subscription_change
 
-    def notify(self, service: UpnpService, variables: Iterable[UpnpStateVariable]):
+    def _on_event(self, service: UpnpService, variables: Iterable[UpnpStateVariable]):
         for variable in variables:
             logging.info('%s -> %s', variable.name, variable.value)
+            if variable.name == 'LastChange':
+                update_playback_info_from_event(self._playback_info, cast(str, variable.value))
+                asyncio.create_task(self._playback_observable.notify(self._playback_info),
+                                    name='renderer playback info notify')
 
     def __repr__(self):
         return '<MediaRenderer {}>'.format(self.friendly_name)
@@ -68,6 +79,15 @@ class MediaRenderer(object):
                                                                            Channel='Master',
                                                                            DesiredVolume=value)
 
+    async def subscribe_notifcations(self, subscriber) -> Subscription:
+        return await self._playback_observable.subscribe(subscriber)
+
+    async def _handle_subscription_change(self, subscription_count):
+        if subscription_count > 0:
+            await self._enable_notifications()
+        elif subscription_count == 0:
+            await self._disable_notifications()
+
     @property
     def playback_info(self):
         return self._playback_info
@@ -75,24 +95,32 @@ class MediaRenderer(object):
     async def update_playback_info(self):
         self._playback_info.volume_percent = await self.get_volume()
 
+    async def _enable_notifications(self):
+        if self._notifications_enabled:
             return
         if self._notify_backend is not None:
-            self.disable_notifications()
-        self._notify_backend = backend
-        if self._notify_backend is not None:
+            self._notifications_enabled = True
             if self.rendering_control:
                 await self._notify_backend.subscribe(self.rendering_control)
+            if self.av_transport:
+                await self._notify_backend.subscribe(self.av_transport)
+            if self.connection_manager:
+                await self._notify_backend.subscribe(self.connection_manager)
 
-    async def disable_notifications(self):
+    async def _disable_notifications(self):
+        if self._notifications_enabled is False:
+            return
         try:
+            self._notifications_enabled = False
             if self._notify_backend is not None:
                 if self.rendering_control:
                     await self._notify_backend.unsubscribe(self.rendering_control)
+                if self.av_transport:
+                    await self._notify_backend.unsubscribe(self.av_transport)
+                if self.connection_manager:
+                    await self._notify_backend.unsubscribe(self.connection_manager)
         except asyncio.TimeoutError:
             logging.warning('Failed to unsubscribe from notifications from %s', self.friendly_name)
-        finally:
-            # this is required to ensure notifications can be re-enabled
-            self._notify_backend = None
 
     @property
     def udn(self):
@@ -104,7 +132,10 @@ class MediaRenderer(object):
 
     @property
     def av_transport(self):
-        return self._device.service('urn:schemas-upnp-org:service:AVTransport:1')
+        if self._device.has_service('urn:schemas-upnp-org:service:AVTransport:1'):
+            return self._device.service('urn:schemas-upnp-org:service:AVTransport:1')
+        else:
+            return None
 
     @property
     def connection_manager(self):
