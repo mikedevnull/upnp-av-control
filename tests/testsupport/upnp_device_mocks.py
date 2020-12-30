@@ -33,7 +33,7 @@ class _UpnpServiceMock(object):
         return self._actions[name]
 
     def add_action_mock(self, name, *args, **kwargs):
-        self._actions[name] = _AsyncActionMock(*args, **kwargs)
+        self._actions[name] = _AsyncActionMock(*args, name=name, **kwargs)
 
 
 class _AsyncActionMock(object):
@@ -47,12 +47,21 @@ class _AsyncActionMock(object):
 class RenderingControlService(_UpnpServiceMock):
     def __init__(self, event_sub_url):
         super().__init__(event_sub_url)
-        self.add_action_mock('GetVolume')
+        self.add_action_mock('GetVolume', return_value={'CurrentVolume': 12})
         self.add_action_mock('SetVolume')
 
     @property
     def service_type(self):
         return "urn:schemas-upnp-org:service:RenderingControl:1"
+
+
+class ConnectionManagerService(_UpnpServiceMock):
+    def __init__(self, event_sub_url):
+        super().__init__(event_sub_url)
+
+    @property
+    def service_type(self):
+        return "urn:schemas-upnp-org:service:ConnectionManager:1"
 
 
 class UpnpMediaRendererDevice(_UpnpDeviceMock):
@@ -62,10 +71,15 @@ class UpnpMediaRendererDevice(_UpnpDeviceMock):
                          location="http://localhost:12342")
 
         self.add_service_mock(RenderingControlService(f'{self.location}/rcs'))
+        self.add_service_mock(ConnectionManagerService(f'{self.location}/cm'))
 
     @property
     def rendering_control(self):
         return self.service('urn:schemas-upnp-org:service:RenderingControl:1')
+
+    @property
+    def connection_manager(self):
+        return self.service('urn:schemas-upnp-org:service:ConnectionManager:1')
 
 
 class UpnpMediaServerDevice(_UpnpDeviceMock):
