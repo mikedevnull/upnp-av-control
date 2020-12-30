@@ -83,6 +83,7 @@ async def test_device_registry_event_processing():
 
     discovery_callback.assert_not_called()
     assert len(registry.devices) == 1
+    await registry.async_stop()
 
 
 scan_server_ssdp = {
