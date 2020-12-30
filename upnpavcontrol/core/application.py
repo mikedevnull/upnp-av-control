@@ -24,7 +24,7 @@ class AVControlPoint(object):
             self._device_registry = DeviceRegistry()
         else:
             self._device_registry = device_registry
-        device_registry.set_event_callback(self._handle_discovery_event)
+        self._device_registry.set_event_callback(self._handle_discovery_event)
         self._active_renderer = None
         if notifcation_backend is None:
             self._notify_receiver = NotificationBackend(AiohttpNotificationEndpoint(), AiohttpRequester())
