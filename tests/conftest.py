@@ -1,7 +1,7 @@
 import pytest
 from upnpavcontrol.core import discovery
 from upnpavcontrol.core.notification_backend import NotificationBackend
-from upnpavcontrol.core.mediarenderer import MediaRenderer
+from upnpavcontrol.core.mediarenderer import create_media_renderer
 from upnpavcontrol.core.mediaserver import MediaServer
 from .testsupport.upnp_test_requester import UpnpTestRequester
 from .testsupport.notification_test_endpoint import NotificationTestEndpoint
@@ -47,7 +47,7 @@ async def mocked_server_device(mocked_av_control_point):
 
 @pytest.fixture
 async def mocked_renderer_device(mocked_av_control_point):
-    device = MediaRenderer(cast(Any, UpnpMediaRendererDevice()))
+    device = await create_media_renderer(cast(Any, UpnpMediaRendererDevice()))
     mocked_av_control_point._renderers[device.udn] = device
     yield device
     mocked_av_control_point._renderers.pop(device.udn)

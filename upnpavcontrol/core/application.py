@@ -1,6 +1,6 @@
 from upnpavcontrol.core.discovery.registry import MediaDeviceType
 from .discovery import DeviceRegistry, DeviceEntry, DiscoveryEventType
-from .mediarenderer import MediaRenderer
+from .mediarenderer import create_media_renderer, MediaRenderer
 from .mediaserver import MediaServer
 from .notification_backend import NotificationBackend, AiohttpNotificationEndpoint
 from async_upnp_client.aiohttp import AiohttpRequester
@@ -82,5 +82,5 @@ class AVControlPoint(object):
         if entry.device_type == MediaDeviceType.MEDIASERVER:
             return MediaServer(raw_device)
         elif entry.device_type == MediaDeviceType.MEDIARENDERER:
-            return MediaRenderer(raw_device)
+            return await create_media_renderer(raw_device, self._notify_receiver)
         raise RuntimeError('Cannot create device, is neither Renderer nor Server')
