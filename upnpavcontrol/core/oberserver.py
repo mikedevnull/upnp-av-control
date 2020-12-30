@@ -1,4 +1,4 @@
-from typing import Callable, Awaitable, TypeVar, Generic, Dict
+from typing import Callable, Awaitable, TypeVar, Generic, Dict, List, Optional
 import asyncio
 import logging
 
@@ -7,9 +7,9 @@ _logger = logging.getLogger(__name__)
 
 
 class Subscription(object):
-    """ 
+    """
     A simple handle representing a subscription to observable notifications.
-    
+
     Can be used to unsubscribe from notifications later on
     """
     def __init__(self, observable):
@@ -18,7 +18,7 @@ class Subscription(object):
     async def unsubscribe(self):
         """
         Unsubscribe from any future notifications.
-        
+
         Does nothing if the subscriptions has already been unsubscribed
         """
         if self._observable is not None:
@@ -40,10 +40,24 @@ class Observable(Generic[T]):
     Upon registration, a subscription handle will be return that can be used to unsubsribe from notifications.
 
     Any callable that raises an exception will be automatically removed from the list of subscibers.
+
+    It's possible to register an additional callback to react upon new/lost subscriptions.
+    This makes it possible, for example, to stop additional services as long as no clients are subscribed.
+    While the callback is invoked, the subscription count is guaranteed not to change.
+    The callback must not add or remove subscriptions, as this will cause a deadlock.
     """
     def __init__(self):
         self._subscriptions: Dict[Subscription, Callable[[T], Awaitable[None]]] = {}
         self._lock = asyncio.Lock()
+        self._change_callback_cb: Optional[Callable[[int], Awaitable[None]]] = None
+
+    @property
+    def on_subscription_change(self) -> Optional[Callable[[int], Awaitable[None]]]:
+        return self._change_callback_cb
+
+    @on_subscription_change.setter
+    def on_subscription_change(self, callback: Optional[Callable[[int], Awaitable[None]]]):
+        self._change_callback_cb = callback
 
     async def subscribe(self, subscriber: Callable[[T], Awaitable[None]]) -> Subscription:
         """
@@ -55,7 +69,10 @@ class Observable(Generic[T]):
         Returns a `Subscription` handle that can be used to unsubscubsribe from notifcations
         """
         subscription = Subscription(self)
-        self._subscriptions[subscription] = subscriber
+        async with self._lock:
+            self._subscriptions[subscription] = subscriber
+            if self._change_callback_cb is not None:
+                await self._change_callback_cb(len(self._subscriptions))
         return subscription
 
     async def notify(self, payload: T):
@@ -78,7 +95,18 @@ class Observable(Generic[T]):
         """
         Remove the callable linked to the given subscription.
         """
+        await self._batch_unsubscribe([subscription])
+
+    async def _batch_unsubscribe(self, subscriptions: List[Subscription]):
+        """
+        Unsubscribe all given subscriptions in a single run.
+        """
         async with self._lock:
-            if subscription in self._subscriptions:
-                self._subscriptions.pop(subscription)
-        subscription.reset()
+            at_least_one_removed = False
+            for subscription in subscriptions:
+                if subscription in self._subscriptions:
+                    self._subscriptions.pop(subscription)
+                    at_least_one_removed = True
+                subscription.reset()
+            if at_least_one_removed and self._change_callback_cb is not None:
+                await self._change_callback_cb(len(self._subscriptions))
