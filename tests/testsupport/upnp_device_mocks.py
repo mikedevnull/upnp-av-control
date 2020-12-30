@@ -17,6 +17,9 @@ class _UpnpDeviceMock(object):
     def service(self, service_type):
         return self._services[service_type]
 
+    def has_service(self, service_type):
+        return service_type in self._services
+
     def add_service_mock(self, service):
         self._services[service.service_type] = service
 
