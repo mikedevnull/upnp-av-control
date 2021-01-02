@@ -8,6 +8,7 @@ from .testsupport.notification_test_endpoint import NotificationTestEndpoint
 from .testsupport.null_advertisement_listener import NullAdvertisementListener
 from .testsupport.upnp_device_mocks import UpnpMediaServerDevice, UpnpMediaRendererDevice
 from typing import cast, Any
+import upnpavcontrol.core.discovery.scan
 
 
 @pytest.fixture
@@ -15,8 +16,13 @@ def upnp_test_requester():
     return UpnpTestRequester()
 
 
+async def fake_async_search(*args, **kwargs):
+    pass
+
+
 @pytest.fixture
-async def mocked_av_control_point(event_loop, upnp_test_requester):
+async def mocked_av_control_point(event_loop, monkeypatch, upnp_test_requester):
+    monkeypatch.setattr(upnpavcontrol.core.discovery.scan, 'async_search', fake_async_search)
     registry = discovery.DeviceRegistry(advertisement_listener=NullAdvertisementListener)
     endpoint = NotificationTestEndpoint()
     notification_backend = NotificationBackend(endpoint=endpoint, requester=upnp_test_requester)
