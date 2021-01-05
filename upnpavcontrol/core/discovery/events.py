@@ -36,11 +36,3 @@ class SSDPEvent:
     device_type: str
     udn: str
     location: typing.Optional[str] = None
-
-
-@dataclass(frozen=True)
-class MediaDeviceDiscoveryEvent:
-    event_type: DiscoveryEventType
-    device_type: str
-    udn: str
-    location: typing.Optional[str] = None
