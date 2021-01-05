@@ -1,1 +1,3 @@
-from .api import router  # noqa
+from .api import router
+
+__all__ = ['router']

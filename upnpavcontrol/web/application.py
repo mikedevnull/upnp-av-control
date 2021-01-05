@@ -1,21 +1,20 @@
 from fastapi import FastAPI
-from starlette.websockets import WebSocket, WebSocketDisconnect
+from starlette.websockets import WebSocket
 from upnpavcontrol.core import AVControlPoint
 from upnpavcontrol.core import notification_backend
 from async_upnp_client.aiohttp import AiohttpRequester
-from .broadcast_event_bus import BroadcastEventBus
-from .models import DiscoveryEvent
+from .websocket_event_bus import WebsocketEventBus, MediaDeviceDiscoveryCallback
 from . import api
 from . import settings
 import aiohttp
-from typing import Optional, cast, Any
+from typing import Optional
 
 
 class AVControlPointAPI(FastAPI):
     def __init__(self, *args, **kwargs):
         super(AVControlPointAPI, self).__init__(*args, **kwargs)
         self._av_control_point: Optional[AVControlPoint] = None
-        self.event_bus = BroadcastEventBus()
+        self.event_bus = WebsocketEventBus(self)
         self._aio_client_session: Optional[aiohttp.ClientSession] = None
 
     @property
@@ -30,15 +29,19 @@ class AVControlPointAPI(FastAPI):
 
     @av_control_point.setter
     def av_control_point(self, control_point):
-        if self._av_control_point is not None:
-            self._av_control_point.set_discovery_event_callback(None)
         self._av_control_point = control_point
-        if self._av_control_point is not None:
-            self._av_control_point.set_discovery_event_callback(self._device_registry_callback)
 
-    async def _device_registry_callback(self, event_type, device):
-        event = DiscoveryEvent(event_type=event_type, udn=device.udn)
-        await self.event_bus.broadcast_event(event.json())
+    async def subscribe_discovery_notifications(self, callback: MediaDeviceDiscoveryCallback):
+        assert self._av_control_point is not None
+        return await self._av_control_point.on_device_discovery_event(callback)
+
+    async def subscribe_renderer_notifications(self, udn, callback):
+        renderer = self._av_control_point.get_mediarenderer_by_UDN(udn)
+
+        async def f(playbackinfo):
+            await callback(udn, playbackinfo)
+
+        return await renderer.subscribe_notifcations(f)
 
 
 app = AVControlPointAPI()
@@ -48,12 +51,6 @@ app.include_router(api.router)
 @app.websocket('/ws/events')
 async def websocket_endpoint(websocket: WebSocket):
     await app.event_bus.accept(websocket)
-    try:
-        while True:
-            # currently we don't expect any data coming in, so we discard it
-            await websocket.receive_text()
-    except WebSocketDisconnect:
-        app.event_bus.remove_connection(websocket)
 
 
 def create_control_point_from_settings():
@@ -83,8 +80,6 @@ async def init_event_bus():
     if app.av_control_point is None:
         app.av_control_point = create_control_point_from_settings()
     await app.av_control_point.async_start()
-    # Prime the push notification generator
-    await app.event_bus.queue.asend(cast(Any, None))
 
 
 @app.on_event("shutdown")

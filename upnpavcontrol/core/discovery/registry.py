@@ -25,6 +25,13 @@ class DeviceEntry(object):
     expires_at: typing.Optional[datetime.datetime] = None
 
 
+@dataclass(frozen=True)
+class MediaDeviceDiscoveryEvent:
+    event_type: DiscoveryEventType
+    device_type: MediaDeviceType
+    udn: str
+
+
 RegistryEventCallback = typing.Callable[[DiscoveryEventType, DeviceEntry], typing.Awaitable]
 
 

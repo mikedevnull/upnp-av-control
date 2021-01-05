@@ -33,6 +33,7 @@ class JsonRPCError(BaseModel):
 
 JSONRPC_PARSE_ERROR = JsonRPCError(code=-32700, message='Parse error')
 JSONRPC_INVALID_REQUEST = JsonRPCError(code=-32600, message='Invalid request')
+JSONRPC_METHOD_NOT_FOUND = JsonRPCError(code=-32601, message='Method not found')
 
 
 class JsonRPCException(ValueError):
