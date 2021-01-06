@@ -1,6 +1,7 @@
 import async_upnp_client
 from upnpavcontrol.core.mediarenderer import PlaybackInfo, update_playback_info_from_event, create_media_renderer
 from .testsupport.upnp_device_mocks import UpnpMediaRendererDevice
+from .testsupport import AsyncMock
 import pytest
 from unittest import mock
 from typing import cast, Any
@@ -42,8 +43,8 @@ async def test_renderer_creation():
 
 
 class MockedNotificationBackend(object):
-    subscribe = mock.AsyncMock(name='subscribe')
-    unsubscribe = mock.AsyncMock(name='unsubscribe')
+    subscribe = AsyncMock(name='subscribe')
+    unsubscribe = AsyncMock(name='unsubscribe')
 
 
 @pytest.mark.asyncio
@@ -91,7 +92,7 @@ async def test_renderer_handle_backend_events():
     device = UpnpMediaRendererDevice()
     renderer = await create_media_renderer(cast(async_upnp_client.UpnpDevice, device), )
 
-    info_cb = mock.AsyncMock()
+    info_cb = AsyncMock()
     await renderer.subscribe_notifcations(info_cb)
 
     original_volume_result = await device.rendering_control.action('GetVolume').async_call()
@@ -103,5 +104,6 @@ async def test_renderer_handle_backend_events():
     ]
     renderer._on_event(device.rendering_control, cast(Any, fake_event_data))
     # _on_event cannot be a coroutine, but creates a task. Ensure this task has a chance to run
+    await asyncio.sleep(0)
     await asyncio.sleep(0)
     info_cb.assert_called_once_with(PlaybackInfo(volume_percent=21))

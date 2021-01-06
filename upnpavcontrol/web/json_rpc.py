@@ -1,9 +1,10 @@
 import asyncio
 from pydantic import BaseModel, ValidationError
-from typing import Optional, Any, Union, List, Literal
+from typing import Optional, Any, Union, List, Mapping
+from upnpavcontrol.core.typing_compat import Literal
 import json
 
-JsonRPCParamType = Union[List[Any], dict[str, Any]]
+JsonRPCParamType = Union[List[Any], Mapping[str, Any]]
 
 
 class JsonRPCRequest(BaseModel):

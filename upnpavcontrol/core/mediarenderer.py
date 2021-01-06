@@ -64,8 +64,7 @@ class MediaRenderer(object):
             logging.info('%s -> %s', variable.name, variable.value)
             if variable.name == 'LastChange':
                 update_playback_info_from_event(self._playback_info, cast(str, variable.value))
-                asyncio.create_task(self._playback_observable.notify(self._playback_info),
-                                    name='renderer playback info notify')
+                asyncio.create_task(self._playback_observable.notify(self._playback_info))
 
     def __repr__(self):
         return '<MediaRenderer {}>'.format(self.friendly_name)

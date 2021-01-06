@@ -1,6 +1,8 @@
 from . import json_rpc
 import asyncio
-from typing import Protocol, Callable, Awaitable
+from typing import Callable, Awaitable
+
+from upnpavcontrol.core.typing_compat import Protocol
 from upnpavcontrol.core.discovery import MediaDeviceDiscoveryEvent
 from upnpavcontrol.core.mediarenderer import PlaybackInfo
 from upnpavcontrol.core.oberserver import Subscription
