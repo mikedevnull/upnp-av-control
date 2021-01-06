@@ -5,8 +5,8 @@ from upnpavcontrol.core.discovery.advertisement import _DeviceAdvertisementHandl
 import upnpavcontrol.core.discovery.scan
 from upnpavcontrol.core import discovery
 from .testsupport.null_advertisement_listener import NullAdvertisementListener
-from .testsupport import advertisement_data
-from unittest.mock import AsyncMock
+from .testsupport import advertisement_data, AsyncMock
+
 import asyncio
 
 ssdp_to_event_mapping = [(advertisement_data.alive_renderer_ssdp, advertisement_data.alive_renderer_event),

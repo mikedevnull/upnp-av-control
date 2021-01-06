@@ -1,12 +1,12 @@
 from upnpavcontrol.core import oberserver
-from unittest import mock
+from .testsupport import AsyncMock
 import pytest
 
 
 @pytest.mark.asyncio
 async def test_basic_usage():
-    callback1 = mock.AsyncMock()
-    callback2 = mock.AsyncMock()
+    callback1 = AsyncMock()
+    callback2 = AsyncMock()
     observable = oberserver.Observable[int]()
     subscription1 = await observable.subscribe(callback1)
     subscription2 = await observable.subscribe(callback2)
@@ -29,8 +29,8 @@ async def test_basic_usage():
 
 @pytest.mark.asyncio
 async def test_callback_error_unsubscription():
-    callback1 = mock.AsyncMock()
-    callback2 = mock.AsyncMock()
+    callback1 = AsyncMock()
+    callback2 = AsyncMock()
     observable = oberserver.Observable[int]()
     subscription1 = await observable.subscribe(callback1)
     subscription2 = await observable.subscribe(callback2)
@@ -55,12 +55,11 @@ async def test_callback_error_unsubscription():
 
 @pytest.mark.asyncio
 async def test_subscription_callback():
-    callback1 = mock.AsyncMock()
-    callback2 = mock.AsyncMock()
-    subscription_cb = mock.AsyncMock()
+    callback1 = AsyncMock()
+    callback2 = AsyncMock()
+    subscription_cb = AsyncMock()
     observable = oberserver.Observable[int]()
     observable.on_subscription_change = subscription_cb
-    assert observable.on_subscription_change == subscription_cb
     subscription1 = await observable.subscribe(callback1)
     subscription_cb.assert_called_once_with(1)
     subscription2 = await observable.subscribe(callback2)

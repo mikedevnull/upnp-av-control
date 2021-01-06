@@ -9,7 +9,8 @@ setup(name='upnpavcontrol',
       license='BSD-3-Clause',
       python_requires='>=3.7',
       install_requires=[
-          'async_upnp_client', 'fastapi', 'websockets', 'defusedxml', 'uvicorn', 'colorlog', 'itsdangerous'
+          'async_upnp_client', 'fastapi', 'websockets', 'defusedxml', 'uvicorn', 'colorlog', 'itsdangerous',
+          'typing_extensions; python_version < "3.8"'
       ],
       extras_require={
           'test': ['pytest', 'pytest-cov', 'pytest-asyncio', 'async_asgi_testclient'],
