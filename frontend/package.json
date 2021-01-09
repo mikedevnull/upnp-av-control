@@ -8,7 +8,7 @@
     "test:unit": "vue-cli-service test:unit",
     "lint": "vue-cli-service lint",
     "dev": "concurrently \"npm run dev-frontend\" \"npm run dev-backend\"",
-    "dev-backend": "uvicorn upnpavcontrol.web:app --debug --reload --root-path /api",
+    "dev-backend": "uvicorn upnpavcontrol.web:app --debug --reload --root-path /api --log-config=../uvicorn-log-config.yml",
     "dev-frontend": "vue-cli-service serve"
   },
   "dependencies": {
