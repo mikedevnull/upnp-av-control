@@ -6,9 +6,12 @@ from upnpavcontrol.core.typing_compat import Protocol
 from upnpavcontrol.core.discovery import MediaDeviceDiscoveryEvent
 from upnpavcontrol.core.mediarenderer import PlaybackInfo
 from upnpavcontrol.core.oberserver import Subscription
+import logging
 _event_type_map = {'NEW_DEVICE': 'new_device', 'DEVICE_LOST': 'device_lost'}
 
 MediaDeviceDiscoveryCallback = Callable[[MediaDeviceDiscoveryEvent], Awaitable]
+
+_logger = logging.getLogger(__name__)
 
 
 class EventBusConnector(Protocol):
@@ -35,6 +38,7 @@ class EventBusConnection(object):
         while True:
             try:
                 raw_request = await self._websocket.receive_text()
+                _logger.debug('Websocket recv: %s', raw_request)
                 request = json_rpc.parse_jsonrpc_request(raw_request)
                 response = await self._handle_request(request)
                 await self._websocket.send_text(response.json())
