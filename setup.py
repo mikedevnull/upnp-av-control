@@ -10,7 +10,7 @@ setup(name='upnpavcontrol',
       python_requires='>=3.7',
       install_requires=[
           'async_upnp_client', 'fastapi', 'websockets', 'defusedxml', 'uvicorn', 'colorlog', 'itsdangerous',
-          'typing_extensions; python_version < "3.8"'
+          'typing_extensions; python_version < "3.8"', 'PyYAML'
       ],
       extras_require={
           'test': ['pytest', 'pytest-cov', 'pytest-asyncio', 'async_asgi_testclient'],
