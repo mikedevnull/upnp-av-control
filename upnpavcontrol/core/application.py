@@ -6,7 +6,7 @@ from .mediaserver import MediaServer
 from .notification_backend import NotificationBackend, AiohttpNotificationEndpoint
 from async_upnp_client.aiohttp import AiohttpRequester
 from async_upnp_client import UpnpFactory
-from typing import Awaitable, Callable, Union, Optional, Dict, cast
+from typing import Awaitable, Callable, Union, Dict, cast
 from .oberserver import Observable
 import logging
 
@@ -18,7 +18,6 @@ _logger = logging.getLogger(__name__)
 
 class AVControlPoint(object):
     def __init__(self, device_registry: DeviceRegistry = None, notifcation_backend=None):
-        self._device_discovery_callback: Optional[DiscoveryEventCallback] = None
         self._device_discover_observer = Observable[MediaDeviceDiscoveryEvent]()
         self._renderers: Dict[str, MediaRenderer] = {}
         self._servers: Dict[str, MediaServer] = {}
@@ -47,9 +46,6 @@ class AVControlPoint(object):
 
     def get_mediarenderer_by_UDN(self, udn: str) -> MediaRenderer:
         return self._renderers[udn]
-
-    def set_discovery_event_callback(self, callback: Optional[DiscoveryEventCallback]):
-        self._device_discovery_callback = callback
 
     def on_device_discovery_event(self, callback: Callable[[MediaDeviceDiscoveryEvent], Awaitable[None]]):
         return self._device_discover_observer.subscribe(callback)
@@ -83,13 +79,6 @@ class AVControlPoint(object):
 
     async def _notify_discovery(self, event: MediaDeviceDiscoveryEvent):
         await self._device_discover_observer.notify(event)
-        # legacy, will be removed
-        if event.device_type == MediaDeviceType.MEDIASERVER:
-            device = self.get_mediaserver_by_UDN(event.udn)
-        else:
-            device = self.get_mediarenderer_by_UDN(event.udn)
-        if self._device_discovery_callback is not None:
-            await self._device_discovery_callback(event.event_type, device)
 
     async def _create_device(self, entry: DeviceEntry) -> MediaDevice:
         raw_device = await self._upnp_device_factory.async_create_device(entry.location)
