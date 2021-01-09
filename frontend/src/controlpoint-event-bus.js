@@ -1,3 +1,5 @@
+import JsonRPCClient from "./jsonrpc";
+
 function websocketUrl(socketPath) {
   const loc = window.location;
   return (
@@ -19,41 +21,72 @@ class ControlPointEventBus {
     this.socketFactory = socketFactory;
     this.socket = null;
     this.state = "closed";
+    this.jrpc = null;
+    this.onerror = undefined;
   }
 
   run() {
     this.updateStoreData();
     this.socket = this.socketFactory(this.socketUrl);
-    this.socket.onmessage = event => {
-      this.handleMessage(event);
-    };
-  }
-
-  handleMessage(event) {
-    const payload = JSON.parse(event.data);
-    if (this.state == "closed") {
-      // handshake
-      if (payload.version != "0.0.1") {
-        console.log("Version mismatch: " + payload.version);
+    this.jrpc = new JsonRPCClient();
+    this.jrpc.onerror = message => {
+      if (this.state == "closed") {
         this.socket.close();
-        return;
       }
-      this.state = "connected";
-      return;
-    }
-    if (
-      payload.event_type == "NEW_DEVICE" ||
-      payload.event_type == "DEVICE_LOST"
-    ) {
-      console.log("devices changed, should update state");
-      this.updateStoreData();
-    }
+      if (this.onerror) {
+        this.onerror("JSONRPC Error: " + message);
+      }
+    };
+    this.jrpc.on("initialize", params => this.onInitialize(params.version));
+    this.jrpc.on("new_device", params =>
+      this.onNewDevice(params.udn, params.device_type)
+    );
+    this.jrpc.on("device_lost", params =>
+      this.onNewDevice(params.udn, params.device_type)
+    );
+    this.socket.onmessage = event => {
+      this.jrpc.handleMessage(event.data);
+    };
+    this.socket.onclose = () => {
+      this.jrpc.close();
+    };
+
+    this.jrpc.streamTo = _msg => {
+      this.socket.send(_msg);
+    };
   }
 
   updateStoreData() {
     this.store.dispatch("updateAvailableRenderers");
     this.store.dispatch("updateAvailableServers");
-    this.store.dispatch("updatePlaybackInfo");
+  }
+
+  onInitialize(version) {
+    if (this.state == "connected") {
+      return;
+    }
+    if (version != "0.2.0") {
+      this.socket.close();
+      return;
+    }
+    this.state = "connected";
+    this.jrpc.call("subscribe", { category: "discovery" });
+  }
+
+  onNewDevice(udn, deviceType) {
+    if (deviceType == "MediaRenderer") {
+      this.store.dispatch("updateAvailableRenderers");
+    } else if (deviceType == "MediaServer") {
+      this.store.dispatch("updateAvailableServers");
+    }
+  }
+
+  onDeviceLost(udn, deviceType) {
+    if (deviceType == "MediaRenderer") {
+      this.store.dispatch("updateAvailableRenderers");
+    } else if (deviceType == "MediaServer") {
+      this.store.dispatch("updateAvailableServers");
+    }
   }
 }
 
