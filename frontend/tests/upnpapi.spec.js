@@ -43,23 +43,14 @@ describe("upnpapi", () => {
     expect(mockedAxios.get).toHaveBeenCalledWith("/library/devices");
   });
 
-  it("should query the API to select the active renderer", async () => {
+  it("should use the API to set the current volume", async () => {
     const requestedUdn = "1234-5678";
 
-    mockedAxios.put.mockResolvedValueOnce();
-    await upnpapi.setActiveRenderer(requestedUdn);
-    expect(mockedAxios.put).toHaveBeenCalledTimes(1);
-    expect(mockedAxios.put).toHaveBeenCalledWith("/player/device", {
-      udn: requestedUdn
-    });
-  });
-
-  it("should use the API to set the current volume", async () => {
     mockedAxios.put.mockResolvedValueOnce("some_data");
-    const result = await upnpapi.setCurrentVolume(4);
+    const result = await upnpapi.setCurrentVolume(requestedUdn, 4);
     expect(result).toBe("some_data");
     expect(mockedAxios.put).toHaveBeenCalledTimes(1);
-    expect(mockedAxios.put).toHaveBeenCalledWith("/player/volume", {
+    expect(mockedAxios.put).toHaveBeenCalledWith("/player/1234-5678/volume", {
       volume_percent: 4 // eslint-disable-line @typescript-eslint/camelcase
     });
   });

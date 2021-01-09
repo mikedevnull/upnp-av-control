@@ -28,14 +28,8 @@ export default {
       .then(response => response.data)
       .then(devices => devices.map(convertDeviceEntry));
   },
-  setActiveRenderer(udn) {
-    const url = "/player/device";
-    return upnpApi.put(url, {
-      udn: udn
-    });
-  },
-  setCurrentVolume(volumePercent) {
-    const url = "/player/volume";
+  setCurrentVolume(udn, volumePercent) {
+    const url = `/player/${udn}/volume`;
     return upnpApi.put(url, {
       // eslint-disable-next-line @typescript-eslint/camelcase
       volume_percent: volumePercent
