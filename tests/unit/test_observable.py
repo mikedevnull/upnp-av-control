@@ -1,5 +1,5 @@
 from upnpavcontrol.core import oberserver
-from .testsupport import AsyncMock
+from ..testsupport import AsyncMock
 import pytest
 
 
