@@ -4,8 +4,8 @@ import pytest
 from upnpavcontrol.core.discovery.advertisement import _DeviceAdvertisementHandler
 import upnpavcontrol.core.discovery.scan
 from upnpavcontrol.core import discovery
-from .testsupport.null_advertisement_listener import NullAdvertisementListener
-from .testsupport import advertisement_data, AsyncMock
+from ..testsupport import NullAdvertisementListener, AsyncMock
+from . import advertisement_data
 
 import asyncio
 
