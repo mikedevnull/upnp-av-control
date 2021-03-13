@@ -5,9 +5,10 @@ from .mediarenderer import create_media_renderer, MediaRenderer
 from .mediaserver import MediaServer
 from .notification_backend import NotificationBackend, AiohttpNotificationEndpoint
 from async_upnp_client.aiohttp import AiohttpRequester
-from async_upnp_client import UpnpFactory
+from async_upnp_client import UpnpFactory, UpnpDevice
 from typing import Awaitable, Callable, Union, Dict, cast
 from .oberserver import Observable
+from .typing_compat import Protocol
 import logging
 
 MediaDevice = Union[MediaServer, MediaRenderer]
@@ -16,12 +17,23 @@ DiscoveryEventCallback = Callable[[DiscoveryEventType, MediaDevice], Awaitable]
 _logger = logging.getLogger(__name__)
 
 
+class UpnpDeviceFactory(Protocol):
+    async def async_create_device(self, location: str) -> UpnpDevice:
+        pass
+
+
 class AVControlPoint(object):
-    def __init__(self, device_registry: DeviceRegistry = None, notifcation_backend=None):
+    def __init__(self,
+                 device_registry: DeviceRegistry = None,
+                 notifcation_backend=None,
+                 device_factory: UpnpDeviceFactory = None):
         self._device_discover_observer = Observable[MediaDeviceDiscoveryEvent]()
         self._renderers: Dict[str, MediaRenderer] = {}
         self._servers: Dict[str, MediaServer] = {}
-        self._upnp_device_factory = UpnpFactory(AiohttpRequester())
+        if device_factory is None:
+            self._upnp_device_factory = UpnpFactory(AiohttpRequester())
+        else:
+            self._upnp_device_factory = device_factory
         if device_registry is None:
             self._device_registry = DeviceRegistry()
         else:
@@ -81,6 +93,7 @@ class AVControlPoint(object):
         await self._device_discover_observer.notify(event)
 
     async def _create_device(self, entry: DeviceEntry) -> MediaDevice:
+        _logger.debug('Loading device description from %s', entry.location)
         raw_device = await self._upnp_device_factory.async_create_device(entry.location)
         if entry.device_type == MediaDeviceType.MEDIASERVER:
             return MediaServer(raw_device)
