@@ -13,7 +13,7 @@ setup(name='upnpavcontrol',
           'typing_extensions; python_version < "3.8"', 'PyYAML'
       ],
       extras_require={
-          'test': ['pytest', 'pytest-cov', 'pytest-asyncio', 'async_asgi_testclient'],
+          'test': ['pytest', 'pytest-cov', 'pytest-asyncio', 'pytest-bdd', 'async_asgi_testclient'],
           'dev': ['flake8', 'flake8-print', 'yapf'],
       },
       entry_points={
