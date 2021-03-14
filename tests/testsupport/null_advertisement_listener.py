@@ -12,13 +12,13 @@ class NullAdvertisementListener(AdvertisementListenerInterface):
         self._handler = _DeviceAdvertisementHandler(event_queue)
 
     async def simulate(self, data):
-        assert data['NTS'] in ('ssdp:alive', 'ssdp:update', 'ssdp::byebye')
+        assert data['NTS'] in ('ssdp:alive', 'ssdp:update', 'ssdp:byebye')
         if data['NTS'] == 'ssdp:alive':
             await self._handler.on_alive(data)
         elif data['NTS'] == 'ssdp:update':
             await self._handler.on_update(data)
         elif data['NTS'] == 'ssdp:byebye':
-            await self._handler.on_bybye(data)
+            await self._handler.on_byebye(data)
 
     async def trigger_alive(self, data):
         await self._handler.on_alive(data)
