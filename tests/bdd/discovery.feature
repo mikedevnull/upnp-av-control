@@ -9,6 +9,12 @@ Feature: Device discovery
     Then the client will be notified about the new FooMediaServer
     And  the media server FooMediaServer will be in the library API device list
 
+  Scenario: No advertisement events when client unsubscribed
+    Given a client listens for discovery events
+    When the client unsubscribes for discovery events
+    And a MediaServer FooMediaServer appears on the network
+    Then the client will receive no notification
+
   Scenario: New MediaRenderer advertised
     Given a client listens for discovery events
     When a MediaRenderer AcmeRenderer appears on the network
