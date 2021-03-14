@@ -22,7 +22,7 @@ scenarios('discovery.feature')
 
 @given('a client listens for discovery events')
 @sync
-async def event_bus(event_bus_connection):
+async def discovery_events_subscribed(event_bus_connection):
     result = await event_bus_connection.send(method='subscribe', params={'category': 'discovery'})
     assert result is True
 
@@ -41,6 +41,13 @@ def device_appears_or_leaves(test_context, name, action):
         test_context.add_device_to_network(name, descriptor, notify=True)
     else:
         test_context.remove_device_to_network(name, notify=True)
+
+
+@when('the client unsubscribes for discovery events')
+@sync
+async def unsubscribe_discovery_events(event_bus_connection):
+    result = await event_bus_connection.send(method='unsubscribe', params={'category': 'discovery'})
+    assert result is True
 
 
 @then(parsers.cfparse('the client will be notified about the {action} {name}'))
