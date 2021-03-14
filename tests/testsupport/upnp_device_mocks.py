@@ -45,7 +45,7 @@ class _AsyncActionMock(object):
 
 
 class RenderingControlService(_UpnpServiceMock):
-    def __init__(self, event_sub_url):
+    def __init__(self, event_sub_url=None):
         super().__init__(event_sub_url)
         self.add_action_mock('GetVolume', return_value={'CurrentVolume': 12})
         self.add_action_mock('SetVolume')
@@ -56,7 +56,7 @@ class RenderingControlService(_UpnpServiceMock):
 
 
 class ConnectionManagerService(_UpnpServiceMock):
-    def __init__(self, event_sub_url):
+    def __init__(self, event_sub_url=None):
         super().__init__(event_sub_url)
 
     @property
