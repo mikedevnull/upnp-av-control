@@ -49,12 +49,16 @@ class TestContext(object):
         _logger.debug('added new device %s', descriptor)
         self._available_devices[name] = descriptor
         if notify:
-            self.trigger_notification(name, 'alive')
+            self.trigger_notification(descriptor, 'alive')
 
-    def trigger_notification(self, name, event):
-        descriptor = self.devices_on_network[name]
+    def remove_device_to_network(self, name, notify=False):
+        _logger.debug('remove device %s', name)
+        descriptor = self._available_devices.pop(name)
+        if notify:
+            self.trigger_notification(descriptor, 'byebye')
 
-        ssdp = fake_devices.format_ssdp_event(descriptor, 'alive')
+    def trigger_notification(self, descriptor, event):
+        ssdp = fake_devices.format_ssdp_event(descriptor, event)
         _logger.debug('trigger ssdp %s', ssdp)
         _run_on_main_loop(self._advertisement_listener.simulate(ssdp))
 
