@@ -71,17 +71,37 @@ def get_service(name: str):
 
 
 def format_ssdp_event(descriptor: FakeDeviceDescriptor, event: str) -> typing.Mapping[str, str]:
-    assert event in ('alive')
-    return {
-        'Host': '239.255.255.250:1900',
-        'Cache-Control': 'max-age=1800',
-        'Location': descriptor.location,
-        'NT': f'urn:schemas-upnp-org:device:{descriptor.device_type}:{descriptor.device_version}',
-        'NTS': f'ssdp:{event}',
-        'Server': 'foonix/1.2 UPnP/1.0 FooServer/1.50',
-        'USN':
-        f'uuid:{descriptor.udn}::urn:schemas-upnp-org:device:{descriptor.device_type}:{descriptor.device_version}'  # noqa: E501
-    }
+    assert event in ('alive', 'byebye')
+    if event == 'alive':
+        return {
+            'Host':
+            '239.255.255.250:1900',
+            'Cache-Control':
+            'max-age=1800',
+            'Location':
+            descriptor.location,
+            'NT':
+            f'urn:schemas-upnp-org:device:{descriptor.device_type}:{descriptor.device_version}',
+            'NTS':
+            'ssdp:alive',
+            'Server':
+            'foonix/1.2 UPnP/1.0 FooServer/1.50',
+            'USN':
+            f'uuid:{descriptor.udn}::urn:schemas-upnp-org:device:{descriptor.device_type}:{descriptor.device_version}'  # noqa: E501
+        }
+    else:
+        return {
+            'Host':
+            '239.255.255.250:1900',
+            'Location':
+            descriptor.location,
+            'NT':
+            f'urn:schemas-upnp-org:device:{descriptor.device_type}:{descriptor.device_version}',
+            'NTS':
+            'ssdp:byebye',
+            'USN':
+            f'uuid:{descriptor.udn}::urn:schemas-upnp-org:device:{descriptor.device_type}:{descriptor.device_version}'  # noqa: E501
+        }
 
 
 def create_fake_device(descriptor: FakeDeviceDescriptor):
