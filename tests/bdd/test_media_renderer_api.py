@@ -7,7 +7,7 @@ import logging
 
 _logger = logging.getLogger(__name__)
 
-scenarios('renderer_state_notifications.feature')
+scenarios('media_renderer_api.feature')
 
 
 @given(parsers.parse('a client subscribed to playback notifications from {renderer_name}'))
