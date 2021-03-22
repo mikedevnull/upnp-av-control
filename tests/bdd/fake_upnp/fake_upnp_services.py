@@ -44,7 +44,7 @@ class _UpnpServiceMock(object):
         self._event_endpoint = None
         self._event_subscritions = []
         self._variables = {}
-        self._volume = 0
+        self._volume = 42
         self._last_change = FakeUpnpVariable('LastChange', value='')
         self.on_event = None
 
@@ -92,8 +92,8 @@ class FakeRenderingControlService(_UpnpServiceMock):
         self.add_async_action('SetVolume', self._set_volume)
         self._seq = 0
 
-    async def _set_volume(self, value):
-        self._volume = value
+    async def _set_volume(self, DesiredVolume, InstanceID=0, Channel='Master'):
+        self._volume = DesiredVolume
         await self.trigger_notification(variables=['Volume'])
 
     async def _get_volume(self, InstanceID, Channel):
