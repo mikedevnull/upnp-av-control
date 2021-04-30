@@ -6,6 +6,7 @@ import defusedxml.ElementTree as etree
 from typing import Iterable, Optional, cast
 import asyncio
 from dataclasses import dataclass
+from .playback import parse_protocol_infos
 
 
 @dataclass
@@ -78,6 +79,11 @@ class MediaRenderer(object):
         return await self.rendering_control.action('SetVolume').async_call(InstanceID=0,
                                                                            Channel='Master',
                                                                            DesiredVolume=value)
+
+    async def get_protocol_info(self):
+        response = await self.connection_manager.async_call_action('GetProtocolInfo')
+        data = response['Sink']
+        return parse_protocol_infos(data)
 
     async def subscribe_notifcations(self, subscriber) -> Subscription:
         return await self._playback_observable.subscribe(subscriber)
