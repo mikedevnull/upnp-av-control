@@ -1,5 +1,7 @@
 from upnpavcontrol import core
 import pytest
+from ..testsupport import AsyncMock
+from unittest import mock
 
 
 def test_parse_protocol_infos():
@@ -54,3 +56,43 @@ def test_parse_protocol_info_match(info1_str, info2_str, expected_result):
     info1 = core.ProtocolInfoEntry.fromstring(info1_str)
     info2 = core.ProtocolInfoEntry.fromstring(info2_str)
     assert core.protocol_info_matches(info1, info2) == expected_result
+
+
+class DmrMock(object):
+    pass
+
+
+class DmsMock(object):
+    pass
+
+
+class FakePlaybackItem(object):
+    data = {'@protocolInfo': 'http-get:*:audio/mpeg:*', '#text': 'someURI'}
+    res = [core.didllite.Resource.parse_obj(data)]
+
+
+@pytest.mark.asyncio
+async def test_play():
+    object_id = '23456'
+    dms = DmsMock()
+    dms.connection_manager = mock.Mock()
+    dms.connection_manager.has_action = mock.Mock(return_value=False)
+
+    fake_didl = core.didllite.DidlLite('xmldata')
+    fake_didl._objects = [FakePlaybackItem()]
+    dms.browse_metadata = AsyncMock(return_value=fake_didl)
+
+    dmr = DmrMock()
+    dmr.get_protocol_info = AsyncMock(return_value=core.parse_protocol_infos('http-get:*:audio/mpeg:*'))
+    dmr.connection_manager = mock.Mock()
+    dmr.connection_manager.has_action = mock.Mock(return_value=False)
+
+    dmr.av_transport = mock.Mock()
+    dmr.av_transport.async_call_action = AsyncMock()
+
+    await core.playback.play(dms, object_id, dmr)
+
+    dms.browse_metadata.assert_called_once_with(object_id)
+    call1 = mock.call('SetAVTransportURI', InstanceID=0, CurrentURI='someURI', CurrentURIMetaData='xmldata')
+    call2 = mock.call('Play', InstanceID=0, Speed='1')
+    dmr.av_transport.async_call_action.assert_has_calls([call1, call2])
