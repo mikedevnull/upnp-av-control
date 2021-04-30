@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 import csv
 import io
 import typing
+from . import didllite
 
 
 @dataclass
@@ -42,3 +43,15 @@ def parse_protocol_infos(data):
 
 def protocol_info_matches(lhs: ProtocolInfoEntry, rhs: ProtocolInfoEntry):
     return lhs is not None and rhs is not None and lhs.protocol == rhs.protocol and lhs.content_format.mimetype == rhs.content_format.mimetype
+
+
+def match_resources(object_resources: typing.Sequence[didllite.Resource],
+                    renderer_protocols: typing.Sequence[ProtocolInfoEntry]) -> typing.Sequence[didllite.Resource]:
+    matched_resources = []
+    for object_resource in object_resources:
+        for renderer_protocol in renderer_protocols:
+            object_protoinfo = ProtocolInfoEntry.fromstring(object_resource.protocolInfo)
+            if protocol_info_matches(object_protoinfo, renderer_protocol):
+                matched_resources.append(object_resource)
+                break
+    return matched_resources
