@@ -1,70 +1,15 @@
 # -*- coding: utf-8 -*-
 import defusedxml.ElementTree as etree
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 import typing
+from datetime import time
 import html
 
-
-class DidlObject(BaseModel):
-    id: str
-    parentID: str
-    upnpclass: str
-    title: str
-
-
-class DidlItem(DidlObject):
-    pass
-
-
-class DidlContainer(DidlObject):
-    pass
-
-
-class MusikAlbum(DidlContainer):
-    albumArtURI: typing.Optional[str]
-    artist: typing.Optional[str]
-    genre: typing.Optional[str]
-    producer: typing.Optional[str]
-    toc: typing.Optional[str]
-
-
-class MusikArtist(DidlContainer):
-    genre: typing.Optional[str]
-    artistDiscographyURI: typing.Optional[str]
-
-
-class MusicTrack(DidlItem):
-    artist: typing.Optional[str]
-    album: typing.Optional[str]
-    originalTrackNumber: typing.Optional[int]
-    playlist: typing.Optional[str]
-    storageMedium: typing.Optional[str]
-    contributor: typing.Optional[str]
-    date: typing.Optional[str]
-    albumArtURI: typing.Optional[str]
-
-
-# Not all fields are present in all models, but
-# as their mappings don't overlap (for the subset we're currently supporting)
-# it's ok to use a single mapping structure.
-# Optional and required fields will be enfored by the model itself
-_field_to_didl_mapping = {
-    'id': '@id',
-    'parentID': '@parentID',
-    'upnpclass': 'upnp:class',
-    'title': 'dc:title',
-    'artist': 'upnp:artist',
-    'album': 'upnp:album',
-    'albumArtURI': 'upnp:albumArtURI',
-    'artistDiscographyURI': 'upnp:artistDiscographyURI',
-    'originalTrackNumber': 'upnp:originalTrackNumber',
-    'playlist': 'upnp:playlist',
-    'storageMedium': 'upnp:storageMedium',
-    'contributor': 'dc:contributor',
-    'date': 'dc:date'
+_nsmap = {
+    'upnp': 'urn:schemas-upnp-org:metadata-1-0/upnp/',
+    'dc': 'http://purl.org/dc/elements/1.1/',
+    'dl': 'urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/'
 }
-
-_nsmap = {'upnp': 'urn:schemas-upnp-org:metadata-1-0/upnp/', 'dc': 'http://purl.org/dc/elements/1.1/'}
 
 
 class DictAdapter():
@@ -77,61 +22,119 @@ class DictAdapter():
 
     Adapted from pydantic.utils.GetterDict.
     """
-    def __init__(self, obj: typing.Any, key_map: typing.Mapping[str, str], namespaces: typing.Mapping[str, str] = None):
+    def __init__(self, obj: typing.Any, namespaces: typing.Mapping[str, str] = _nsmap):
         self._xml = obj
-        self._key_map = key_map
         self._nsmap = namespaces
 
     def _get_from_xml(self, key, default=None):
-        mapped_key = self._key_map[key]
-        if mapped_key[0] == '@':
-            return self._xml.attrib.get(mapped_key[1:], default)
-        else:
-            value = self._xml.findtext(mapped_key, namespaces=self._nsmap)
+        if key[0] == '@':
+            return self._xml.attrib.get(key[1:], default)
+        elif key == '__raw_xml':
+            return etree.tostring(self._xml).decode()
+        elif key == '#text':
+            return self._xml.text
+        elif key[0] == '#':
+            value = self._xml.findtext(key[1:], namespaces=self._nsmap)
             if value is None:
                 return default
             return html.unescape(value)
-
-    def __getitem__(self, key: str) -> typing.Any:
-        return self._get_from_xml(key)
+        elif key[0] == '*':
+            return self._xml.findall(key[1:], namespaces=self._nsmap)
+        else:
+            element = self._xml.find(key, namespaces=self._nsmap)
+            return element
 
     def get(self, key: typing.Any, default: typing.Any = None) -> typing.Any:
         return self._get_from_xml(key, default)
 
-    def keys(self) -> typing.AbstractSet[str]:
-        """
-        Keys of the pseudo dictionary, uses a list not set so order information can be maintained like python
-        dictionaries.
-        """
-        return self._key_map.keys()
 
-    def values(self) -> typing.List[typing.Any]:
-        return [self[k] for k in self]
+class Resource(BaseModel):
+    protocolInfo: str = Field(alias='@protocolInfo')
+    uri: str = Field(alias='#text')
+    size: typing.Optional[int] = Field(alias='@size')
+    duration: typing.Optional[time] = Field(alias='@duration')
+    bitrate: typing.Optional[int] = Field(alias='@bitrate')
+    sampleFrequency: typing.Optional[int] = Field(alias='@sampleFrequency')
 
-    def items(self) -> typing.Iterator[typing.Tuple[str, typing.Any]]:
-        for k in self:
-            yield k, self.get(k)
-
-    def __iter__(self) -> typing.Iterator[str]:
-        for key in self._key_map:
-            yield key
-
-    def __len__(self) -> int:
-        return len(self._key_map)
-
-    def __contains__(self, item: typing.Any) -> bool:
-        return item in self.keys()
+    class Config:
+        getter_dict = DictAdapter
+        orm_mode = True
 
 
-def _create_xml_adapter(xmlElement, field_mapping=_field_to_didl_mapping):
-    return DictAdapter(xmlElement, field_mapping, _nsmap)
+class AlbumArtURI(BaseModel):
+    uri: str = Field(alias='#text')
+    dlnaProfile: typing.Optional[str] = Field(alias='@dlna:profileID')
+
+    class Config:
+        getter_dict = DictAdapter
+        orm_mode = True
+
+
+class DidlObject(BaseModel):
+    id: str = Field(alias='@id')
+    parentID: str = Field(alias='@parentID')
+    upnpclass: str = Field(alias='#upnp:class')
+    title: str = Field(alias='#dc:title')
+
+    res: typing.List[Resource] = Field(alias='*dl:res', default_factory=list)
+
+    class Config:
+        getter_dict = DictAdapter
+        orm_mode = True
+
+
+class DidlItem(DidlObject):
+    pass
+
+
+class DidlContainer(DidlObject):
+    pass
+
+
+class MusikAlbum(DidlContainer):
+    albumArtURI: typing.Optional[AlbumArtURI] = Field(alias='upnp:albumArtURI')
+    artist: typing.Optional[str] = Field(alias='#upnp:artist')
+    genre: typing.Optional[str] = Field(alias='#upnp:genre')
+    producer: typing.Optional[str]
+    toc: typing.Optional[str]
+
+
+class MusikArtist(DidlContainer):
+    genre: typing.Optional[str] = Field(alias='#upnp:genre')
+    artistDiscographyURI: typing.Optional[str] = Field(alias='#upnp:artistDiscographyURI')
+
+
+class MusicTrack(DidlItem):
+    artist: typing.Optional[str] = Field(alias='#upnp:artist')
+    album: typing.Optional[str] = Field(alias='#upnp:album')
+    artistDiscographyURI: typing.Optional[str] = Field(alias='#upnp:artistDiscographyURI')
+    originalTrackNumber: typing.Optional[int] = Field(alias='#upnp:originalTrackNumber')
+    playlist: typing.Optional[str] = Field(alias='#upnp:playlist')
+    storageMedium: typing.Optional[str] = Field(alias='#upnp:storageMedium')
+    contributor: typing.Optional[str] = Field(alias='#dc:contributor')
+    date: typing.Optional[str] = Field(alias='#dc:date')
+    albumArtURI: typing.Optional[AlbumArtURI] = Field(alias='upnp:albumArtURI')
 
 
 def from_xml_string(xmldata):
-    tree = etree.fromstring(xmldata)
-    # TODO: validate root element
-    for child in tree:
-        yield _to_didl_element(child)
+    root = etree.fromstring(xmldata)
+    return [_to_didl_element(child) for child in root]
+
+
+class DidlLite(object):
+    def __init__(self, xml: str):
+        self._raw = xml
+        self._objects: typing.Optional[typing.List[DidlObject]] = None
+
+    @property
+    def objects(self):
+        if self._objects is None:
+            self._objects = from_xml_string(self._raw)
+        return self._objects
+
+    @property
+    def xml(self):
+        return self._raw
 
 
 _class_to_element_mapping = {
@@ -141,7 +144,7 @@ _class_to_element_mapping = {
 }
 
 
-def _to_didl_element(xmlElement):
+def _to_didl_element(xmlElement: any):
     upnpclass = xmlElement.findtext('upnp:class', namespaces=_nsmap)
     # mapping logic should be improved/refactored when more types are supported
     if upnpclass in _class_to_element_mapping:
@@ -152,5 +155,4 @@ def _to_didl_element(xmlElement):
         cls = DidlContainer
     else:
         cls = DidlObject
-    adapter = _create_xml_adapter(xmlElement)
-    return cls.parse_obj(adapter)
+    return cls.from_orm(xmlElement)
