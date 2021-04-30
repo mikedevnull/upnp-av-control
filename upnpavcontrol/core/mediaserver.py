@@ -60,8 +60,11 @@ class MediaServer(object):
         regex = re.compile(r"&(?!amp;|lt;|gt;)")
         didl = regex.sub("&amp;", payload['Result'])
         _logger.debug(prettify_xml(didl))
-        result = didllite.from_xml_string(didl)
-        return result
+        return didllite.DidlLite(didl)
+
+    async def browse_metadata(self, object_id: str):
+        didl = await self.browse(object_id, browse_flag=BrowseFlags.BrowseMetadata)
+        return didl
 
     def __repr__(self):
         return '<MediaServer {}>'.format(self._device.friendly_name)

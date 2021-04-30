@@ -29,37 +29,42 @@ didl_musictrack = """
 </DIDL-Lite>
 """  # noqa 501
 
-
-def test_etree_adapter():
-    import defusedxml.ElementTree as etree
-    xml = list(etree.fromstring(didl_musictrack))
-    mapping = {'id': '@id', 'upnpclass': 'upnp:class', 'foo': 'bar'}
-    adapter = didllite._create_xml_adapter(xml[0], mapping)
-    assert len(adapter) == 3
-    assert adapter['id'] == '26$40260$@40260'
-    assert adapter.get('id') == '26$40260$@40260'
-    assert adapter['upnpclass'] == 'object.item.audioItem.musicTrack'
-    assert adapter.get('upnpclass') == 'object.item.audioItem.musicTrack'
-    assert adapter['foo'] is None
-    assert adapter.get('foo') is None
-    assert adapter.get('foo', 42) == 42
-
-    assert list(adapter.values()) == ['26$40260$@40260', 'object.item.audioItem.musicTrack', None]
-    assert list(adapter.items()) == [('id', '26$40260$@40260'), ('upnpclass', 'object.item.audioItem.musicTrack'),
-                                     ('foo', None)]
-    assert 'id' in adapter
-    assert 'bar' not in adapter
-
-
-def test_mapping_to_pydantic():
-    import defusedxml.ElementTree as etree
-    xml = list(etree.fromstring(didl_musictrack))
-    mapping = {'id': '@id', 'parentID': '@parentID', 'upnpclass': 'upnp:class', 'title': 'dc:title'}
-    adapter = didllite._create_xml_adapter(xml[0], mapping)
-    container = didllite.DidlContainer.parse_obj(adapter)
-    assert container.id == '26$40260$@40260'
-    assert container.parentID == '26$40260'
-    assert container.upnpclass == 'object.item.audioItem.musicTrack'
+didl_musictrack2 = """
+<DIDL-Lite xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/" xmlns:pv="http://www.pv.com/pvns/" xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/">
+  <item id="/a/176/l/179/t/2836" parentID="/a/176/l/179/t" restricted="1">
+    <upnp:class>object.item.audioItem.musicTrack</upnp:class>
+    <dc:title>Song Title 1</dc:title>
+    <dc:creator>Artist 2</dc:creator>
+    <upnp:album>Album 1</upnp:album>
+    <upnp:artist role="artist">Song Title 1</upnp:artist>
+    <dc:contributor>Artist 1</dc:contributor>
+    <upnp:originalTrackNumber>5</upnp:originalTrackNumber>
+    <upnp:genre>Keine Stilrichtung</upnp:genre>
+    <upnp:albumArtURI xmlns:dlna="urn:schemas-dlna-org:metadata-1-0/" dlna:profileID="JPEG_TN">http://192.168.178.21:9002/music/091ab74a/cover_160x160_m.jpg</upnp:albumArtURI>
+    <upnp:albumArtURI>http://192.168.178.21:9002/music/091ab74a/cover</upnp:albumArtURI>
+    <pv:modificationTime>1257616464</pv:modificationTime>
+    <pv:addedTime>1544479558</pv:addedTime>
+    <pv:lastUpdated>1544479558</pv:lastUpdated>
+    <res protocolInfo="http-get:*:audio/mpeg:DLNA.ORG_PN=MP3;DLNA.ORG_OP=11;DLNA.ORG_FLAGS=01700000000000000000000000000000" size="4265996" duration="0:04:26.520" bitrate="16000" sampleFrequency="44100">http://192.168.178.21:9002/music/2836/download.mp3?bitrate=320</res>
+  </item>
+    <item id="/x" parentID="/" restricted="1">
+    <upnp:class>object.item.audioItem.musicTrack</upnp:class>
+    <dc:title>Foo</dc:title>
+    <dc:creator>Artist 2</dc:creator>
+    <upnp:album>Album 1</upnp:album>
+    <upnp:artist role="artist">Artist 2</upnp:artist>
+    <dc:contributor>Artist 2</dc:contributor>
+    <upnp:originalTrackNumber>6</upnp:originalTrackNumber>
+    <upnp:genre>Keine Stilrichtung</upnp:genre>
+    <upnp:albumArtURI xmlns:dlna="urn:schemas-dlna-org:metadata-1-0/" dlna:profileID="JPEG_TN">http://192.168.178.21:9002/music/091ab74a/cover_160x160_m.jpg</upnp:albumArtURI>
+    <upnp:albumArtURI>http://192.168.178.21:9002/music/091ab74a/cover</upnp:albumArtURI>
+    <pv:modificationTime>1257616464</pv:modificationTime>
+    <pv:addedTime>1544479558</pv:addedTime>
+    <pv:lastUpdated>1544479558</pv:lastUpdated>
+    <res protocolInfo="http-get:*:audio/mpeg:DLNA.ORG_PN=MP3;DLNA.ORG_OP=11;DLNA.ORG_FLAGS=01700000000000000000000000000000" size="4265996" duration="0:04:26.520" bitrate="16000" sampleFrequency="44100">http://192.168.178.21:9002/music/2837/download.mp3?bitrate=320</res>
+  </item>
+</DIDL-Lite>
+"""
 
 
 def test_didl_container_parse():
@@ -88,3 +93,8 @@ def test_didl_musictrack_parse():
     assert track.title == 'SomeTitle'
     assert track.album == 'SomeAlbumTitle'
     assert track.upnpclass == 'object.item.audioItem.musicTrack'
+
+
+def test_didle_musictracks_parse():
+    result = list(didllite.from_xml_string(didl_musictrack2))
+    assert len(result) == 2
