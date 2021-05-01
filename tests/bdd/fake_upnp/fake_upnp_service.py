@@ -3,8 +3,8 @@ from ...testsupport import UpnpTestRequester, NotificationTestEndpoint
 from email.utils import formatdate
 import uuid
 from xml.etree import ElementTree as ET
-from urllib.parse import urlparse
 import defusedxml.ElementTree as DET
+import typing
 
 ET.register_namespace('upnp', 'urn:schemas-upnp-org:metadata-1-0/upnp/')
 ET.register_namespace('dc', 'http://purl.org/dc/elements/1.1/')
@@ -21,6 +21,27 @@ NS = {
 }
 
 
+def _format_last_change_notification(value: str):
+    root = ET.Element('{urn:schemas-upnp-org:event-1-0}propertyset')
+    prop = ET.SubElement(root, '{urn:schemas-upnp-org:event-1-0}property')
+    lc = ET.SubElement(prop, 'LastChange')
+    lc.text = value
+
+    return ET.tostring(root).decode('utf-8')
+
+
+def _format_last_change_payload(variables: typing.Mapping[str, typing.Any]):
+    lcroot = ET.Element('{urn:schemas-upnp-org:metadata-1-0/upnp/}Event')
+    instance = ET.SubElement(lcroot, '{urn:schemas-upnp-org:metadata-1-0/RCS/}InstanceID')
+    instance.attrib['val'] = '0'
+    for key, value in variables.items():
+        var = ET.SubElement(instance, '{urn:schemas-upnp-org:metadata-1-0/RCS/}' + key)
+        if key == 'Volume':
+            var.attrib['channel'] = 'Master'
+            var.attrib['val'] = str(value)
+    return ET.tostring(lcroot).decode('utf-8')
+
+
 class FakeAsyncAction(object):
     def __init__(self, wrapped):
         self._wrapped = wrapped
@@ -35,7 +56,7 @@ class FakeUpnpVariable(object):
         self.name = name
 
 
-class _UpnpServiceMock(object):
+class UpnpServiceMock(object):
     def __init__(self, service_type: str, event_sub_url: str = None, device=None):
         self.device = device
         self.event_sub_url = event_sub_url
@@ -44,12 +65,17 @@ class _UpnpServiceMock(object):
         self._event_endpoint = None
         self._event_subscritions = []
         self._variables = {}
-        self._volume = 42
         self._last_change = FakeUpnpVariable('LastChange', value='')
         self.on_event = None
 
     def action(self, name: str):
         return self._actions[name]
+
+    def has_action(self, name: str):
+        return name in self._actions
+
+    async def async_call_action(self, action: str, **kwargs):
+        return await self._actions[action].async_call(**kwargs)
 
     def add_async_action(self, name: str, func, *args, **kwargs):
         self._actions[name] = FakeAsyncAction(func)
@@ -83,70 +109,3 @@ class _UpnpServiceMock(object):
         sid = headers['SID']
         self._event_subscritions.remove(sid)
         return 200, {}, ''
-
-
-class FakeRenderingControlService(_UpnpServiceMock):
-    def __init__(self, device):
-        super().__init__(service_type="urn:schemas-upnp-org:service:RenderingControl:1", device=device)
-        self.add_async_action('GetVolume', self._get_volume)
-        self.add_async_action('SetVolume', self._set_volume)
-        self._seq = 0
-
-    async def _set_volume(self, DesiredVolume, InstanceID=0, Channel='Master'):
-        self._volume = DesiredVolume
-        await self.trigger_notification(variables=['Volume'])
-
-    async def _get_volume(self, InstanceID, Channel):
-        return {'CurrentVolume': self._volume}
-
-    def _format_last_change_notification(self, value: str):
-        root = ET.Element('{urn:schemas-upnp-org:event-1-0}propertyset')
-        prop = ET.SubElement(root, '{urn:schemas-upnp-org:event-1-0}property')
-        lc = ET.SubElement(prop, 'LastChange')
-        lc.text = value
-
-        return ET.tostring(root).decode('utf-8')
-
-    def _format_last_change_payload(self, variables):
-        lcroot = ET.Element('{urn:schemas-upnp-org:metadata-1-0/upnp/}Event')
-        instance = ET.SubElement(lcroot, '{urn:schemas-upnp-org:metadata-1-0/RCS/}InstanceID')
-        instance.attrib['val'] = '0'
-        for variable in variables:
-            var = ET.SubElement(instance, '{urn:schemas-upnp-org:metadata-1-0/RCS/}' + variable)
-            if variable == 'Volume':
-                var.attrib['channel'] = 'Master'
-                var.attrib['val'] = str(self._volume)
-        return ET.tostring(lcroot).decode('utf-8')
-
-    async def trigger_notification(self, variables):
-        path = self._event_endpoint.callback_url
-        host = urlparse(path).netloc
-        last_change_value = self._format_last_change_payload(variables)
-        body = self._format_last_change_notification(last_change_value)
-        for sid in self._event_subscritions:
-            headers = {
-                'host': host,
-                'content-type': 'text/xml',
-                'content-length': str(len(body)),
-                'NT': 'upnp:event',
-                'NTS': 'upnp:propchange',
-                'SID': sid,
-                'seq': str(self._seq)
-            }
-            await self._event_endpoint.trigger_notification(headers, body)
-        self._seq = self._seq + 1
-
-
-class FakeConnectionManagerService(_UpnpServiceMock):
-    def __init__(self, device):
-        super().__init__(service_type="urn:schemas-upnp-org:service:ConnectionManager:1", device=device)
-
-
-_fake_services = {
-    'RenderingControl:1': FakeRenderingControlService,
-    'ConnectionManager:1': FakeConnectionManagerService
-}
-
-
-def create_service(name: str, device):
-    return _fake_services[name](device=device)
