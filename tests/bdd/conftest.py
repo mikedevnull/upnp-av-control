@@ -1,7 +1,6 @@
 from pytest_bdd import scenarios, given, when, then, parsers
 import pytest
 from functools import wraps
-from .fake_upnp import create_fake_device
 import asyncio
 from starlette.websockets import WebSocketDisconnect
 import upnpavcontrol.core.discovery
@@ -9,7 +8,7 @@ import logging
 from async_asgi_testclient import TestClient
 from .context import TestContext
 from .json_rpc_connection import JsonRPCTestConnection
-from . import common_steps
+from .common_steps import *  # pylint: disable=unused-wildcard-import
 
 
 @pytest.mark.asyncio
@@ -41,9 +40,3 @@ async def event_bus_connection(webclient, event_loop):
                 yield rpcConnection
     except WebSocketDisconnect:
         pass
-
-
-@given(parsers.parse('a device {name} already present on the network'))
-def a_device_foomediaserver_already_present_on_the_network(test_context, name):
-    device = create_fake_device(name)
-    test_context.add_device_to_network(name, device, notify=True)
