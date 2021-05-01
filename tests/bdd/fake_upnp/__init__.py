@@ -1,2 +1,3 @@
 from .fake_upnp_devices import create_fake_device
-from .fake_upnp_devices import format_ssdp_event, FakeAsyncUpnpDevice
+from .fake_upnp_devices import format_ssdp_event
+from .fake_upnp_device import FakeAsyncUpnpDevice
