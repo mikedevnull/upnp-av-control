@@ -10,18 +10,6 @@ _logger = logging.getLogger(__name__)
 scenarios('media_renderer_api.feature')
 
 
-@given(parsers.parse('a client subscribed to playback notifications from {renderer_name}'))
-@sync
-async def discovery_events_subscribed(test_context, event_bus_connection, renderer_name):
-    descriptor = test_context.get_device(renderer_name)
-    result = await event_bus_connection.send(method='subscribe',
-                                             params={
-                                                 'category': 'playbackinfo',
-                                                 'udn': descriptor.udn
-                                             })
-    assert result is True
-
-
 @when(parsers.cfparse('the playback volume of AcmeRenderer changes to {volume:d}'))
 @sync
 async def external_volume_change(test_context, event_bus_connection, volume):
