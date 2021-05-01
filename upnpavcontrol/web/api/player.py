@@ -2,6 +2,8 @@ from fastapi import APIRouter, Request, HTTPException
 import logging
 from pydantic import BaseModel, validator
 import urllib.parse
+from .. import json_api
+from ...core import playback
 
 router = APIRouter()
 _logger = logging.getLogger(__name__)
@@ -19,7 +21,7 @@ class Volume(BaseModel):
     volume_percent: int
 
     @validator('volume_percent')
-    def volume_percent_range(cls, v):
+    def volume_percent_range(cls, v):  # pylint: disable=no-self-argument
         if v < 0 or v > 100:
             raise ValueError('Volume out of range (0 <= volume <= 100)')
         return v
@@ -53,3 +55,26 @@ async def get_player_volume(request: Request, udn: str):
     except Exception as e:
         _logger.exception(e)
         raise HTTPException(status_code=404)
+
+
+class PlaybackItem(BaseModel):
+    dms: str
+    object_id: str
+
+
+PlaybackItemRequest = json_api.create_request_model('playlistitem', PlaybackItem)
+
+
+@router.post('/{udn}/queue', status_code=201)
+async def add_item_to_queue(request: Request, udn: str, payload: PlaybackItemRequest):
+    try:
+        udn = urllib.parse.unquote_plus(udn)
+        playbackitem = payload.data.attributes
+        renderer = request.app.av_control_point.get_mediarenderer_by_UDN(udn)
+        server = request.app.av_control_point.get_mediaserver_by_UDN(playbackitem.dms)
+        await playback.play(server, playbackitem.object_id, renderer)
+    except Exception as e:
+        _logger.exception(e)
+        raise HTTPException(status_code=404)
+
+    return ''
