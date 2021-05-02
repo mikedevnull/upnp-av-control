@@ -22,18 +22,13 @@ async def play_object_on_dmr(test_context, object_id, webclient):
     assert response.status_code == 201
 
 
-@when(parsers.cfparse('the duration of item with id {object_id} from {dms} has passed'))
-def sleep_for_item_duration(test_context, object_id, dms):
-    pass
-
-
 @then(parsers.cfparse('the client will be notified that {dmr} is now in {state} state'))
 @sync
 async def check_playback_state_notification(test_context, dmr, state, event_bus_connection):
     assert state in ('PLAYING', 'STOPPED')
     event = await event_bus_connection.wait_for_notification()
     assert event.method == 'playbackinfo'
-    info = event.params['playbackinfoinfo']
+    info = event.params['playbackinfo']
     assert info['transport'] == state
 
 
@@ -42,12 +37,17 @@ async def check_playback_state_notification(test_context, dmr, state, event_bus_
 async def check_playback_state_with_api(test_context, dmr, state, webclient):
     assert state in ('PLAYING', 'STOPPED')
     dmr_device = test_context.get_device(dmr)
-    response = await webclient.get(f'player/{dmr_device.udn}')
+    response = await webclient.get(f'/player/{dmr_device.udn}/playback')
     assert response.status_code == 200
     data = response.json()['data']
-    assert data['transport'] == state
+    assert data['type'] == 'playbackinfo'
+    assert data['id'] == dmr_device.udn
+    assert data['attributes']['transport'] == state
 
 
 @then(parsers.cfparse('the device {dmr} is playing item {object_id} from {dms}'))
 def check_renderer_is_playing_object(test_context, dmr, object_id, dms):
     device = test_context.get_device('AcmeRenderer')
+    av_transport = device.service('urn:schemas-upnp-org:service:AVTransport:1')
+    assert av_transport.state == 'PLAYING'
+    assert av_transport.current_uri == 'http://192.168.178.21:9002/music/2836/download.mp3?bitrate=320'

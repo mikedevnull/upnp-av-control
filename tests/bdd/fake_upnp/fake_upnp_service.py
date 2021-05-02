@@ -4,11 +4,12 @@ from email.utils import formatdate
 import uuid
 from xml.etree import ElementTree as ET
 import defusedxml.ElementTree as DET
+from urllib.parse import urlparse
 import typing
 
 ET.register_namespace('upnp', 'urn:schemas-upnp-org:metadata-1-0/upnp/')
 ET.register_namespace('dc', 'http://purl.org/dc/elements/1.1/')
-ET.register_namespace('avt', 'urn:schemas-upnp-org:metadata-1-0/AVT/')
+ET.register_namespace('avt-event', 'urn:schemas-upnp-org:metadata-1-0/AVT/')
 ET.register_namespace('rcs', 'urn:schemas-upnp-org:metadata-1-0/RCS/')
 ET.register_namespace('event', 'urn:schemas-upnp-org:event-1-0')
 
@@ -30,15 +31,17 @@ def _format_last_change_notification(value: str):
     return ET.tostring(root).decode('utf-8')
 
 
-def _format_last_change_payload(variables: typing.Mapping[str, typing.Any]):
+def _format_last_change_payload(instance_xml_namespace: str, variables: typing.Mapping[str, typing.Any]):
     lcroot = ET.Element('{urn:schemas-upnp-org:metadata-1-0/upnp/}Event')
-    instance = ET.SubElement(lcroot, '{urn:schemas-upnp-org:metadata-1-0/RCS/}InstanceID')
+    instance = ET.SubElement(lcroot, instance_xml_namespace + 'InstanceID')
     instance.attrib['val'] = '0'
     for key, value in variables.items():
-        var = ET.SubElement(instance, '{urn:schemas-upnp-org:metadata-1-0/RCS/}' + key)
+        var = ET.SubElement(instance, instance_xml_namespace + key)
         if key == 'Volume':
             var.attrib['channel'] = 'Master'
             var.attrib['val'] = str(value)
+        else:
+            var.attrib['val'] = value.value
     return ET.tostring(lcroot).decode('utf-8')
 
 
@@ -66,6 +69,7 @@ class UpnpServiceMock(object):
         self._event_subscritions = []
         self._variables = {}
         self._last_change = FakeUpnpVariable('LastChange', value='')
+        self._seq = 0
         self.on_event = None
 
     def action(self, name: str):
@@ -98,6 +102,24 @@ class UpnpServiceMock(object):
             'sid': sid
         }
         return 200, headers, ''
+
+    async def trigger_notification(self, instance_xml_namespace, variables):
+        path = self._event_endpoint.callback_url
+        host = urlparse(path).netloc
+        last_change_value = _format_last_change_payload(instance_xml_namespace, variables)
+        body = _format_last_change_notification(last_change_value)
+        for sid in self._event_subscritions:
+            headers = {
+                'host': host,
+                'content-type': 'text/xml',
+                'content-length': str(len(body)),
+                'NT': 'upnp:event',
+                'NTS': 'upnp:propchange',
+                'SID': sid,
+                'seq': str(self._seq)
+            }
+            await self._event_endpoint.trigger_notification(headers, body)
+        self._seq = self._seq + 1
 
     def notify_changed_state_variables(self, changed):
         if 'LastChange' in changed and self.on_event:

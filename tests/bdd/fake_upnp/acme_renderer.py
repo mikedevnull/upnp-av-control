@@ -1,7 +1,9 @@
 from .fake_upnp_device import FakeDeviceDescriptor, FakeAsyncUpnpDevice
 from .fake_upnp_service import UpnpServiceMock, _format_last_change_notification, _format_last_change_payload
 from .connection_manager import FakeConnectionManagerService
-from urllib.parse import urlparse
+from upnpavcontrol.core import didllite
+import enum
+import asyncio
 
 _descriptor = FakeDeviceDescriptor(name="AcmeRenderer",
                                    friendly_name="Acme Super Blast Renderer",
@@ -11,17 +13,42 @@ _descriptor = FakeDeviceDescriptor(name="AcmeRenderer",
                                    service_types=['RenderingControl:1', 'ConnectionManager:1', 'AVTransport:1'])
 
 
+class PlaybackState(str, enum.Enum):
+    STOPPED = 'STOPPED'
+    PLAYING = 'PLAYING'
+
+
 class FakeAVTransportService(UpnpServiceMock):
     def __init__(self, device):
         super().__init__(service_type="urn:schemas-upnp-org:service:AVTransport:1", device=device)
         self.add_async_action('SetAVTransportURI', self._set_transport)
         self.add_async_action('Play', self._play)
+        self.state = PlaybackState.STOPPED
+        self.current_uri = None
+        self._current_uri_metadata = None
+        self._active_resource = None
 
     async def _set_transport(self, InstanceID, CurrentURI, CurrentURIMetaData):
-        pass
+        meta = didllite.DidlLite(CurrentURIMetaData)
+        item = meta.objects[0]
+        active_resource = None
+        for resource in item.res:
+            if resource.uri == CurrentURI:
+                active_resource = resource
+                break
+        assert active_resource is not None
+        self._active_resource = active_resource
+        self.current_uri = CurrentURI
+        self._current_uri_metadata = CurrentURIMetaData
+        self._playback_task = None
 
     async def _play(self, InstanceID, Speed):
-        pass
+        if self._active_resource is None:
+            return
+        if self.state != PlaybackState.PLAYING:
+            self.state = PlaybackState.PLAYING
+            await self.trigger_notification(instance_xml_namespace='{urn:schemas-upnp-org:metadata-1-0/AVT/}',
+                                            variables={'TransportState': self.state})
 
 
 class FakeRenderingControlService(UpnpServiceMock):
@@ -30,32 +57,14 @@ class FakeRenderingControlService(UpnpServiceMock):
         self.add_async_action('GetVolume', self._get_volume)
         self.add_async_action('SetVolume', self._set_volume)
         self._volume = 42
-        self._seq = 0
 
     async def _set_volume(self, DesiredVolume, InstanceID=0, Channel='Master'):
         self._volume = DesiredVolume
-        await self.trigger_notification(variables={'Volume': self._volume})
+        await self.trigger_notification(instance_xml_namespace='{urn:schemas-upnp-org:metadata-1-0/RCS/}',
+                                        variables={'Volume': self._volume})
 
     async def _get_volume(self, InstanceID, Channel):
         return {'CurrentVolume': self._volume}
-
-    async def trigger_notification(self, variables):
-        path = self._event_endpoint.callback_url
-        host = urlparse(path).netloc
-        last_change_value = _format_last_change_payload(variables)
-        body = _format_last_change_notification(last_change_value)
-        for sid in self._event_subscritions:
-            headers = {
-                'host': host,
-                'content-type': 'text/xml',
-                'content-length': str(len(body)),
-                'NT': 'upnp:event',
-                'NTS': 'upnp:propchange',
-                'SID': sid,
-                'seq': str(self._seq)
-            }
-            await self._event_endpoint.trigger_notification(headers, body)
-        self._seq = self._seq + 1
 
 
 def factory():
