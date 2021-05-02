@@ -3,7 +3,7 @@ import logging
 from pydantic import BaseModel, validator
 import urllib.parse
 from .. import json_api
-from ...core import playback
+from ...core import playback, mediarenderer
 
 router = APIRouter()
 _logger = logging.getLogger(__name__)
@@ -55,6 +55,24 @@ async def get_player_volume(request: Request, udn: str):
     except Exception as e:
         _logger.exception(e)
         raise HTTPException(status_code=404)
+
+
+PlaybackInfoResponse = json_api.create_response_model('playbackinfo', mediarenderer.PlaybackInfo)
+
+
+@router.get('/{udn}/playback', response_model=PlaybackInfoResponse)
+async def get_playback_info(request: Request, udn: str):
+    try:
+        udn = urllib.parse.unquote_plus(udn)
+        renderer = request.app.av_control_point.get_mediarenderer_by_UDN(udn)
+        info = renderer.playback_info
+        response = PlaybackInfoResponse.create(udn, info)
+        return response
+    except Exception as e:
+        _logger.exception(e)
+        raise HTTPException(status_code=404)
+
+    return ''
 
 
 class PlaybackItem(BaseModel):
