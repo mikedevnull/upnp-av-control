@@ -120,6 +120,5 @@ yarn-error.log*
 *.swp
 
 # frontend build results
-/static/*
-!/static/.gitkeep
+upnpavcontrol/web/static/*
 /frontend/coverage/dist
