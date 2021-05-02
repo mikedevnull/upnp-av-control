@@ -10,7 +10,7 @@ setup(name='upnpavcontrol',
       python_requires='>=3.7',
       install_requires=[
           'async_upnp_client', 'fastapi', 'websockets', 'defusedxml', 'uvicorn', 'colorlog', 'itsdangerous',
-          'typing_extensions; python_version < "3.8"', 'PyYAML'
+          'typing_extensions; python_version < "3.8"', 'PyYAML', 'aiofiles'
       ],
       extras_require={
           'test': ['pytest', 'pytest-cov', 'pytest-asyncio', 'pytest-bdd', 'async_asgi_testclient'],
@@ -21,4 +21,6 @@ setup(name='upnpavcontrol',
               'upnp-av-web-cp= upnpavcontrol.tools.web_control_point:main',
           ],
       },
-      packages=find_packages())
+      packages=['upnpavcontrol'],
+      include_package_data=True,
+      zip_safe=False)

@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from starlette.websockets import WebSocket
 from upnpavcontrol.core import AVControlPoint
 from upnpavcontrol.core import notification_backend
@@ -7,6 +8,7 @@ from .websocket_event_bus import WebsocketEventBus, MediaDeviceDiscoveryCallback
 from . import api
 from . import settings
 import aiohttp
+import os
 from typing import Optional
 
 
@@ -45,12 +47,17 @@ class AVControlPointAPI(FastAPI):
 
 
 app = AVControlPointAPI()
-app.include_router(api.router)
+app.include_router(api.router, prefix='/api')
 
 
-@app.websocket('/ws/events')
+@app.websocket('/api/ws/events')
 async def websocket_endpoint(websocket: WebSocket):
     await app.event_bus.accept(websocket)
+
+
+static_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'static')
+static_files = StaticFiles(directory=static_dir, html=True, check_dir=False)
+app.mount('/', static_files, name='static')
 
 
 def create_control_point_from_settings():
