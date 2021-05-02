@@ -31,6 +31,7 @@ export default {
     '@nuxt/typescript-build',
     // https://go.nuxtjs.dev/tailwindcss
     '@nuxtjs/tailwindcss',
+    '@nuxtjs/proxy',
   ],
 
   // Modules: https://go.nuxtjs.dev/config-modules
@@ -40,6 +41,13 @@ export default {
     // https://go.nuxtjs.dev/pwa
     '@nuxtjs/pwa',
   ],
+
+  proxy: [
+    // Dev proxy to python backend
+    'http://127.0.0.1:8000/api',
+    'http://127.0.0.1:8000/docs',
+    'http://127.0.0.1:8000/openapi.json',
+  ], // proxy configuration: https://github.com/nuxt-community/proxy-module
 
   // Axios module configuration: https://go.nuxtjs.dev/config-axios
   axios: {},
