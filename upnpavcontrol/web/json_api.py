@@ -1,25 +1,5 @@
-from pydantic import BaseModel, validator, create_model
-from pydantic.generics import GenericModel
-from typing import TypeVar, Generic, Any, Literal
-
-ItemTypeIdentifier = TypeVar('ItemTypeIdentifier')
-ItemAttributesType = TypeVar('ItemAttributesType')
-
-
-class RequestPayloadModel(GenericModel, Generic[ItemTypeIdentifier, ItemAttributesType]):
-    type: ItemTypeIdentifier
-    attributes: ItemAttributesType
-
-
-RequestPayloadType = TypeVar('RequestPayloadType', bound=RequestPayloadModel)
-
-
-class RequestBase(GenericModel, Generic[RequestPayloadType]):
-    data: RequestPayloadType
-
-    @property
-    def attributes(self):
-        return self.data.attributes
+from pydantic import create_model
+from typing import Any, Literal
 
 
 def create_request_model(type_name: str, payload_model: Any):
