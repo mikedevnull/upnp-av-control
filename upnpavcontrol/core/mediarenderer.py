@@ -5,19 +5,25 @@ from async_upnp_client import UpnpStateVariable, UpnpDevice, UpnpService
 import defusedxml.ElementTree as etree
 from typing import Iterable, Optional, cast
 import asyncio
-from dataclasses import dataclass
+from pydantic import BaseModel
 from .playback import parse_protocol_infos
+import enum
 
 
-@dataclass
-class PlaybackInfo(object):
+class TransportState(str, enum.Enum):
+    STOPPED = 'STOPPED'
+    PLAYING = 'PLAYING'
+
+
+class PlaybackInfo(BaseModel):
     volume_percent: int = 0
+    transport: TransportState = TransportState.STOPPED
 
 
 _nsmap = {
     'upnp': 'urn:schemas-upnp-org:metadata-1-0/upnp/',
     'dc': 'http://purl.org/dc/elements/1.1/',
-    'avt': 'urn:schemas-upnp-org:metadata-1-0/AVT/',
+    'avt-event': 'urn:schemas-upnp-org:metadata-1-0/AVT/',
     'rcs': 'urn:schemas-upnp-org:metadata-1-0/RCS/'
 }
 
@@ -30,6 +36,12 @@ def update_playback_info_from_event(info: PlaybackInfo, event: str) -> bool:
         value = int(vol.attrib['val'])
         if value != info.volume_percent:
             info.volume_percent = value
+            any_value_changed = True
+    state = tree.find("./avt-event:InstanceID[@val='0']/avt-event:TransportState", namespaces=_nsmap)
+    if state is not None:
+        value = TransportState[state.attrib['val']]
+        if value != info.transport:
+            info.transport = value
             any_value_changed = True
     return any_value_changed
 
