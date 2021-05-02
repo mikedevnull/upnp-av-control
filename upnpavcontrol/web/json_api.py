@@ -1,5 +1,6 @@
 from pydantic import create_model
-from typing import Any, Literal
+from typing import Any
+from ..core.typing_compat import Literal
 
 
 def create_request_model(type_name: str, payload_model: Any):

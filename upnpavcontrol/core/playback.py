@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 import typing
+from . import typing_compat
 from . import didllite
 
 
@@ -34,8 +35,8 @@ class ContentFormat(object):
 
 @dataclass
 class ProtocolInfoEntry(object):
-    protocol: typing.Literal['http-get', 'rtsp-rtp-udp']
-    network: typing.Literal['*']
+    protocol: typing_compat.Literal['http-get', 'rtsp-rtp-udp']
+    network: typing_compat.Literal['*']
     content_format: ContentFormat
     additional_info: str
 
