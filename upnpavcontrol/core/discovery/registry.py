@@ -8,6 +8,7 @@ import typing
 from .events import SSDPEvent, DiscoveryEventType
 import datetime
 from enum import Enum
+from pydantic import BaseModel
 
 _logger = logging.getLogger(__name__)
 
@@ -25,11 +26,11 @@ class DeviceEntry(object):
     expires_at: typing.Optional[datetime.datetime] = None
 
 
-@dataclass(frozen=True)
-class MediaDeviceDiscoveryEvent:
+class MediaDeviceDiscoveryEvent(BaseModel):
     event_type: DiscoveryEventType
     device_type: MediaDeviceType
     udn: str
+    friendly_name: typing.Optional[str]
 
 
 RegistryEventCallback = typing.Callable[[DiscoveryEventType, DeviceEntry], typing.Awaitable]

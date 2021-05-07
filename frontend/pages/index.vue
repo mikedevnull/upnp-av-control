@@ -1,34 +1,27 @@
 <template>
-  <div class="container">
-    <div>
-      <Logo />
-      <h1 class="title">upnp-av-control-frontend</h1>
-      <div class="links">
-        <a
-          href="https://nuxtjs.org/"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="button--green"
-        >
-          Documentation
-        </a>
-        <a
-          href="https://github.com/nuxt/nuxt.js"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="button--grey"
-        >
-          GitHub
-        </a>
-      </div>
-    </div>
+  <div class="h-screen flex flex-col">
+    <TopBar
+      ><template #nav-action><NavIconDown class="w-6 h-6" /></template> Now
+      playing
+      <template #extra-action
+        ><nuxt-link to="select-player"
+          ><DevicesIcon class="w-6 h-6" /></nuxt-link></template
+    ></TopBar>
+    <player class="pt-4" @openPlayerSelection="$router.push('select-player')" />
   </div>
 </template>
 
-<script lang="ts">
-import Vue from 'vue'
+<script>
+import NavIconDown from '~/assets/nav-down.svg?inline'
+import DevicesIcon from '~/assets/control-devices.svg?inline'
+export default {
+  components: { NavIconDown, DevicesIcon },
+  data() {
+    return {}
+  },
 
-export default Vue.extend({})
+  methods: {},
+}
 </script>
 
 <style>

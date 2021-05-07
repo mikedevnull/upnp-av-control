@@ -6,6 +6,7 @@ from upnpavcontrol.core.discovery import MediaDeviceDiscoveryEvent
 from upnpavcontrol.core.mediarenderer import PlaybackInfo
 from upnpavcontrol.core.oberserver import Subscription
 import logging
+
 _event_type_map = {'NEW_DEVICE': 'new_device', 'DEVICE_LOST': 'device_lost'}
 
 MediaDeviceDiscoveryCallback = Callable[[MediaDeviceDiscoveryEvent], Awaitable]
@@ -84,7 +85,7 @@ class EventBusConnection(object):
     async def _notify_discovery(self, event):
         assert event.event_type.name in _event_type_map
         method = _event_type_map[event.event_type.name]
-        msg = json_rpc.JsonRPCNotification(method=method, params={'udn': event.udn, 'device_type': event.device_type})
+        msg = json_rpc.JsonRPCNotification(method=method, params=event.dict())
         await self._websocket.send_text(msg.json())
 
     async def _notifiy_playbackinfo(self, udn, playbackinfo):
