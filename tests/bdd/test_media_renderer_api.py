@@ -25,7 +25,7 @@ async def change_renderer_volume(test_context, device_name, webclient, volume):
     else:
         device = test_context.get_device(device_name)
         udn = device.udn
-    test_context.last_response = await webclient.put(f'/player/{udn}/volume', json={'volume_percent': volume})
+    test_context.last_response = await webclient.put(f'/api/player/{udn}/volume', json={'volume_percent': volume})
 
 
 @when(parsers.cfparse('the client requests the volume of {device_name}'))
@@ -36,7 +36,7 @@ async def query_renderer_volume(test_context, device_name, webclient):
     else:
         device = test_context.get_device(device_name)
         udn = device.udn
-    test_context.last_response = await webclient.get(f'/player/{udn}/volume')
+    test_context.last_response = await webclient.get(f'/api/player/{udn}/volume')
 
 
 @then(parsers.cfparse('the volume reported by the API of {device_name} is {volume:d}'))
@@ -44,7 +44,7 @@ async def query_renderer_volume(test_context, device_name, webclient):
 async def check_renderer_volume_with_webapi(test_context, device_name, webclient, volume):
     device = test_context.get_device(device_name)
     udn = device.udn
-    response = await webclient.get(f'/player/{udn}/volume')
+    response = await webclient.get(f'/api/player/{udn}/volume')
     test_context.last_response = response
     assert response.status_code == 200
     assert response.json() == {'volume_percent': volume}

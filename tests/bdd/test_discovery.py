@@ -48,7 +48,7 @@ async def check_device_notification(test_context, event_bus_connection, action, 
 @then(parsers.cfparse('the media server {name} will be in the library API device list'))
 @sync
 async def check_server_in_devicelist(test_context, webclient, name):
-    response = await webclient.get('/library/devices')
+    response = await webclient.get('/api/library/devices')
     assert response.status_code == 200
     descriptor = test_context.get_device(name)
     expected_entry = {'friendly_name': descriptor.friendly_name, 'udn': descriptor.udn}
@@ -58,7 +58,7 @@ async def check_server_in_devicelist(test_context, webclient, name):
 @then(parsers.cfparse('the media server {name} will not be in the library API device list'))
 @sync
 async def check_server_not_in_devicelist(test_context, webclient, name):
-    response = await webclient.get('/library/devices')
+    response = await webclient.get('/api/library/devices')
     assert response.status_code == 200
     device = create_fake_device(name)
     expected_entry = {'friendly_name': device.friendly_name, 'udn': device.udn}
@@ -68,7 +68,7 @@ async def check_server_not_in_devicelist(test_context, webclient, name):
 @then(parsers.cfparse('the media renderer {name} will be in the player API device list'))
 @sync
 async def check_renderer_in_devicelist(test_context, webclient, name):
-    response = await webclient.get('/player/devices')
+    response = await webclient.get('/api/player/devices')
     assert response.status_code == 200
     descriptor = test_context.get_device(name)
     expected_entry = {'name': descriptor.friendly_name, 'udn': descriptor.udn}

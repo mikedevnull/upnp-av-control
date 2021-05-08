@@ -33,7 +33,7 @@ async def webclient(test_context, event_loop):
 @pytest.fixture
 async def event_bus_connection(webclient, event_loop):
     try:
-        async with webclient.websocket_connect('/ws/events') as websocket:
+        async with webclient.websocket_connect('/api/ws/events') as websocket:
             async with JsonRPCTestConnection(websocket) as rpcConnection:
                 assert rpcConnection.state == 'connected'
                 assert rpcConnection.api_version == '0.2.0'
