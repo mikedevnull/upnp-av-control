@@ -68,11 +68,16 @@ async def check_server_not_in_devicelist(test_context, webclient, name):
 @then(parsers.cfparse('the media renderer {name} will be in the player API device list'))
 @sync
 async def check_renderer_in_devicelist(test_context, webclient, name):
-    response = await webclient.get('/api/player/devices')
+    response = await webclient.get('/api/player/')
     assert response.status_code == 200
     descriptor = test_context.get_device(name)
-    expected_entry = {'name': descriptor.friendly_name, 'udn': descriptor.udn}
-    assert expected_entry in response.json()['data']
+    renderer = None
+    for entry in response.json()['data']:
+        if entry['id'] == descriptor.udn:
+            renderer = entry
+            break
+    assert renderer is not None
+    assert renderer['type'] == 'mediarenderer'
 
 
 @then('the client will receive no notification')
