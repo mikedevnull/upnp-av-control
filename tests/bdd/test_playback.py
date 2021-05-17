@@ -4,6 +4,7 @@ from .async_utils import sync
 from functools import wraps
 import asyncio
 import logging
+from .api_utils import get_playback_queue_path, get_playback_info_path
 
 _logger = logging.getLogger(__name__)
 
@@ -18,7 +19,8 @@ async def play_object_on_dmr(test_context, object_id, webclient):
     dms_device = test_context.get_device('FooMediaServer')
     dms_udn = dms_device.udn
     payload = {'data': {'type': 'playlistitem', 'attributes': {'dms': dms_udn, 'object_id': object_id}}}
-    response = await webclient.post(f'/api/player/{dmr_udn}/queue', json=payload)
+    uri = await get_playback_queue_path(webclient, dmr_udn)
+    response = await webclient.post(uri, json=payload)
     assert response.status_code == 201
 
 
@@ -37,7 +39,8 @@ async def check_playback_state_notification(test_context, dmr, state, event_bus_
 async def check_playback_state_with_api(test_context, dmr, state, webclient):
     assert state in ('PLAYING', 'STOPPED')
     dmr_device = test_context.get_device(dmr)
-    response = await webclient.get(f'/api/player/{dmr_device.udn}/playback')
+    uri = await get_playback_info_path(webclient, dmr_device.udn)
+    response = await webclient.get(uri)
     assert response.status_code == 200
     data = response.json()['data']
     assert data['type'] == 'playbackinfo'
