@@ -16,6 +16,7 @@ _descriptor = FakeDeviceDescriptor(name="AcmeRenderer",
 class PlaybackState(str, enum.Enum):
     STOPPED = 'STOPPED'
     PLAYING = 'PLAYING'
+    PAUSED_PLAYBACK = 'PAUSED_PLAYBACK'
 
 
 class FakeAVTransportService(UpnpServiceMock):
@@ -27,6 +28,11 @@ class FakeAVTransportService(UpnpServiceMock):
         self.current_uri = None
         self._current_uri_metadata = None
         self._active_resource = None
+
+    async def _ext_set_transport_state(self, state: PlaybackState):
+        self.state = state
+        await self.trigger_notification(instance_xml_namespace='{urn:schemas-upnp-org:metadata-1-0/AVT/}',
+                                        variables={'TransportState': self.state})
 
     async def _set_transport(self, InstanceID, CurrentURI, CurrentURIMetaData):
         meta = didllite.DidlLite(CurrentURIMetaData)
@@ -48,7 +54,7 @@ class FakeAVTransportService(UpnpServiceMock):
         if self.state != PlaybackState.PLAYING:
             self.state = PlaybackState.PLAYING
             await self.trigger_notification(instance_xml_namespace='{urn:schemas-upnp-org:metadata-1-0/AVT/}',
-                                            variables={'TransportState': self.state})
+                                            variables={'TransportState': self.state.value})
 
 
 class FakeRenderingControlService(UpnpServiceMock):

@@ -13,6 +13,7 @@ import enum
 class TransportState(str, enum.Enum):
     STOPPED = 'STOPPED'
     PLAYING = 'PLAYING'
+    PAUSED_PLAYBACK = 'PAUSED'
 
 
 class PlaybackInfo(BaseModel):

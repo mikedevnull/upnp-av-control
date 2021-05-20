@@ -32,3 +32,14 @@ Feature: Renderer state notifications
   Scenario: Clients cannot query the volume of an unkown device
     When the client requests the volume of an unkown device
     Then an error has been reported
+
+  Scenario Outline: Device transport changes are evented
+    Given a device AcmeRenderer already present on the network
+    And a client subscribed to playback notifications from AcmeRenderer
+    When the transport state of AcmeRenderer changes to <devicestate>
+    Then the client will be notified about the new state <apistate>
+
+    Examples:
+      | devicestate     | apistate |
+      | PLAYING         | PLAYING  |
+      | PAUSED_PLAYBACK | PAUSED   |
