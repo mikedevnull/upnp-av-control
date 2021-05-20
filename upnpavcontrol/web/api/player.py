@@ -11,11 +11,6 @@ from typing import List, Iterable
 router = APIRouter(default_response_class=JsonApiResponse)
 _logger = logging.getLogger(__name__)
 
-
-def _format_device(device):
-    return models.DeviceModel.from_orm(device)
-
-
 DevicesResponse = json_api.create_list_response_model('mediarenderer', id_field='udn', PayloadModel=models.DeviceModel)
 DeviceResponse = json_api.create_response_model('mediarenderer', models.DeviceModel)
 
@@ -61,8 +56,6 @@ async def get_playback_info(request: Request, udn: str):
         _logger.exception(e)
         raise HTTPException(status_code=404)
 
-    return ''
-
 
 @router.patch('/{udn}/playback', response_model_exclude_unset=True, response_model=PlaybackInfoResponse)
 async def patch_playback_info(request: Request, udn: str, info: PlaybackInfoPatchRequest):
@@ -76,8 +69,6 @@ async def patch_playback_info(request: Request, udn: str, info: PlaybackInfoPatc
     except Exception as e:
         _logger.exception(e)
         raise HTTPException(status_code=404)
-
-    return ''
 
 
 class PlaybackItem(BaseModel):
@@ -99,5 +90,3 @@ async def add_item_to_queue(request: Request, udn: str, payload: PlaybackItemReq
     except Exception as e:
         _logger.exception(e)
         raise HTTPException(status_code=404)
-
-    return ''
