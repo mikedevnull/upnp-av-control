@@ -3,3 +3,7 @@ source = upnpavcontrol
 
 [report]
 omit = tests/*
+exclude_lines = 
+    pass
+    \.\.\.
+    raise NotImplementedError
