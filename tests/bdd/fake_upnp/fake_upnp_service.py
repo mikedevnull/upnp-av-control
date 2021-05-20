@@ -41,7 +41,7 @@ def _format_last_change_payload(instance_xml_namespace: str, variables: typing.M
             var.attrib['channel'] = 'Master'
             var.attrib['val'] = str(value)
         else:
-            var.attrib['val'] = value.value
+            var.attrib['val'] = str(value)
     return ET.tostring(lcroot).decode('utf-8')
 
 

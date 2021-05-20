@@ -1,4 +1,4 @@
-from pytest_bdd import scenarios, given, when, then, parsers
+from pytest_bdd import scenarios, given, when, then, parsers, scenario
 import pytest
 from .async_utils import sync
 from functools import wraps
@@ -7,6 +7,14 @@ import logging
 from .api_utils import get_playback_info_path
 
 _logger = logging.getLogger(__name__)
+
+
+@scenario("media_renderer_api.feature",
+          "Device transport changes are evented",
+          example_converters=dict(devicestate=str, apistate=str))
+def test_device_transport_changes_are_evented():
+    pass
+
 
 scenarios('media_renderer_api.feature')
 
@@ -57,6 +65,13 @@ async def query_renderer_volume(test_context, device_name, webclient):
     test_context.last_response = await webclient.get(uri)
 
 
+@when(parsers.cfparse('the transport state of {device_name} changes to <devicestate>'))
+@sync
+async def external_playback_state_changes(test_context, device_name, devicestate):
+    device = test_context.get_device(device_name)
+    await device.service('urn:schemas-upnp-org:service:AVTransport:1')._ext_set_transport_state(devicestate)
+
+
 @then(parsers.cfparse('the volume reported by the API of {device_name} is {volume:d}'))
 @sync
 async def check_renderer_volume_with_webapi(test_context, device_name, webclient, volume):
@@ -71,11 +86,20 @@ async def check_renderer_volume_with_webapi(test_context, device_name, webclient
 
 @then(parsers.cfparse('the client will be notified about the new volume {volume:d}'))
 @sync
-async def check_device_notification(event_bus_connection, volume):
+async def check_device_volume_notification(event_bus_connection, volume):
     event = await event_bus_connection.wait_for_notification()
     assert event.method == 'playbackinfo'
     info = event.params['playbackinfo']
     assert info['volume_percent'] == volume
+
+
+@then(parsers.cfparse('the client will be notified about the new state <apistate>'))
+@sync
+async def check_device_transport_state_notification(event_bus_connection, apistate):
+    event = await event_bus_connection.wait_for_notification()
+    assert event.method == 'playbackinfo'
+    info = event.params['playbackinfo']
+    assert info['transport'] == apistate
 
 
 @then('an error has been reported')
