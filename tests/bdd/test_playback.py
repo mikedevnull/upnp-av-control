@@ -1,8 +1,6 @@
 from pytest_bdd import scenarios, given, when, then, parsers
-import pytest
 from .async_utils import sync
 from functools import wraps
-import asyncio
 import logging
 from .api_utils import get_playback_queue_path, get_playback_info_path
 

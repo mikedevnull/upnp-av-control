@@ -11,7 +11,7 @@ Feature: Device discovery
 
   Scenario: No advertisement events when client unsubscribed
     Given a client listens for discovery events
-    When the client unsubscribes for discovery events
+    When the client unsubscribes from discovery events
     And a MediaServer FooMediaServer appears on the network
     Then the client will receive no notification
 
