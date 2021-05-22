@@ -1,12 +1,10 @@
 from fastapi import APIRouter, Request, HTTPException
 import logging
-from pydantic import BaseModel, validator
+from pydantic import BaseModel
 import urllib.parse
 from .json_api_response import JsonApiResponse
 from .. import json_api, models
 from ...core import playback, mediarenderer
-from ...core.typing_compat import Literal
-from typing import List, Iterable
 
 router = APIRouter(default_response_class=JsonApiResponse)
 _logger = logging.getLogger(__name__)
@@ -17,7 +15,9 @@ DeviceResponse = json_api.create_response_model('mediarenderer', models.DeviceMo
 
 @router.get('/', response_model=DevicesResponse, response_model_exclude_unset=True)
 def player_device_list(request: Request):
-    create_links = lambda d: {'self': request.url_for('player_device', udn=d.udn)}
+    def create_links(d: models.DeviceModel):
+        return {'self': request.url_for('player_device', udn=d.udn)}
+
     resp = DevicesResponse.create(request.app.av_control_point.mediarenderers, links_factory=create_links)
     return resp
 

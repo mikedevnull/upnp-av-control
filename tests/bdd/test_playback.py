@@ -1,8 +1,8 @@
-from pytest_bdd import scenarios, given, when, then, parsers
+from pytest_bdd import scenarios, when, then, parsers
 from .async_utils import sync
-from functools import wraps
 import logging
 from .api_utils import get_playback_queue_path, get_playback_info_path
+from .common_steps import *  # noqa: F401, F403
 
 _logger = logging.getLogger(__name__)
 

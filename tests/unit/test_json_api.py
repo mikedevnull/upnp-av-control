@@ -33,7 +33,6 @@ def test_json_api_list_data_response():
     reparsed = json.loads(raw)
     assert 'data' in reparsed
     assert len(reparsed['data']) == 2
-    print(reparsed['data'])
     d2 = next((x for x in reparsed['data'] if x['id'] == 2))
     assert d2['attributes']['baz'] == 'hello'
     assert d2['attributes']['foo'] == 42

@@ -1,5 +1,4 @@
 from pydantic import BaseModel, Field
-from ..core.discovery.registry import DiscoveryEventType
 
 
 class DeviceModel(BaseModel):

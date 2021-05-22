@@ -1,4 +1,4 @@
-from pytest_bdd import scenarios, given, when, then, parsers
+from pytest_bdd import given, when, then, parsers
 from .async_utils import sync
 from .fake_upnp import create_fake_device
 import pytest

@@ -1,7 +1,6 @@
 from .fake_upnp_device import FakeDeviceDescriptor, FakeAsyncUpnpDevice
-from .fake_upnp_service import UpnpServiceMock, _format_last_change_notification, _format_last_change_payload
+from .fake_upnp_service import UpnpServiceMock
 from .connection_manager import FakeConnectionManagerService
-from urllib.parse import urlparse
 
 didl_musictrack = """
 <DIDL-Lite xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/" xmlns:pv="http://www.pv.com/pvns/" xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/">
@@ -22,7 +21,7 @@ didl_musictrack = """
     <res protocolInfo="http-get:*:audio/mpeg:DLNA.ORG_PN=MP3;DLNA.ORG_OP=11;DLNA.ORG_FLAGS=01700000000000000000000000000000" size="4265996" duration="0:04:26.520" bitrate="16000" sampleFrequency="44100">http://192.168.178.21:9002/music/2836/download.mp3?bitrate=320</res>
   </item>
 </DIDL-Lite>
-"""
+""" # noqa: 501
 
 _descriptor = FakeDeviceDescriptor(name="FooMedia",
                                    friendly_name="Foo MediaServer",
