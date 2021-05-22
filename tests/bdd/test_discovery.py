@@ -1,9 +1,8 @@
 from pytest_bdd import scenarios, given, when, then, parsers
-import pytest
 from .fake_upnp import create_fake_device
 from .async_utils import sync
-import asyncio
 import logging
+from .common_steps import *
 
 _logger = logging.getLogger(__name__)
 
@@ -27,7 +26,7 @@ def device_appears_or_leaves(test_context, name, action):
         test_context.remove_device_to_network(name, notify=True)
 
 
-@when('the client unsubscribes for discovery events')
+@when('the client unsubscribes from discovery events')
 @sync
 async def unsubscribe_discovery_events(event_bus_connection):
     result = await event_bus_connection.send(method='unsubscribe', params={'category': 'discovery'})
@@ -78,11 +77,3 @@ async def check_renderer_in_devicelist(test_context, webclient, name):
             break
     assert renderer is not None
     assert renderer['type'] == 'mediarenderer'
-
-
-@then('the client will receive no notification')
-@sync
-async def check_no_device_notification(event_bus_connection):
-    event_bus_connection.timeout = 1
-    with pytest.raises(asyncio.TimeoutError):
-        await event_bus_connection.wait_for_notification()
