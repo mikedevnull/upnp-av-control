@@ -1,9 +1,8 @@
 from .fake_upnp_device import FakeDeviceDescriptor, FakeAsyncUpnpDevice
-from .fake_upnp_service import UpnpServiceMock, _format_last_change_notification, _format_last_change_payload
+from .fake_upnp_service import UpnpServiceMock
 from .connection_manager import FakeConnectionManagerService
 from upnpavcontrol.core import didllite
 import enum
-import asyncio
 
 _descriptor = FakeDeviceDescriptor(name="AcmeRenderer",
                                    friendly_name="Acme Super Blast Renderer",

@@ -1,9 +1,7 @@
-from unittest import mock
 from ...testsupport import UpnpTestRequester, NotificationTestEndpoint
 from email.utils import formatdate
 import uuid
 from xml.etree import ElementTree as ET
-import defusedxml.ElementTree as DET
 from urllib.parse import urlparse
 import typing
 

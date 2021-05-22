@@ -19,7 +19,7 @@ didl1 = """
 <upnp:artist>Artist1</upnp:artist>
 <upnp:album>Album2</upnp:album><upnp:albumArtURI dlna:profileID="JPEG_TN">http://192.168.2.250:50002/transcoder/jpegtnscaler.cgi/albumart/40850.jpg</upnp:albumArtURI></container>
 </DIDL-Lite>
-"""  # noqa
+"""  # noqa: 501
 
 didl_musictrack = """
 <DIDL-Lite xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/" xmlns:sec="http://www.sec.co.kr/" xmlns:dlna="urn:schemas-dlna-org:metadata-1-0/"><item id="26$40260$@40260" parentID="26$40260" restricted="1">
@@ -27,7 +27,7 @@ didl_musictrack = """
 <upnp:class>object.item.audioItem.musicTrack</upnp:class>
 <dc:date>2015-01-01</dc:date><upnp:album>SomeAlbumTitle</upnp:album><upnp:artist>SomeArtist</upnp:artist><dc:creator>SomeArtist</dc:creator><upnp:genre>Alternative</upnp:genre><upnp:author>SomeArtist</upnp:author><upnp:originalTrackNumber>1</upnp:originalTrackNumber><upnp:albumArtURI dlna:profileID="JPEG_TN">http://192.168.0.1:123456/ebdart/40260.jpg</upnp:albumArtURI><res  protocolInfo="http-get:*:audio/mp4:*" size="4161945" bitrate="16000" duration="0:04:08.000" nrAudioChannels="2" sampleFrequency="44100">http://192.168.0.1:123456/NDLNA/40260.m4a</res></item>
 </DIDL-Lite>
-"""  # noqa 501
+"""  # noqa: 501
 
 didl_musictrack2 = """
 <DIDL-Lite xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/" xmlns:pv="http://www.pv.com/pvns/" xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/">
@@ -64,7 +64,7 @@ didl_musictrack2 = """
     <res protocolInfo="http-get:*:audio/mpeg:DLNA.ORG_PN=MP3;DLNA.ORG_OP=11;DLNA.ORG_FLAGS=01700000000000000000000000000000" size="4265996" duration="0:04:26.520" bitrate="16000" sampleFrequency="44100">http://192.168.178.21:9002/music/2837/download.mp3?bitrate=320</res>
   </item>
 </DIDL-Lite>
-"""
+"""  # noqa: 501
 
 
 def test_didl_container_parse():

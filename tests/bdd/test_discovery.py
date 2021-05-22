@@ -2,7 +2,7 @@ from pytest_bdd import scenarios, given, when, then, parsers
 from .fake_upnp import create_fake_device
 from .async_utils import sync
 import logging
-from .common_steps import *
+from .common_steps import *  # noqa: F403, F401
 
 _logger = logging.getLogger(__name__)
 

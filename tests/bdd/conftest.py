@@ -1,14 +1,9 @@
-from pytest_bdd import scenarios, given, when, then, parsers
 import pytest
-from functools import wraps
-import asyncio
 from starlette.websockets import WebSocketDisconnect
 import upnpavcontrol.core.discovery
-import logging
 from async_asgi_testclient import TestClient
 from .context import TestContext
 from .json_rpc_connection import JsonRPCTestConnection
-from .common_steps import *  # pylint: disable=unused-wildcard-import
 
 
 @pytest.mark.asyncio

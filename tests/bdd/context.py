@@ -2,11 +2,9 @@ from upnpavcontrol.core import AVControlPoint
 from upnpavcontrol.core.discovery import DeviceRegistry
 from upnpavcontrol.core.notification_backend import NotificationBackend
 from ..testsupport import NullAdvertisementListener, UpnpTestRequester, NotificationTestEndpoint
-from upnpavcontrol.core.discovery.registry import MediaDeviceType, MediaDeviceDiscoveryEvent, DiscoveryEventType
 import async_upnp_client
-from .fake_upnp import create_fake_device, format_ssdp_event, FakeAsyncUpnpDevice
+from .fake_upnp import format_ssdp_event, FakeAsyncUpnpDevice
 from .async_utils import run_on_main_loop
-import asyncio
 import logging
 
 _logger = logging.getLogger(__name__)

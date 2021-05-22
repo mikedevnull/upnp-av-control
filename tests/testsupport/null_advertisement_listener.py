@@ -1,5 +1,4 @@
 from upnpavcontrol.core.discovery.advertisement import AdvertisementListenerInterface
-from upnpavcontrol.core.discovery.registry import MediaDeviceDiscoveryEvent
 from upnpavcontrol.core.discovery.advertisement import _DeviceAdvertisementHandler
 
 
