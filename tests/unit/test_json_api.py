@@ -4,7 +4,7 @@ import typing
 import json
 
 
-class TestDataModel(pydantic.BaseModel):
+class FooDataModel(pydantic.BaseModel):
     id: int
     foo: int
     baz: str
@@ -12,8 +12,8 @@ class TestDataModel(pydantic.BaseModel):
 
 
 def test_json_api_data_response():
-    ResponseModel = json_api.create_response_model('testtype', TestDataModel)
-    data = TestDataModel(id=2, foo=42, baz='hello')
+    ResponseModel = json_api.create_response_model('testtype', FooDataModel)
+    data = FooDataModel(id=2, foo=42, baz='hello')
     model = ResponseModel.create(data.id, data)
     raw = model.json()
     reparsed = json.loads(raw)
@@ -26,8 +26,8 @@ def test_json_api_data_response():
 
 
 def test_json_api_list_data_response():
-    ResponseModel = json_api.create_list_response_model('testtype', id_field='id', PayloadModel=TestDataModel)
-    data = [TestDataModel(id=2, foo=42, baz='hello'), TestDataModel(id=3, foo=21, baz='world')]
+    ResponseModel = json_api.create_list_response_model('testtype', id_field='id', PayloadModel=FooDataModel)
+    data = [FooDataModel(id=2, foo=42, baz='hello'), FooDataModel(id=3, foo=21, baz='world')]
     response = ResponseModel.create(data)
     raw = response.json()
     reparsed = json.loads(raw)
