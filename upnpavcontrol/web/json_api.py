@@ -48,7 +48,7 @@ def create_request_model(type_name: str, payload_model: Any):
     return RequestModel
 
 
-def create_request_patch_model(type_name: str, PayloadModel: BaseModel):
+def create_request_patch_model(type_name: Literal, PayloadModel: BaseModel):
     class OptionalPayloadModel(PayloadModel):
         ...
 
@@ -56,7 +56,7 @@ def create_request_patch_model(type_name: str, PayloadModel: BaseModel):
         field.required = False
 
     OptionalPayloadModel.__name__ = f'Optional{BaseModel.__name__}'
-    D = DataModelIn[OptionalPayloadModel, Literal[type_name]]
+    D = DataModelIn[OptionalPayloadModel, type_name]
     return RequestModel[D]
 
 
@@ -70,7 +70,7 @@ def _construct_attributes(data: any, PayloadModel):
 
 
 def create_response_model(type_name: str, PayloadModel):
-    D = DataModel[PayloadModel, Literal[type_name]]
+    D = DataModel[PayloadModel, str]
     R = ResponseModel[D]
 
     def factory(id: str, payload: PayloadModel, self_link=None, relationships=None):
@@ -85,8 +85,8 @@ def create_response_model(type_name: str, PayloadModel):
     return R
 
 
-def create_list_response_model(type_name: str, id_field: str, PayloadModel):
-    D = DataModel[PayloadModel, Literal[type_name]]
+def create_list_response_model(type_name: Literal[None], id_field: str, PayloadModel):
+    D = DataModel[PayloadModel, str]
     R = ResponseModel[List[D]]
 
     def factory(payload: Iterable[PayloadModel], links_factory=None, relationships=None):

@@ -5,6 +5,7 @@ import urllib.parse
 from .json_api_response import JsonApiResponse
 from .. import json_api, models
 from ...core import playback, mediarenderer
+from ...core.typing_compat import Literal
 
 router = APIRouter(default_response_class=JsonApiResponse)
 _logger = logging.getLogger(__name__)
@@ -41,7 +42,7 @@ def player_device(request: Request, udn: str):
 
 
 PlaybackInfoResponse = json_api.create_response_model('playbackinfo', mediarenderer.PlaybackInfo)
-PlaybackInfoPatchRequest = json_api.create_request_patch_model('playbackinfo', mediarenderer.PlaybackInfo)
+PlaybackInfoPatchRequest = json_api.create_request_patch_model(Literal['playbackinfo'], mediarenderer.PlaybackInfo)
 
 
 @router.get('/{udn}/playback', response_model=PlaybackInfoResponse, response_model_exclude_unset=True)
