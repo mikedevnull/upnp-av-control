@@ -60,12 +60,21 @@ def create_request_patch_model(type_name: str, PayloadModel: BaseModel):
     return RequestModel[D]
 
 
+def _construct_attributes(data: any, PayloadModel):
+    if data.__class__ is PayloadModel:
+        return data
+    if getattr(PayloadModel.Config, 'orm_mode', False):
+        return PayloadModel.from_orm(data)
+    else:
+        return PayloadModel(**data)
+
+
 def create_response_model(type_name: str, PayloadModel):
     D = DataModel[PayloadModel, Literal[type_name]]
     R = ResponseModel[D]
 
     def factory(id: str, payload: PayloadModel, self_link=None, relationships=None):
-        data = {'type': type_name, 'id': id, 'attributes': payload}
+        data = {'type': type_name, 'id': id, 'attributes': _construct_attributes(payload, PayloadModel)}
         if self_link is not None:
             data['links'] = {'self': self_link}
         if relationships is not None:
@@ -81,7 +90,11 @@ def create_list_response_model(type_name: str, id_field: str, PayloadModel):
     R = ResponseModel[List[D]]
 
     def factory(payload: Iterable[PayloadModel], links_factory=None, relationships=None):
-        data = [{'type': type_name, 'id': d.__getattribute__(id_field), 'attributes': d} for d in payload]
+        data = [{
+            'type': type_name,
+            'id': getattr(d, id_field),
+            'attributes': _construct_attributes(d, PayloadModel)
+        } for d in payload]
         if links_factory is not None:
             for index, d in enumerate(payload):
                 data[index]['links'] = links_factory(d)
