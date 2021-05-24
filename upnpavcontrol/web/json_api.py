@@ -89,7 +89,7 @@ def create_list_response_model(type_name: Literal[None], id_field: str, PayloadM
     D = DataModel[PayloadModel, str]
     R = ResponseModel[List[D]]
 
-    def factory(payload: Iterable[PayloadModel], links_factory=None, relationships=None):
+    def factory(payload: Iterable[PayloadModel], links_factory=None, relationship_factory=None):
         data = [{
             'type': type_name,
             'id': getattr(d, id_field),
@@ -98,6 +98,9 @@ def create_list_response_model(type_name: Literal[None], id_field: str, PayloadM
         if links_factory is not None:
             for index, d in enumerate(payload):
                 data[index]['links'] = links_factory(d)
+        if relationship_factory is not None:
+            for index, d in enumerate(payload):
+                data[index]['relationships'] = relationship_factory(d)
         return ResponseModel(data=data)
 
     R.create = staticmethod(factory)
