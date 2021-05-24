@@ -10,9 +10,6 @@ from .. import json_api
 router = APIRouter()
 _logger = logging.getLogger(__name__)
 
-DevicesResponse = json_api.create_list_response_model('mediaserver', id_field='udn', PayloadModel=models.DeviceModel)
-DeviceResponse = json_api.create_response_model('mediaserver', models.DeviceModel)
-
 MetadataResponse = json_api.create_response_model('itemmetadata', models.LibraryItemMetadata)
 LibraryListingResponse = json_api.create_list_response_model('itemlist',
                                                              id_field='id',
@@ -33,16 +30,16 @@ def _fixup_didl_items(items):
     return (_fixup_item_media_urls(x) for x in items)
 
 
-@router.get('/', response_model=DevicesResponse)
+@router.get('/', response_model=models.DevicesResponse)
 def get_media_library_devices(request: Request):
     def create_links(d: models.DeviceModel):
         return {'self': request.url_for('get_media_library_device', udn=d.udn)}
 
-    resp = DevicesResponse.create(request.app.av_control_point.mediaservers, links_factory=create_links)
+    resp = models.DevicesResponse.create(request.app.av_control_point.mediaservers, links_factory=create_links)
     return resp
 
 
-@router.get('/{udn}', response_model=DeviceResponse)
+@router.get('/{udn}', response_model=models.DeviceResponse)
 def get_media_library_device(request: Request, udn: str):
     device = request.app.av_control_point.get_mediaserver_by_UDN(udn)
     relationships = {
@@ -57,8 +54,8 @@ def get_media_library_device(request: Request, udn: str):
             }
         }
     }
-    return DeviceResponse.create(device.udn, device, request.url_for('get_media_library_device', udn=udn),
-                                 relationships)
+    return models.DeviceResponse.create(device.udn, device, request.url_for('get_media_library_device', udn=udn),
+                                        relationships)
 
 
 def _url_for_query(request, path, params, query):

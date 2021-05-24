@@ -10,20 +10,17 @@ from ...core.typing_compat import Literal
 router = APIRouter(default_response_class=JsonApiResponse)
 _logger = logging.getLogger(__name__)
 
-DevicesResponse = json_api.create_list_response_model('mediarenderer', id_field='udn', PayloadModel=models.DeviceModel)
-DeviceResponse = json_api.create_response_model('mediarenderer', models.DeviceModel)
 
-
-@router.get('/', response_model=DevicesResponse, response_model_exclude_unset=True)
+@router.get('/', response_model=models.DevicesResponse, response_model_exclude_unset=True)
 def player_device_list(request: Request):
     def create_links(d: models.DeviceModel):
         return {'self': request.url_for('player_device', udn=d.udn)}
 
-    resp = DevicesResponse.create(request.app.av_control_point.mediarenderers, links_factory=create_links)
+    resp = models.DevicesResponse.create(request.app.av_control_point.mediarenderers, links_factory=create_links)
     return resp
 
 
-@router.get('/{udn}', response_model=DeviceResponse, response_model_exclude_unset=True)
+@router.get('/{udn}', response_model=models.DeviceResponse, response_model_exclude_unset=True)
 def player_device(request: Request, udn: str):
     device = request.app.av_control_point.get_mediarenderer_by_UDN(udn)
     relationships = {
@@ -38,7 +35,7 @@ def player_device(request: Request, udn: str):
             }
         }
     }
-    return DeviceResponse.create(device.udn, device, request.url_for('player_device', udn=udn), relationships)
+    return models.DeviceResponse.create(device.udn, device, request.url_for('player_device', udn=udn), relationships)
 
 
 PlaybackInfoResponse = json_api.create_response_model('playbackinfo', mediarenderer.PlaybackInfo)
