@@ -1,7 +1,6 @@
 from pytest_bdd import scenarios, when, then, parsers, scenario
 from .async_utils import sync
 import logging
-from .api_utils import get_playback_info_path
 from .common_steps import *  # noqa: F401, F403
 
 _logger = logging.getLogger(__name__)
@@ -33,20 +32,11 @@ async def external_volume_change(test_context, event_bus_connection, volume):
 async def change_renderer_volume(test_context, device_name, webclient, volume):
     if device_name == "an unkown device":
         udn = 'fake-udn-no-device-has-this'
-        uri = _format_playback_info_path(webclient, udn)
     else:
         device = test_context.get_device(device_name)
         udn = device.udn
-        uri = await get_playback_info_path(webclient, udn)
-        assert uri == _format_playback_info_path(webclient, udn)
-    test_context.last_response = await webclient.patch(
-        uri, json={'data': {
-            'type': 'playbackinfo',
-            'id': udn,
-            'attributes': {
-                'volume_percent': volume
-            }
-        }})
+    uri = f'/api/player/{udn}/playback'
+    test_context.last_response = await webclient.patch(uri, json={'volume_percent': volume})
 
 
 @when(parsers.cfparse('the client requests the volume of {device_name}'))
@@ -54,13 +44,10 @@ async def change_renderer_volume(test_context, device_name, webclient, volume):
 async def query_renderer_volume(test_context, device_name, webclient):
     if device_name == "an unkown device":
         udn = 'fake-udn-no-device-has-this'
-        uri = _format_playback_info_path(webclient, udn)
     else:
         device = test_context.get_device(device_name)
         udn = device.udn
-        uri = await get_playback_info_path(webclient, udn)
-        assert uri == _format_playback_info_path(webclient, udn)
-    test_context.last_response = await webclient.get(uri)
+    test_context.last_response = await webclient.get(f'/api/player/{udn}/playback')
 
 
 @when(parsers.cfparse('the transport state of {device_name} changes to <devicestate>'))
@@ -75,11 +62,10 @@ async def external_playback_state_changes(test_context, device_name, devicestate
 async def check_renderer_volume_with_webapi(test_context, device_name, webclient, volume):
     device = test_context.get_device(device_name)
     udn = device.udn
-    uri = await get_playback_info_path(webclient, udn)
-    response = await webclient.get(uri)
+    response = await webclient.get(f'/api/player/{udn}/playback')
     test_context.last_response = response
     assert response.status_code == 200
-    assert response.json()['data']['attributes']['volume_percent'] == volume
+    assert response.json()['volume_percent'] == volume
 
 
 @then(parsers.cfparse('the client will be notified about the new volume {volume:d}'))

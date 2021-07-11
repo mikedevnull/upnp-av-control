@@ -1,24 +1,40 @@
-from pydantic import BaseModel, Field
+from pydantic import Field, BaseModel
 import typing
-from . import json_api
+from upnpavcontrol.core import typing_compat
+from upnpavcontrol.core.mediarenderer import PlaybackInfo
 
 
-class DeviceModel(BaseModel):
+class ApiInfo(BaseModel):
+    version: typing_compat.Literal[1]
+
+
+class PlayerDevice(BaseModel):
     friendly_name: str = Field(alias="name")
+    udn: str = Field(alias="id")
 
     class Config:
         orm_mode = True
         allow_population_by_field_name = True
 
 
-DevicesResponse = json_api.create_list_response_model('mediadevice', id_field='udn', PayloadModel=DeviceModel)
-DeviceResponse = json_api.create_response_model('mediadevice', DeviceModel)
+PlaybackState = PlaybackInfo
+
+
+class PlaybackQueueItem(BaseModel):
+    library_item_id: str
+
+
+class LibraryCollection(BaseModel):
+    id: str
+    title: str
+
+    class Config:
+        orm_mode = True
 
 
 class LibraryListItem(BaseModel):
+    id: str
     title: str
-    artist: typing.Optional[str]
-    album: typing.Optional[str]
 
     class Config:
         orm_mode = True

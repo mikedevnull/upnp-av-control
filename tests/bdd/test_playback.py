@@ -1,7 +1,6 @@
 from pytest_bdd import scenarios, when, then, parsers
 from .async_utils import sync
 import logging
-from .api_utils import get_playback_queue_path, get_playback_info_path
 from .common_steps import *  # noqa: F401, F403
 
 _logger = logging.getLogger(__name__)
@@ -12,12 +11,14 @@ scenarios('playback.feature')
 @when(parsers.cfparse('the client requests to play item with id {object_id} from FooMediaServer on AcmeRenderer'))
 @sync
 async def play_object_on_dmr(test_context, object_id, webclient):
+    from upnpavcontrol.web.api.library import create_library_item_id
     dmr_device = test_context.get_device('AcmeRenderer')
     dmr_udn = dmr_device.udn
     dms_device = test_context.get_device('FooMediaServer')
     dms_udn = dms_device.udn
-    payload = {'data': {'type': 'playlistitem', 'attributes': {'dms': dms_udn, 'object_id': object_id}}}
-    uri = await get_playback_queue_path(webclient, dmr_udn)
+    item_id = create_library_item_id(dms_udn, object_id)
+    payload = {"library_item_id": item_id}
+    uri = f"/api/player/{dmr_udn}/queue"
     response = await webclient.post(uri, json=payload)
     assert response.status_code == 201
 
@@ -37,13 +38,10 @@ async def check_playback_state_notification(test_context, dmr, state, event_bus_
 async def check_playback_state_with_api(test_context, dmr, state, webclient):
     assert state in ('PLAYING', 'STOPPED')
     dmr_device = test_context.get_device(dmr)
-    uri = await get_playback_info_path(webclient, dmr_device.udn)
-    response = await webclient.get(uri)
+    response = await webclient.get(f'/api/player/{dmr_device.udn}/playback')
     assert response.status_code == 200
-    data = response.json()['data']
-    assert data['type'] == 'playbackinfo'
-    assert data['id'] == dmr_device.udn
-    assert data['attributes']['transport'] == state
+    data = response.json()
+    assert data['transport'] == state
 
 
 @then(parsers.cfparse('the device {dmr} is playing item {object_id} from {dms}'))
