@@ -2,7 +2,6 @@ from pytest_bdd import scenarios, when, then, scenario, parsers
 from .async_utils import sync
 import logging
 from .common_steps import *  # noqa: F401, F403
-from .api_utils import get_browse_path, get_metadata_path, extract_browse_path
 
 _logger = logging.getLogger(__name__)
 

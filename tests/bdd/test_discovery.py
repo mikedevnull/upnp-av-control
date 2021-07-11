@@ -50,12 +50,12 @@ async def check_server_in_devicelist(test_context, webclient, name):
     response = await webclient.get('/api/library/')
     assert response.status_code == 200
     descriptor = test_context.get_device(name)
-    for entry in response.json()['data']:
+    for entry in response.json():
         if entry['id'] == descriptor.udn:
             server = entry
             break
     assert server is not None
-    assert server['attributes']['name'] == descriptor.friendly_name
+    assert server['title'] == descriptor.friendly_name
 
 
 @then(parsers.cfparse('the media server {name} will not be in the library API device list'))
@@ -64,7 +64,7 @@ async def check_server_not_in_devicelist(test_context, webclient, name):
     response = await webclient.get('/api/library/')
     assert response.status_code == 200
     device = create_fake_device(name)
-    parsed_response = response.json()['data']
+    parsed_response = response.json()
     for entry in parsed_response:
         assert entry['id'] != device.udn
 
@@ -76,9 +76,9 @@ async def check_renderer_in_devicelist(test_context, webclient, name):
     assert response.status_code == 200
     descriptor = test_context.get_device(name)
     renderer = None
-    for entry in response.json()['data']:
+    for entry in response.json():
         if entry['id'] == descriptor.udn:
             renderer = entry
             break
     assert renderer is not None
-    assert renderer['attributes']['name'] == descriptor.friendly_name
+    assert renderer['name'] == descriptor.friendly_name
