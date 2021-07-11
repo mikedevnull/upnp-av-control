@@ -1,3 +1,4 @@
+from enum import Enum
 from pydantic import Field, BaseModel
 import typing
 from upnpavcontrol.core import typing_compat
@@ -24,17 +25,16 @@ class PlaybackQueueItem(BaseModel):
     library_item_id: str
 
 
-class LibraryCollection(BaseModel):
-    id: str
-    title: str
-
-    class Config:
-        orm_mode = True
+class LibraryItemType(Enum):
+    CONTAINER = 'container'
+    ITEM = 'item'
 
 
 class LibraryListItem(BaseModel):
     id: str
+    parentID: typing.Optional[str]
     title: str
+    upnpclass: LibraryItemType
 
     class Config:
         orm_mode = True
@@ -42,7 +42,7 @@ class LibraryListItem(BaseModel):
 
 class LibraryItemMetadata(BaseModel):
     id: str
-    parentID: str
+    parentID: typing.Optional[str]
     upnpclass: str
     title: str
     artist: typing.Optional[str]
