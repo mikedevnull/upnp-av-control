@@ -29,11 +29,11 @@ didl_fake_root = """
 <DIDL-Lite xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/" xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/">
   <container id="/images" parentID="0" restricted="1" searchable="0">
     <upnp:class>object.container</upnp:class>
-    <dc:title>Bilder</dc:title>
+    <dc:title>Images</dc:title>
   </container>
   <container id="/music" parentID="0" restricted="1" searchable="0">
     <upnp:class>object.container</upnp:class>
-    <dc:title>Musik</dc:title>
+    <dc:title>Music</dc:title>
   </container>
   <container id="/video" parentID="0" restricted="1" searchable="0">
     <upnp:class>object.container</upnp:class>
@@ -44,7 +44,7 @@ didl_fake_root = """
 
 didl_music_content = """
 <DIDL-Lite xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/" xmlns:pv="http://www.pv.com/pvns/" xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/">
-  <item id="/a/176/l/179/t/2836" parentID="/a/176/l/179/t" restricted="1">
+  <item id="/a/176/l/179/t/2836" parentID="/" restricted="1">
     <upnp:class>object.item.audioItem.musicTrack</upnp:class>
     <dc:title>Song Title 1</dc:title>
     <dc:creator>Artist 2</dc:creator>
@@ -60,7 +60,7 @@ didl_music_content = """
     <pv:lastUpdated>1544479558</pv:lastUpdated>
     <res protocolInfo="http-get:*:audio/mpeg:DLNA.ORG_PN=MP3;DLNA.ORG_OP=11;DLNA.ORG_FLAGS=01700000000000000000000000000000" size="4265996" duration="0:04:26.520" bitrate="16000" sampleFrequency="44100">http://192.168.178.21:9002/music/2836/download.mp3?bitrate=320</res>
   </item>
-    <item id="/x" parentID="/" restricted="1">
+  <item id="/x" parentID="/" restricted="1">
     <upnp:class>object.item.audioItem.musicTrack</upnp:class>
     <dc:title>Foo</dc:title>
     <dc:creator>Artist 2</dc:creator>
@@ -75,6 +75,11 @@ didl_music_content = """
     <pv:addedTime>1544479558</pv:addedTime>
     <pv:lastUpdated>1544479558</pv:lastUpdated>
     <res protocolInfo="http-get:*:audio/mpeg:DLNA.ORG_PN=MP3;DLNA.ORG_OP=11;DLNA.ORG_FLAGS=01700000000000000000000000000000" size="4265996" duration="0:04:26.520" bitrate="16000" sampleFrequency="44100">http://192.168.178.21:9002/music/2837/download.mp3?bitrate=320</res>
+  </item>
+  <item id="/fakelongartistlist" parentID="/" restricted="1">
+    <upnp:class>object.container</upnp:class>
+    <dc:title>FakeLongArtistListing</dc:title>
+    <pv:lastUpdated>1544479558</pv:lastUpdated>
   </item>
 </DIDL-Lite>
 """  # noqa: 501
@@ -95,7 +100,7 @@ def create_fake_entries(count: int):
 
 
 someFakeObjectDidlMetadata = didllite.from_xml_string(didl_musictrack)[0]
-fakeRootDidl = didllite.from_xml_string(didl_fake_root)[0]
+fakeRootDidl = didllite.from_xml_string(didl_fake_root)
 fakeMusicDidl = didllite.from_xml_string(didl_music_content)
 fakeLongArtistDidl = list(create_fake_entries(50))
 
@@ -117,7 +122,7 @@ class FakeContentDirectoryService(UpnpServiceMock):
             return {'Result': didl_fake_root, 'NumberReturned': 3, 'TotalMatches': 3, 'UpdateID': 1}
         elif ObjectID == '/music':
             return {'Result': didl_music_content, 'NumberReturned': 2, 'TotalMatches': 2, 'UpdateID': 1}
-        elif ObjectID == 'FakeLongArtistListing':
+        elif ObjectID == '/fakelongartistlist':
             elements = fakeLongArtistDidl[StartingIndex:StartingIndex + RequestedCount]
             return {
                 'Result': format_didllite(elements),

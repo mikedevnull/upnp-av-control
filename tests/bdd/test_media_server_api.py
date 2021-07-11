@@ -6,6 +6,14 @@ from .common_steps import *  # noqa: F401, F403
 _logger = logging.getLogger(__name__)
 
 
+def find_item_with_title(payload, title):
+    try:
+        item = next(x for x in payload if x['title'] == title)
+        return item
+    except StopIteration:
+        return None
+
+
 @scenario("media_server_api.feature", "Pagination", example_converters=dict(first_element=int, last_element=int))
 def test_browse_pagination():
     pass
@@ -18,45 +26,41 @@ scenarios('media_server_api.feature')
 @sync
 async def the_client_requests_the_contents_of_the_root_element(test_context, webclient):
     """the client requests the contents of the root element."""
-    device_name = 'FooMediaServer'
-    device = test_context.get_device(device_name)
-    udn = device.udn
-    browse_uri = await get_browse_path(webclient, udn)
-    test_context.last_response = await webclient.get(browse_uri)
+    test_context.last_response = await webclient.get('/api/library/')
     assert test_context.last_response.status_code == 200
 
 
-@when('the client requests link of the second item in the response')
+@when(parsers.cfparse('the client requests the contents of item {item_name}'))
 @sync
-async def the_client_requests_link_of_the_second_in_the_response(test_context, webclient):
-    """the client requests link of the second in the response."""
+async def the_client_requests_children_of_item(test_context, webclient, item_name):
     response_json = test_context.last_response.json()
-    second_item = response_json['data'][1]
-    browse_uri = extract_browse_path(second_item)
-    test_context.last_response = await webclient.get(browse_uri)
+    item = find_item_with_title(response_json, item_name)
+    item_id = item['id']
+    uri = f'/api/library/{item_id}'
+    test_context.last_response = await webclient.get(uri)
+
+
+@when(parsers.cfparse('the client requests the metadata of item {item_name}'))
+@sync
+async def the_client_requests_metadata_of_item(test_context, webclient, item_name):
+    response_json = test_context.last_response.json()
+    item = find_item_with_title(response_json, item_name)
+    assert item is not None
+    item_id = item['id']
+    uri = f'/api/library/{item_id}/metadata'
+    test_context.last_response = await webclient.get(uri)
 
 
 @when('the client requests page <pagenumber> with size <pagesize> of object FakeLongArtistListing')
 @sync
 async def the_client_requests_paginated(test_context, webclient, pagenumber, pagesize):
     """the client requests page <pagenumber> with size <pagesize> of object FakeLongArtistListing."""
-    device_name = 'FooMediaServer'
-    device = test_context.get_device(device_name)
-    udn = device.udn
-    browse_uri = await get_browse_path(webclient, udn)
-    pagination_params = {'page': pagenumber, 'pagesize': pagesize, 'objectID': 'FakeLongArtistListing'}
+    response_json = test_context.last_response.json()
+    item = find_item_with_title(response_json, "FakeLongArtistListing")
+    item_id = item['id']
+    browse_uri = f'/api/library/{item_id}'
+    pagination_params = {'page': pagenumber, 'pagesize': pagesize}
     test_context.last_response = await webclient.get(browse_uri, query_string=pagination_params)
-
-
-@when('the client requests the object metadata of object SomeFakeObject on FooMediaServer')
-@sync
-async def the_client_requests_the_object_metadata_on_foomediaserver(test_context, webclient):
-    """the client requests the object metadata of object SomeFakeObject on FooMediaServer."""
-    device_name = 'FooMediaServer'
-    device = test_context.get_device(device_name)
-    udn = device.udn
-    browse_uri = await get_metadata_path(webclient, udn)
-    test_context.last_response = await webclient.get(browse_uri, query_string={'objectID': 'SomeFakeObject'})
 
 
 @then(parsers.cfparse('the response will contain elements from index <first_element> to index <last_element>'))
@@ -67,46 +71,50 @@ def the_response_will_contain_elements_from_index_first_element_to_index_last_el
     from .fake_upnp.foo_media_server import fakeLongArtistDidl
     payload = test_context.last_response.json()
     expected = fakeLongArtistDidl[first_element:last_element + 1]
-    assert len(payload['data']) == len(expected)
-    for expected_item, received_item in zip(expected, payload['data']):
-        assert received_item['id'] == expected_item.id
-        assert received_item['attributes']['title'] == expected_item.title
-        assert received_item['attributes']['album'] == expected_item.album
-        assert received_item['attributes']['artist'] == expected_item.artist
+    assert len(payload) == len(expected)
+    for expected_item, received_item in zip(expected, payload):
+        assert 'id' in received_item
+        assert received_item['title'] == expected_item.title
 
 
-@then('the response will contain the content listing of this second item')
-def the_response_will_contain_the_content_listing_of_this_second_item(test_context):
-    """the response will contain the content listing of this second item."""
-    from .fake_upnp.foo_media_server import fakeMusicDidl
+@then('the response will contain FooMediaServer as an entry')
+def the_response_will_contain_foomediaserver(test_context):
     assert test_context.last_response.status_code == 200
     payload = test_context.last_response.json()
-    assert len(payload['data']) == len(fakeMusicDidl)
-    data0 = payload['data'][0]
-    assert data0['attributes']['title'] == fakeMusicDidl[0].title
-    assert data0['attributes']['album'] == fakeMusicDidl[0].album
-    assert data0['attributes']['artist'] == fakeMusicDidl[0].artist
-    assert data0['id'] == fakeMusicDidl[0].id
-
-    data1 = payload['data'][1]
-    assert data1['attributes']['title'] == fakeMusicDidl[1].title
-    assert data1['attributes']['album'] == fakeMusicDidl[1].album
-    assert data1['attributes']['artist'] == fakeMusicDidl[1].artist
-    assert data1['id'] == fakeMusicDidl[1].id
+    device = test_context.get_device('FooMediaServer')
+    item = find_item_with_title(payload, device.friendly_name)
+    assert item is not None
+    assert item['title'] == device.friendly_name
 
 
-@then('the response will contain the metadata of object SomeFakeObject on FooMediaServer')
+@then(parsers.cfparse('the response will contain the content listing of the {item} item of FooMediaServer'))
+def the_response_will_contain_the_content_listing_of_item(test_context, item):
+    """the response will contain the content listing of this second item."""
+    if item == 'root':
+        from .fake_upnp.foo_media_server import fakeRootDidl
+        didl = fakeRootDidl
+    elif item == 'Music':
+        from .fake_upnp.foo_media_server import fakeMusicDidl
+        didl = fakeMusicDidl
+    assert test_context.last_response.status_code == 200
+    payload = test_context.last_response.json()
+    assert len(payload) == len(didl)
+    for item in didl:
+        other_item = find_item_with_title(payload, item.title)
+        assert item.title == other_item['title']
+
+
+@then('the response will contain the metadata of object Song Title 1 on FooMediaServer')
 def the_response_will_contain_the_metadata_of_object_on_foomediaserver(test_context):
     """the response will contain the metadata of object SomeFakeObject on FooMediaServer."""
-    from .fake_upnp.foo_media_server import someFakeObjectDidlMetadata
+    from .fake_upnp.foo_media_server import fakeMusicDidl
     assert test_context.last_response.status_code == 200
+    didl = fakeMusicDidl[0]
     payload = test_context.last_response.json()
-    _logger.debug(payload)
-    attributes = payload['data']['attributes']
-    assert attributes['id'] == someFakeObjectDidlMetadata.id
-    assert attributes['parentID'] == someFakeObjectDidlMetadata.parentID
-    assert attributes['upnpclass'] == someFakeObjectDidlMetadata.upnpclass
-    assert attributes['title'] == someFakeObjectDidlMetadata.title
-    assert attributes['album'] == someFakeObjectDidlMetadata.album
-    assert attributes['artist'] == someFakeObjectDidlMetadata.artist
-    assert attributes['originalTrackNumber'] == someFakeObjectDidlMetadata.originalTrackNumber
+    assert 'id' in payload  # not equal to original didl, rewritten by frontend
+    assert 'parentID' in payload  # not equal to original didl, rewritten by frontend
+    assert payload['upnpclass'] == didl.upnpclass
+    assert payload['title'] == didl.title
+    assert payload['album'] == didl.album
+    assert payload['artist'] == didl.artist
+    assert payload['originalTrackNumber'] == didl.originalTrackNumber

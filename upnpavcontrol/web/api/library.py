@@ -5,15 +5,34 @@ import urllib.parse
 import logging
 import asyncio
 from .. import models
-from .. import json_api
+import typing
 
 router = APIRouter()
 _logger = logging.getLogger(__name__)
 
-MetadataResponse = json_api.create_response_model('itemmetadata', models.LibraryItemMetadata)
-LibraryListingResponse = json_api.create_list_response_model('itemlist',
-                                                             id_field='id',
-                                                             PayloadModel=models.LibraryListItem)
+
+def create_library_item_id(udn: str, objectID: typing.Optional[str] = None):
+    assert '.' not in udn
+    if objectID is not None:
+        # extra escaping of '/' in objectID required due to
+        # https://github.com/encode/starlette/issues/826
+        # and https://github.com/tiangolo/fastapi/issues/791
+        return urllib.parse.quote_plus(udn) + '.' + urllib.parse.quote_plus(objectID.replace('/', '%2F'))
+    else:
+        return urllib.parse.quote_plus(udn)
+
+
+def split_library_item_id(id: str):
+    parts = id.split('.', 1)
+    if len(parts) == 1:
+        return urllib.parse.unquote_plus(parts[0]), None
+    else:
+        udn = urllib.parse.unquote_plus(parts[0])
+        # extra escaping of '/' in objectID required due to
+        # https://github.com/encode/starlette/issues/826
+        # and https://github.com/tiangolo/fastapi/issues/791
+        objectID = urllib.parse.unquote_plus(parts[1]).replace('%2F', '/')
+        return udn, objectID
 
 
 def _fixup_item_media_urls(item):
@@ -26,91 +45,67 @@ def _fixup_item_media_urls(item):
     return item
 
 
-def _fixup_didl_items(items):
-    return (_fixup_item_media_urls(x) for x in items)
+def _fixup_item_ids(item, udn):
+    item.id = create_library_item_id(udn, item.id)
+    if item.parentID == '-1':
+        item.parentID = None
+    else:
+        item.parentID = create_library_item_id(udn, item.parentID)
+    return item
 
 
-@router.get('/', response_model=models.DevicesResponse)
-def get_media_library_devices(request: Request):
-    def create_links(d: models.DeviceModel):
-        return {'self': request.url_for('get_media_library_device', udn=d.udn)}
-
-    resp = models.DevicesResponse.create(request.app.av_control_point.mediaservers, links_factory=create_links)
-    return resp
+def _map_item_class(itemclass: str):
+    if itemclass.startswith('object.container'):
+        return models.LibraryItemType.CONTAINER
+    else:
+        return models.LibraryItemType.ITEM
 
 
-@router.get('/{udn}', response_model=models.DeviceResponse)
-def get_media_library_device(request: Request, udn: str):
-    device = request.app.av_control_point.get_mediaserver_by_UDN(udn)
-    relationships = {
-        'browse': {
-            'links': {
-                'related': request.url_for('browse_library', udn=udn)
-            }
-        },
-        'metadata': {
-            'links': {
-                'related': request.url_for('get_object_metadata', udn=udn)
-            }
-        }
-    }
-    return models.DeviceResponse.create(device.udn, device, request.url_for('get_media_library_device', udn=udn),
-                                        relationships)
+def format_library_item(item, udn: str):
+    item = _fixup_item_media_urls(item)
+    item = _fixup_item_ids(item, udn)
+    return {'title': item.title, 'id': item.id, 'parentID': item.parentID, 'upnpclass': _map_item_class(item.upnpclass)}
 
 
-def _url_for_query(request, path, params, query):
-    url = request.url_for(path, **params)
-    parsed = list(urllib.parse.urlparse(url))
-    parsed[4] = urllib.parse.urlencode(query)
-    return urllib.parse.urlunparse(parsed)
+@router.get('/', response_model=typing.List[models.LibraryListItem])
+def get_library_collections(request: Request):
+    items = [{
+        'title': x.friendly_name,
+        'id': create_library_item_id(x.udn),
+        'upnpclass': models.LibraryItemType.CONTAINER
+    } for x in request.app.av_control_point.mediaservers]
+    return items
 
 
-def _browse_list_relationship_factory(request, udn, item):
-    relationships = {
-        'browse': {
-            'links': {
-                'related': _url_for_query(request, 'browse_library', {'udn': udn}, {'objectID': item.id})
-            }
-        },
-        'metadata': {
-            'links': {
-                'related': _url_for_query(request, 'get_object_metadata', {'udn': udn}, {'objectID': item.id})
-            }
-        }
-    }
-    return relationships
-
-
-@router.get('/{udn}/browse')
-async def browse_library(request: Request, udn: str, objectID: str = '0', page: int = 0, pagesize: int = 0):
+@router.get('/{id}/metadata', response_model=models.LibraryItemMetadata)
+async def get_library_item(request: Request, id: str):
     try:
-        udn = urllib.parse.unquote_plus(udn)
-        objectID = urllib.parse.unquote_plus(objectID)
-        server = request.app.av_control_point.get_mediaserver_by_UDN(udn)
-        result = await server.browse(objectID, starting_index=page * pagesize, requested_count=pagesize)
-
-        payload = [models.LibraryItemMetadata.from_orm(_fixup_item_media_urls(x)) for x in result.objects]
-        return LibraryListingResponse.create(
-            payload, relationship_factory=lambda x: _browse_list_relationship_factory(request, udn, x))
-    except asyncio.TimeoutError:
-        _logger.error('Mediaserver browse request timed out')
-        raise HTTPException(status_code=504, detail="Request to mediaserver timed out")
+        udn, objectID = split_library_item_id(id)
+        if objectID is None:
+            objectID = '0'
+        device = request.app.av_control_point.get_mediaserver_by_UDN(udn)
+        result = await device.browse(objectID, browse_flag=BrowseFlags.BrowseMetadata)
+        payload = models.LibraryItemMetadata.from_orm(_fixup_item_ids(_fixup_item_media_urls(result.objects[0]), udn))
+        return payload
     except Exception as e:
         _logger.exception(e)
         raise HTTPException(status_code=404)
 
 
-@router.get('/{udn}/metadata', response_model_exclude_unset=True)
-async def get_object_metadata(request: Request, udn: str, objectID: str = '0'):
+@router.get('/{id}')
+async def browse_library(request: Request, id: str, page: int = 0, pagesize: int = 0):
     try:
-        udn = urllib.parse.unquote_plus(udn)
-        objectID = urllib.parse.unquote_plus(objectID)
-        server = request.app.av_control_point.get_mediaserver_by_UDN(udn)
-        result = await server.browse(objectID, browse_flag=BrowseFlags.BrowseMetadata)
-        payload = models.LibraryItemMetadata.from_orm(_fixup_item_media_urls(result.objects[0]))
-        return MetadataResponse.create(objectID, payload)
+        # id = urllib.parse.unquote_plus(id)
+        udn, objectID = split_library_item_id(id)
+        if objectID is None:
+            objectID = '0'
+        device = request.app.av_control_point.get_mediaserver_by_UDN(udn)
+        result = await device.browse(objectID, starting_index=page * pagesize, requested_count=pagesize)
+
+        payload = [format_library_item(x, udn) for x in result.objects]
+        return payload
     except asyncio.TimeoutError:
-        _logger.error('Mediaserver metadata request timed out')
+        _logger.error('Mediaserver browse request timed out')
         raise HTTPException(status_code=504, detail="Request to mediaserver timed out")
     except Exception as e:
         _logger.exception(e)
