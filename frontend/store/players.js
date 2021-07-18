@@ -37,8 +37,17 @@ export const actions = {
   removeDevice(context, device) {
     context.commit('removeDevice', device)
   },
-  selectPlayer(context, deviceid) {
+  async selectPlayer(context, deviceid) {
+    if (
+      context.state.selectedPlayerId &&
+      context.state.selectedPlayerId !== deviceid
+    ) {
+      await this.$upnpapi.eventBus.unsubscribePlaybackInfo(
+        context.state.selectedPlayerId
+      )
+    }
     context.commit('setSelectedPlayer', deviceid)
+    await this.$upnpapi.eventBus.subscribePlaybackInfo(deviceid)
     const player = context.state.devices.find((d) => d.id === deviceid)
     context.commit('setPlayer', player)
   },
