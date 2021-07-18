@@ -43,3 +43,12 @@ export const actions = {
     context.commit('setPlayer', player)
   },
 }
+
+export const getters = {
+  current_title(state) {
+    if (state.selected_player) {
+      return state.selected_player.name
+    }
+    return 'No player selected'
+  },
+}
