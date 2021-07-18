@@ -6,9 +6,9 @@
           href="#"
           class="block flex items-center px-4 h-16 hover:bg-primary-lightest"
           :class="{
-            [`bg-primary-lightest`]: selectedPlayerId === player.udn,
+            [`bg-primary-lightest`]: selectedPlayerId === player.id,
           }"
-          @click="$emit('selected', player.udn)"
+          @click="$emit('selected', player.id)"
           ><div>
             <img
               v-if="player.icon"

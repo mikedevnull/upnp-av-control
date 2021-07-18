@@ -8,21 +8,21 @@ export const mutations = {
   addDevice(state, device) {
     if (
       state.devices.find((d) => {
-        return d.udn === device.udn
+        return d.id === device.id
       }) === undefined
     ) {
       state.devices.push(device)
     }
   },
 
-  removeDevice(state, udn) {
+  removeDevice(state, id) {
     state.devices = state.devices.filter((d) => {
-      return d.udn !== udn
+      return d.id !== id
     })
   },
 
-  setSelectedPlayer(state, udn) {
-    state.selectedPlayerId = udn
+  setSelectedPlayer(state, id) {
+    state.selectedPlayerId = id
   },
 
   setPlayer(state, device) {
@@ -37,9 +37,9 @@ export const actions = {
   removeDevice(context, device) {
     context.commit('removeDevice', device)
   },
-  selectPlayer(context, deviceudn) {
-    context.commit('setSelectedPlayer', deviceudn)
-    const player = context.state.devices.find((d) => d.udn === deviceudn)
+  selectPlayer(context, deviceid) {
+    context.commit('setSelectedPlayer', deviceid)
+    const player = context.state.devices.find((d) => d.id === deviceid)
     context.commit('setPlayer', player)
   },
 }
