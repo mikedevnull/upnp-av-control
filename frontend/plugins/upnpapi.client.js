@@ -11,7 +11,7 @@ export default async function ({ $axios, store }, inject) {
   })
 
   // Set baseURL to something different
-  api.setBaseURL('/api')
+  api.setBaseURL('/')
 
   const upnpapi = upnpApiFactory(api)
 
