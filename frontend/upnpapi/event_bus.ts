@@ -1,4 +1,6 @@
 import JsonRPCClient from './jsonrpc'
+import { PlaybackInfo } from './types'
+import { adaptTo } from './utils'
 
 function websocketUrl(socketPath: string) {
   const loc = window.location
@@ -20,14 +22,17 @@ type InitMessage = {
 
 type NewDeviceMessage = {
   udn: string
-  // eslint-disable-next-line camelcase
-  device_type: string
+  deviceType: string
 }
 
 type DeviceLostMessage = {
   udn: string
-  // eslint-disable-next-line camelcase
-  device_type: string
+  deviceType: string
+}
+
+export type PlaybackInfoMessage = {
+  id: string
+  playbackinfo: PlaybackInfo
 }
 
 interface OnDeviceLostCallback {
@@ -36,6 +41,13 @@ interface OnDeviceLostCallback {
 
 interface OnNewDeviceCallback {
   (message: NewDeviceMessage): void
+}
+
+interface OnErrorCallback {
+  (message: string): void
+}
+interface PlaybackInfoCallback {
+  (message: PlaybackInfoMessage): void
 }
 
 function createWebsocket(url: string) {
@@ -49,16 +61,15 @@ export default class ControlPointEventBus {
   socket: WebSocket
   jrpc: JsonRPCClient
   state: ControlPointState
-  onerror: CallableFunction | undefined
+  onerror: OnErrorCallback | undefined
   onNewDevice: OnNewDeviceCallback | undefined
   onDeviceLost: OnDeviceLostCallback | undefined
+  onPlaybackInfo: PlaybackInfoCallback | undefined
 
   constructor(socketFactory: WebSocketFactory = createWebsocket) {
-    //     this.store = undefined
     this.socketUrl = websocketUrl('api/ws/events')
     this.socketFactory = socketFactory
     this.socket = this.socketFactory(this.socketUrl)
-    //     this.state = 'closed'
     this.jrpc = new JsonRPCClient()
     this.state = 'closed'
     this.onerror = undefined
@@ -74,14 +85,20 @@ export default class ControlPointEventBus {
     this.jrpc.on('initialize', (params: InitMessage) =>
       this._onInitialize(params.version)
     )
-    this.jrpc.on('new_device', (params: NewDeviceMessage) => {
+    this.jrpc.on('new_device', (params: any) => {
       if (this.onNewDevice) {
-        this.onNewDevice(params)
+        this.onNewDevice(adaptTo<NewDeviceMessage>(params))
       }
     })
-    this.jrpc.on('device_lost', (params: DeviceLostMessage) => {
+    this.jrpc.on('device_lost', (params: any) => {
       if (this.onDeviceLost) {
-        this.onDeviceLost(params)
+        this.onDeviceLost(adaptTo<DeviceLostMessage>(params))
+      }
+    })
+    this.jrpc.on('playbackinfo', (params: any) => {
+      console.log(params)
+      if (this.onPlaybackInfo) {
+        this.onPlaybackInfo(adaptTo<PlaybackInfoMessage>(params.playbackinfo))
       }
     })
 

@@ -1,9 +1,6 @@
 import { NuxtAxiosInstance } from '@nuxtjs/axios'
-
-export type PlayerDevice = {
-  id: string
-  name: string
-}
+import { PlaybackInfo, PlayerDevice } from './types'
+import { adaptTo } from './utils'
 
 export function getDevices(connector: NuxtAxiosInstance) {
   // return testData.renderer
@@ -20,4 +17,12 @@ export function play(
 ) {
   const url = `/api/player/${player.id}/queue`
   connector.post(url, { library_item_id: itemid })
+}
+
+export function playbackInfo(connector: NuxtAxiosInstance, playerId: string) {
+  const url = `/api/player/${playerId}/playback`
+  return connector
+    .get(url)
+    .then((response: any) => response.data)
+    .then((data: any) => adaptTo<PlaybackInfo>(data))
 }
