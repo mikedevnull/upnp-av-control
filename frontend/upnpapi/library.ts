@@ -1,23 +1,20 @@
 import { NuxtAxiosInstance } from '@nuxtjs/axios'
-
-type LibraryListItem = {
-  title: string
-  id: string
-  parentID?: string
-  upnpclass: string
-}
+import { LibraryListItem } from './types'
+import { adaptTo } from './utils'
 
 export function browse(connector: NuxtAxiosInstance, id: string) {
   if (id) {
     const url = `/api/library/${id}`
     return connector
       .get(url)
-      .then((response: any) => response.data as LibraryListItem[])
+      .then((response: any) => response.data)
+      .then((data: any) => adaptTo<LibraryListItem[]>(data))
   } else {
     const url = `/api/library/`
     return connector
       .get(url)
-      .then((response: any) => response.data as LibraryListItem[])
+      .then((response: any) => response.data)
+      .then((data: any) => adaptTo<LibraryListItem[]>(data))
   }
 }
 
