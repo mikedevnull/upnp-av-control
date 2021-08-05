@@ -1,6 +1,7 @@
 import logging
 from .notification_backend import NotificationBackend
 from .oberserver import Observable, Subscription
+from . import didllite
 from async_upnp_client import UpnpStateVariable, UpnpDevice, UpnpService
 import defusedxml.ElementTree as etree
 from typing import Iterable, Optional, cast
@@ -8,17 +9,25 @@ import asyncio
 from pydantic import BaseModel
 from .playback import parse_protocol_infos
 import enum
+import xml.dom.minidom
+import typing
+
+_logger = logging.getLogger(__name__)
 
 
 class TransportState(str, enum.Enum):
     STOPPED = 'STOPPED'
     PLAYING = 'PLAYING'
     PAUSED_PLAYBACK = 'PAUSED'
+    NO_MEDIA_PRESENT = 'IDLE'
 
 
 class PlaybackInfo(BaseModel):
     volume_percent: int = 0
     transport: TransportState = TransportState.STOPPED
+    title: typing.Optional[str]
+    artist: typing.Optional[str]
+    album: typing.Optional[str]
 
 
 _nsmap = {
@@ -29,7 +38,25 @@ _nsmap = {
 }
 
 
+def prettify_xml(xml_frame):
+    dom = xml.dom.minidom.parseString(xml_frame)
+    return dom.toprettyxml()
+
+
+def _set_current_track_metadata(xml: str, info: PlaybackInfo):
+    didl = didllite.from_xml_string(xml)
+    if len(didl) > 0:
+        current = didl[0]
+        if current.upnpclass.startswith('object.item.audioItem.musicTrack'):
+            current = cast(didllite.MusicTrack, current)
+            info.artist = current.artist
+            info.album = current.album
+            info.title = current.title
+    return info
+
+
 def update_playback_info_from_event(info: PlaybackInfo, event: str) -> bool:
+    _logger.debug(event)
     tree = etree.fromstring(event)
     any_value_changed = False
     vol = tree.find("./rcs:InstanceID[@val='0']/rcs:Volume[@channel='Master']", namespaces=_nsmap)
@@ -44,6 +71,10 @@ def update_playback_info_from_event(info: PlaybackInfo, event: str) -> bool:
         if value != info.transport:
             info.transport = value
             any_value_changed = True
+    transportMeta = tree.find("./avt-event:InstanceID[@val='0']/avt-event:AVTransportURIMetaData", namespaces=_nsmap)
+    if transportMeta is not None and len(transportMeta) > 0:
+        info = _set_current_track_metadata(transportMeta.attrib['val'], info)
+        any_value_changed = True
     return any_value_changed
 
 
