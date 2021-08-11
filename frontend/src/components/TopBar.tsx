@@ -1,4 +1,3 @@
-import { ReactComponent as NavBackIcon } from "../assets/nav-back.svg";
 import PropTypes from "prop-types";
 
 interface TopBarProps {

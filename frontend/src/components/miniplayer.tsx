@@ -10,7 +10,7 @@ export default function Miniplayer() {
         <NavUp />
       </Link>
 
-      <img className="mx-2 border h-12" src="logo192.png"></img>
+      <img className="mx-2 border h-12" src="logo192.png" alt="cover art"></img>
       <span className="m-2 text-left flex-grow">Miniplayer</span>
       <span>0:00</span>
       <div className="m-4 flex flex-row">
