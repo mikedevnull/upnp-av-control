@@ -1,7 +1,7 @@
 import "./App.css";
 import { LibraryBrowser } from "./pages";
-import { BrowserRouter as Router, Switch, Route, Link } from "react-router-dom";
-import { Player } from "./pages";
+import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
+import { Player, PlayerSelection } from "./pages";
 
 function App() {
   return (
@@ -10,6 +10,9 @@ function App() {
         <Switch>
           <Route path="/player">
             <Player />
+          </Route>
+          <Route path="/select-player">
+            <PlayerSelection />
           </Route>
           <Route path="/">
             <LibraryBrowser />
