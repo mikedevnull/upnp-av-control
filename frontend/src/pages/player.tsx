@@ -2,6 +2,7 @@ import { ReactComponent as PrevIcon } from "../assets/control-prev.svg";
 import { ReactComponent as NextIcon } from "../assets/control-next.svg";
 import { ReactComponent as PlayIcon } from "../assets/control-play.svg";
 import { ReactComponent as NavDownIcon } from "../assets/nav-down.svg";
+import { ReactComponent as DevicesIcon } from "../assets/control-devices.svg";
 import { TopBar } from "../components/TopBar";
 import { Link } from "react-router-dom";
 
@@ -14,21 +15,28 @@ const Player = () => {
       <NavDownIcon />
     </Link>
   );
+  const action = (
+    <Link to="/select-player">
+      <DevicesIcon />
+    </Link>
+  );
   return (
     <>
-      <TopBar nav={nav} />
-      <div className="flex flex-col w-full h-full">
+      <TopBar nav={nav} action={action} />
+      <div className="container flex flex-col w-full h-full">
         <div className="flex-grow-2">
-          <div
+          <img
             className="
           rounded-3xl
           mx-auto
           h-48
+          w-auto
           text-primary-light
           shadow-2xl
           border-primary-light border
-          w-9/12
         "
+            src="logo192.png"
+            alt="cover art"
           />
         </div>
         <div className="flex-grow p-8 max-h-44 text-center text-primary">
