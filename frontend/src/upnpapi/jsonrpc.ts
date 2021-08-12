@@ -72,7 +72,7 @@ export default class JsonRPCClient {
     };
   }
 
-  call(method: string, params: object): Promise<unknown> {
+  call(method: string, params?: object): Promise<unknown> {
     const id = this._callId++;
     const request = JSON.stringify({ jsonrpc: "2.0", method, id, params });
     const promise = new Promise<unknown>((resolve, reject) => {
