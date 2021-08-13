@@ -19,11 +19,6 @@ const fake_devices: Array<PlayerDevice> = [
   },
 ];
 
-interface PlayerSelectionProps {
-  devices: [PlayerDevice];
-  selectedPlayerId?: string;
-}
-
 export default function PlayerSelection() {
   const nav = (
     <Link to="/player">
