@@ -13,7 +13,7 @@ def a_device_foomediaserver_already_present_on_the_network(test_context, name):
 
 @given(parsers.parse('a client subscribed to playback notifications from {renderer_name}'))
 @sync
-async def discovery_events_subscribed(test_context, event_bus_connection, renderer_name):
+async def playbackinfo_events_subscribed(test_context, event_bus_connection, renderer_name):
     descriptor = test_context.get_device(renderer_name)
     result = await event_bus_connection.send(method='subscribe',
                                              params={
@@ -25,7 +25,7 @@ async def discovery_events_subscribed(test_context, event_bus_connection, render
 
 @when(parsers.parse('the client unsubscribes from playback notifications from {renderer_name}'))
 @sync
-async def discovery_events_unsubscribe(test_context, event_bus_connection, renderer_name):
+async def playbackinfo_events_unsubscribe(test_context, event_bus_connection, renderer_name):
     descriptor = test_context.get_device(renderer_name)
     result = await event_bus_connection.send(method='unsubscribe',
                                              params={

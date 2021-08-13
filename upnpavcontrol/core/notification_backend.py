@@ -106,6 +106,7 @@ class NotificationBackend(object):
         # actually times out
         self._subscription_renewal_time = self._subscription_timeout / 2
         self._renew_subscriptions_task = None
+        self._subscriptions = {}
 
     async def async_start(self):
         """
@@ -143,11 +144,18 @@ class NotificationBackend(object):
             raise
 
     async def subscribe(self, service: UpnpService):
-        success, sid = await self._handler.async_subscribe(service, self._subscription_timeout)
-        if success:
+        try:
+            sid, actual_renewal_time = await self._handler.async_subscribe(service, self._subscription_timeout)
             _logger.info('Subscribed service %s upnp events (sid: %s)', service, sid)
-        else:
-            _logger.error('Failed to subscribe to service upnp events')
+            self._subscriptions[service] = {"sid": sid, "timeout": actual_renewal_time}
+            return sid
+        except Exception:
+            _logger.exception('Subscription to service failed')
+            raise
 
     async def unsubscribe(self, service: UpnpService):
-        await self._handler.async_unsubscribe(service)
+        if service in self._subscriptions:
+            sid = self._subscriptions[service]['sid']
+            await self._handler.async_unsubscribe(sid)
+        else:
+            _logger.warning('Cannot unsubscribe service %s, no known subscription')
