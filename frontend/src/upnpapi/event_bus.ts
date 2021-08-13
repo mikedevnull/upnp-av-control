@@ -96,14 +96,12 @@ export default class ControlPointEventBus {
       }
     });
     this.jrpc.on("playbackinfo", (params: any) => {
-      console.log(params);
       if (this.onPlaybackInfo) {
         this.onPlaybackInfo(adaptTo<PlaybackInfoMessage>(params.playbackinfo));
       }
     });
 
     this.socket.onmessage = (event) => {
-      console.log(event.data);
       this.jrpc.handleMessage(event.data);
     };
     this.socket.onclose = () => {};
@@ -121,7 +119,6 @@ export default class ControlPointEventBus {
       return;
     }
     this.state = "connected";
-    console.log("event-bus connected");
     this.jrpc.call("subscribe", { category: "discovery" });
   }
 
