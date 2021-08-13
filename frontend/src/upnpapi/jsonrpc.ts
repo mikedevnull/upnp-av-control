@@ -87,8 +87,7 @@ export default class JsonRPCClient {
       const payload = JSON.parse(data);
       if (payload.jsonrpc !== "2.0") {
         this.onerror("received non jsonrpc message");
-      }
-      if (isNotification(payload)) {
+      } else if (isNotification(payload)) {
         this._handleNotification(payload);
       } else if (isRPCResponse(payload)) {
         this._handleResponse(payload);
