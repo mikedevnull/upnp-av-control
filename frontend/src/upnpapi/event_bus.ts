@@ -77,6 +77,7 @@ export default class ControlPointEventBus {
     this.jrpc.onerror = (message: string) => {
       if (this.state === "connected") {
         this.socket.close();
+        this.state = "closed";
       }
       if (this.onerror) {
         this.onerror("JSONRPC Error: " + message);
