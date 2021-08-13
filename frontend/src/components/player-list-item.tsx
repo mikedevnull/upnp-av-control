@@ -17,13 +17,13 @@ export default function PlayerListItem({
     className += " bg-primary-lightest";
   }
   return (
-    <a href="#" onClick={() => clickHandler(player.id)} className={className}>
+    <li onClick={() => clickHandler(player.id)} className={className}>
       <img
         src={IconPlayer}
         alt=""
         className="h-14 w-14 m-1 rounded-xl border border-primary-light"
       />
       {player.name}
-    </a>
+    </li>
   );
 }

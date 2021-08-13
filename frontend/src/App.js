@@ -2,8 +2,13 @@ import "./App.css";
 import { LibraryBrowser } from "./pages";
 import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
 import { Player, PlayerSelection } from "./pages";
+import { useEffect } from "react";
 
 function App() {
+  useEffect(() => {
+    console.log("setup upnpapi");
+  });
+
   return (
     <Router>
       <div className="App">
