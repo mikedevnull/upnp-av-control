@@ -82,10 +82,11 @@ class EventBusConnection(object):
                 return json_rpc.JsonRPCResponse(id=request.id, result=True)
         return json_rpc.JsonRPCResponse(id=request.id, result=False)
 
-    async def _notify_discovery(self, event):
+    async def _notify_discovery(self, event: MediaDeviceDiscoveryEvent):
         assert event.event_type.name in _event_type_map
         method = _event_type_map[event.event_type.name]
         msg = json_rpc.JsonRPCNotification(method=method, params=event.dict())
+        _logger.debug('Sending discovery event "%s" for device %s', method, event.udn)
         await self._websocket.send_text(msg.json())
 
     async def _notifiy_playbackinfo(self, udn, playbackinfo):
@@ -99,6 +100,8 @@ class WebsocketEventBus(object):
         self._connector = connector
 
     async def accept(self, websocket):
+        _logger.debug('incoming event bus websocket connection')
         await websocket.accept()
+        _logger.info('accepted eventbus connection')
         connection = EventBusConnection(websocket, self._connector)
         await connection.handle()

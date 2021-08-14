@@ -5,10 +5,7 @@ import { adaptTo } from "./utils";
 function websocketUrl(socketPath: string) {
   const loc = window.location;
   return (
-    (loc.protocol === "https:" ? "wss://" : "ws://") +
-    loc.host +
-    loc.pathname +
-    socketPath
+    (loc.protocol === "https:" ? "wss://" : "ws://") + loc.host + socketPath
   );
 }
 
@@ -67,7 +64,7 @@ export default class ControlPointEventBus {
   onPlaybackInfo: PlaybackInfoCallback | undefined;
 
   constructor(socketFactory: WebSocketFactory = createWebsocket) {
-    this.socketUrl = websocketUrl("api/ws/events");
+    this.socketUrl = websocketUrl("/api/ws/events");
     this.socketFactory = socketFactory;
     this.socket = this.socketFactory(this.socketUrl);
     this.jrpc = new JsonRPCClient();
