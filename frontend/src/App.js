@@ -22,8 +22,6 @@ function App() {
       PlaybackControl.Event.DEVICES_CHANGED,
       setDevices
     );
-    playbackControl.current.selectedPlayerId =
-      "6e5dbd54-1fcc-d911-1346-f1ba79c317e5";
   }, []);
   function selectPlayer(playerId) {
     setSelectedPlayerId(playerId);
