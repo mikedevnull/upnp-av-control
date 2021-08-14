@@ -12,18 +12,22 @@ function createPlaybackControl() {
 }
 
 function App() {
-  const playbackControl = useRef(createPlaybackControl);
+  const playbackControl = useRef(createPlaybackControl());
   const [devices, setDevices] = useState([]);
   const [selectedPlayerId, setSelectedPlayerId] = useState(
-    playbackControl.selectedPlayerId
+    playbackControl.current.selectedPlayerId
   );
   useEffect(() => {
-    playbackControl.on(PlaybackControl.Event.DEVICES_CHANGED, setDevices);
-    playbackControl.selectedPlayerId = "6e5dbd54-1fcc-d911-1346-f1ba79c317e5";
+    playbackControl.current.on(
+      PlaybackControl.Event.DEVICES_CHANGED,
+      setDevices
+    );
+    playbackControl.current.selectedPlayerId =
+      "6e5dbd54-1fcc-d911-1346-f1ba79c317e5";
   }, []);
   function selectPlayer(playerId) {
     setSelectedPlayerId(playerId);
-    playbackControl.selectedPlayerId = playerId;
+    playbackControl.current.selectedPlayerId = playerId;
   }
 
   return (
@@ -31,7 +35,7 @@ function App() {
       <div className="App">
         <Switch>
           <Route path="/player">
-            <Player playbackControl={playbackControl} />
+            <Player playbackControl={playbackControl.current} />
           </Route>
           <Route path="/select-player">
             <PlayerSelection
@@ -41,7 +45,7 @@ function App() {
             />
           </Route>
           <Route path="/">
-            <LibraryBrowser playbackControl={playbackControl} />
+            <LibraryBrowser playbackControl={playbackControl.current} />
           </Route>
         </Switch>
       </div>
