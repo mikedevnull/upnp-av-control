@@ -1,6 +1,5 @@
 import * as api from "./player";
 import PlaybackControl from "./playback_control";
-import { PlaybackControlEvent } from "./playback_control";
 import EventBus from "./event_bus";
 jest.mock("./event_bus");
 jest.mock("./player");
@@ -40,7 +39,7 @@ describe("PlaybackControl", () => {
     await flushPromises();
 
     const deviceCb = jest.fn();
-    control.on(PlaybackControlEvent.DEVICES_CHANGED, deviceCb);
+    control.on(PlaybackControl.Event.DEVICES_CHANGED, deviceCb);
     mockedGetDevice.mockReturnValueOnce([{ id: "abc", name: "Baz" }]);
 
     eventBus.triggerNewDevice({ udn: "abc", deviceType: "renderer" });
@@ -54,7 +53,7 @@ describe("PlaybackControl", () => {
     await flushPromises();
 
     const deviceCb = jest.fn();
-    control.on(PlaybackControlEvent.DEVICES_CHANGED, deviceCb);
+    control.on(PlaybackControl.Event.DEVICES_CHANGED, deviceCb);
     mockedGetDevice.mockReturnValueOnce([]);
 
     eventBus.triggerDeviceLost({ udn: "abc", deviceType: "renderer" });
@@ -67,13 +66,14 @@ describe("PlaybackControl", () => {
     const control = new PlaybackControl(eventBus);
 
     const playerCb = jest.fn();
-    control.on(PlaybackControlEvent.ACTIVE_PLAYER_PRESENT, playerCb);
+    control.on(PlaybackControl.Event.ACTIVE_PLAYER_PRESENCE_CHANGED, playerCb);
     await flushPromises();
 
     control.selectedPlayerId = "1234";
     control.selectedPlayerId = "1234"; // setting it twice should not have any effect
 
     expect(playerCb).toHaveBeenCalledTimes(1);
+    expect(playerCb).toHaveBeenCalledWith(true);
     expect(control.isPlayerPresent).toBeTruthy();
   });
 
@@ -82,7 +82,7 @@ describe("PlaybackControl", () => {
     const control = new PlaybackControl(eventBus);
 
     const playerCb = jest.fn();
-    control.on(PlaybackControlEvent.ACTIVE_PLAYER_PRESENT, playerCb);
+    control.on(PlaybackControl.Event.ACTIVE_PLAYER_PRESENCE_CHANGED, playerCb);
     await flushPromises();
     control.selectedPlayerId = "1234";
     expect(playerCb).not.toHaveBeenCalled();
@@ -92,6 +92,7 @@ describe("PlaybackControl", () => {
     await flushPromises();
 
     expect(playerCb).toHaveBeenCalledTimes(1);
+    expect(playerCb).toHaveBeenCalledWith(true);
     expect(control.isPlayerPresent).toBeTruthy();
   });
 
@@ -100,7 +101,7 @@ describe("PlaybackControl", () => {
     const control = new PlaybackControl(eventBus);
 
     const playerCb = jest.fn();
-    control.on(PlaybackControlEvent.ACTIVE_PLAYER_LOST, playerCb);
+    control.on(PlaybackControl.Event.ACTIVE_PLAYER_PRESENCE_CHANGED, playerCb);
     control.selectedPlayerId = "1234";
     await flushPromises();
     expect(control.isPlayerPresent).toBeTruthy();
@@ -109,7 +110,8 @@ describe("PlaybackControl", () => {
     mockedGetDevice.mockReturnValueOnce([]);
     await flushPromises();
 
-    expect(playerCb).toHaveBeenCalledTimes(1);
+    expect(playerCb).toHaveBeenCalledTimes(2);
+    expect(playerCb).toHaveBeenCalledWith(false);
     expect(control.isPlayerPresent).toBeFalsy();
   });
 
@@ -118,13 +120,14 @@ describe("PlaybackControl", () => {
     const control = new PlaybackControl(eventBus);
 
     const playerCb = jest.fn();
-    control.on(PlaybackControlEvent.ACTIVE_PLAYER_LOST, playerCb);
+    control.on(PlaybackControl.Event.ACTIVE_PLAYER_PRESENCE_CHANGED, playerCb);
     control.selectedPlayerId = "1234";
     await flushPromises();
     expect(control.isPlayerPresent).toBeTruthy();
 
     control.selectedPlayerId = undefined;
-    expect(playerCb).toHaveBeenCalledTimes(1);
+    expect(playerCb).toHaveBeenCalledTimes(2);
+    expect(playerCb).toHaveBeenCalledWith(false);
     expect(control.isPlayerPresent).toBeFalsy();
   });
 });
