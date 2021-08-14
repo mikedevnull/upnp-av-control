@@ -2,13 +2,17 @@ import "./App.css";
 import { LibraryBrowser } from "./pages";
 import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
 import { Player, PlayerSelection } from "./pages";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { ControlPointEventBus, PlaybackControl } from "./upnpapi";
 
-const eventBus = new ControlPointEventBus();
-const playbackControl = new PlaybackControl(eventBus);
+function createPlaybackControl() {
+  const eventBus = new ControlPointEventBus();
+  const playbackControl = new PlaybackControl(eventBus);
+  return playbackControl;
+}
 
 function App() {
+  const playbackControl = useRef(createPlaybackControl);
   const [devices, setDevices] = useState([]);
   const [selectedPlayerId, setSelectedPlayerId] = useState(
     playbackControl.selectedPlayerId
