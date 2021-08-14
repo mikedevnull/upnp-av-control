@@ -4,12 +4,13 @@ import { getDevices } from "./player";
 import EventEmitter from "eventemitter3";
 import _ from "lodash";
 
-export enum PlaybackControlEvent {
+enum PlaybackControlEvent {
   DEVICES_CHANGED = "playback-devices-changed",
-  ACTIVE_PLAYER_PRESENT = "active-player-present",
-  ACTIVE_PLAYER_LOST = "active-player-lost",
+  ACTIVE_PLAYER_PRESENCE_CHANGED = "active-player-presence",
 }
 export default class PlaybackControl extends EventEmitter {
+  public static readonly Event = PlaybackControlEvent;
+  readonly Event = PlaybackControl.Event;
   private _selectedPlayerId?: string;
   private _playerPresent: boolean = false;
   private _players: ArrayLike<PlayerDevice> = [];
@@ -42,11 +43,24 @@ export default class PlaybackControl extends EventEmitter {
     this.checkSelectedPlayerPresence();
   }
 
+  get selectedPlayerName() {
+    if (this.isPlayerPresent) {
+      const selectedPlayer = _.find(
+        this._players,
+        (p) => p.id === this._selectedPlayerId
+      );
+      if (selectedPlayer) {
+        return selectedPlayer.name;
+      }
+    }
+    return "";
+  }
+
   private async updateDevices() {
     const devices = await getDevices();
     if (_.isEqual(devices, this._players) === false) {
       this._players = devices;
-      this.emit(PlaybackControlEvent.DEVICES_CHANGED, devices);
+      this.emit(PlaybackControl.Event.DEVICES_CHANGED, devices);
       this.checkSelectedPlayerPresence();
     }
   }
@@ -55,7 +69,10 @@ export default class PlaybackControl extends EventEmitter {
     if (this._selectedPlayerId === undefined) {
       if (this._playerPresent === true) {
         this._playerPresent = false;
-        this.emit(PlaybackControlEvent.ACTIVE_PLAYER_LOST);
+        this.emit(
+          PlaybackControl.Event.ACTIVE_PLAYER_PRESENCE_CHANGED,
+          this._playerPresent
+        );
       }
       return;
     }
@@ -66,11 +83,10 @@ export default class PlaybackControl extends EventEmitter {
     const newState = selectedPlayer !== undefined;
     if (newState !== this._playerPresent) {
       this._playerPresent = newState;
-      if (newState) {
-        this.emit(PlaybackControlEvent.ACTIVE_PLAYER_PRESENT);
-      } else {
-        this.emit(PlaybackControlEvent.ACTIVE_PLAYER_LOST);
-      }
+      this.emit(
+        PlaybackControl.Event.ACTIVE_PLAYER_PRESENCE_CHANGED,
+        this._playerPresent
+      );
     }
   }
 }

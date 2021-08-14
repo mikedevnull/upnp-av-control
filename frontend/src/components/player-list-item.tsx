@@ -4,7 +4,7 @@ import IconPlayer from "../assets/icon-player.svg";
 interface PlayerListItemProps {
   player: PlayerDevice;
   selected: boolean;
-  clickHandler: CallableFunction;
+  clickHandler?: CallableFunction;
 }
 
 export default function PlayerListItem({
@@ -17,7 +17,14 @@ export default function PlayerListItem({
     className += " bg-primary-lightest";
   }
   return (
-    <li onClick={() => clickHandler(player.id)} className={className}>
+    <li
+      onClick={() => {
+        if (clickHandler) {
+          clickHandler(player.id);
+        }
+      }}
+      className={className}
+    >
       <img
         src={IconPlayer}
         alt=""

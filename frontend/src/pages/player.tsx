@@ -5,8 +5,20 @@ import { ReactComponent as NavDownIcon } from "../assets/nav-down.svg";
 import { ReactComponent as DevicesIcon } from "../assets/control-devices.svg";
 import { TopBar } from "../components/TopBar";
 import { Link } from "react-router-dom";
+import { usePlayerControl } from "../custom-hooks";
+import { PlaybackControl } from "../upnpapi";
 
-const Player = () => {
+interface PlayerProps {
+  playbackControl: PlaybackControl;
+}
+
+const Player = (props: PlayerProps) => {
+  const { playerPresent, playerName } = usePlayerControl(props.playbackControl);
+  let overlayClass =
+    "absolute top-0 mt-16 right-0 bottom-0 left-0 opacity-90 bg-gray-50";
+  if (playerPresent) {
+    overlayClass += " hidden";
+  }
   const current_volume = 0;
   const current_title = "Dummy Title";
   const current_artist = "Dummy Artist";
@@ -22,8 +34,8 @@ const Player = () => {
   );
   return (
     <>
-      <TopBar nav={nav} action={action} />
-      <div className="container flex flex-col w-full h-full">
+      <TopBar nav={nav} action={action} title={playerName} />
+      <div className="container mx-auto flex flex-col w-full h-full">
         <div className="flex-grow-2">
           <img
             className="
@@ -87,6 +99,7 @@ const Player = () => {
             name="volume"
           />
         </div>
+        <div className={overlayClass}></div>
       </div>
     </>
   );
