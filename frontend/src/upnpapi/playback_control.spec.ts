@@ -1,11 +1,44 @@
 import * as api from "./player";
 import PlaybackControl from "./playback_control";
 import EventBus from "./event_bus";
+import { MapLike } from "typescript";
+import { before } from "lodash";
 jest.mock("./event_bus");
 jest.mock("./player");
 
 const MockEventBus = <jest.Mock<EventBus>>EventBus;
 const mockedGetDevice = api.getDevices as jest.Mock;
+class LocalStorageMock {
+  private store: MapLike<string>;
+  constructor() {
+    this.store = {};
+  }
+  clear() {
+    this.store = {};
+  }
+
+  getItem(key: string) {
+    return this.store[key] || null;
+  }
+
+  setItem(key: string, value: string) {
+    this.store[key] = value;
+  }
+
+  removeItem(key: string) {
+    delete this.store[key];
+  }
+
+  get length() {
+    return this.store.keys.length;
+  }
+
+  key(n: number) {
+    return this.store.keys[n];
+  }
+}
+
+global.localStorage = new LocalStorageMock();
 
 const devices = [
   { id: "1234", name: "foo" },
@@ -21,6 +54,7 @@ describe("PlaybackControl", () => {
   beforeEach(() => {
     eventBus = new MockEventBus();
     mockedGetDevice.mockClear();
+    localStorage.clear();
   });
 
   it("provides a list of available devices", async () => {
@@ -129,5 +163,24 @@ describe("PlaybackControl", () => {
     expect(playerCb).toHaveBeenCalledTimes(2);
     expect(playerCb).toHaveBeenCalledWith(false);
     expect(control.isPlayerPresent).toBeFalsy();
+  });
+
+  it("uses the localstorage to initialize the active player id", async () => {
+    mockedGetDevice.mockReturnValueOnce(devices);
+    localStorage.setItem("selected-player-id", "1234");
+    const control = new PlaybackControl(eventBus);
+
+    await flushPromises();
+    expect(control.selectedPlayerId).toEqual("1234");
+    expect(control.isPlayerPresent).toBeTruthy();
+  });
+
+  it("stores the selected player id in localstorage", async () => {
+    mockedGetDevice.mockReturnValueOnce(devices);
+    const control = new PlaybackControl(eventBus);
+
+    await flushPromises();
+    control.selectedPlayerId = "abcd";
+    expect(localStorage.getItem("selected-player-id")).toEqual("abcd");
   });
 });

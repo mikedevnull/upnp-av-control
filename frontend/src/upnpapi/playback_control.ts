@@ -17,9 +17,12 @@ export default class PlaybackControl extends EventEmitter {
 
   constructor(private readonly _eventBus: ControlPointEventBus) {
     super();
-
-    _eventBus.onNewDevice = this.updateDevices.bind(this);
-    _eventBus.onDeviceLost = this.updateDevices.bind(this);
+    const storedId = localStorage.getItem("selected-player-id");
+    if (storedId) {
+      this._selectedPlayerId = storedId;
+    }
+    this._eventBus.onNewDevice = this.updateDevices.bind(this);
+    this._eventBus.onDeviceLost = this.updateDevices.bind(this);
     this.updateDevices();
   }
 
@@ -40,6 +43,11 @@ export default class PlaybackControl extends EventEmitter {
       return;
     }
     this._selectedPlayerId = playerId;
+    if (playerId) {
+      localStorage.setItem("selected-player-id", playerId);
+    } else {
+      localStorage.removeItem("selected-player-id");
+    }
     this.checkSelectedPlayerPresence();
   }
 
