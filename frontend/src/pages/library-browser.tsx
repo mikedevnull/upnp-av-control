@@ -83,6 +83,7 @@ export default function LibraryBrowser(props: LibraryBrowserProps) {
         return {
           ...meta,
           parentID: undefined,
+          title: "",
         };
       });
     }

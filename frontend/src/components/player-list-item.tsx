@@ -28,7 +28,7 @@ export default function PlayerListItem({
       <img
         src={IconPlayer}
         alt=""
-        className="h-14 w-14 m-1 rounded-xl border border-primary-light"
+        className="h-14 w-14 m-1 rounded-xl object-scale-down"
       />
       {player.name}
     </li>

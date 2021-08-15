@@ -1,5 +1,6 @@
 import { LibraryListItem, PlayerDevice } from "../upnpapi/types";
-import IconPlayer from "../assets/icon-player.svg";
+import IconContainer from "../assets/folder.svg";
+import IconTrack from "../assets/track.svg";
 
 interface BrowseListItemProps {
   item: LibraryListItem;
@@ -9,6 +10,8 @@ interface BrowseListItemProps {
 export function BrowseListItem({ item, clickHandler }: BrowseListItemProps) {
   let className =
     "block flex items-center px-4 h-16 hover:bg-primary-lightest cursor-pointer text-left";
+  const placeholderIcon = item.upnpclass === "item" ? IconTrack : IconContainer;
+  const img = item.image ? item.image : placeholderIcon;
   return (
     <li
       onClick={() => {
@@ -18,11 +21,11 @@ export function BrowseListItem({ item, clickHandler }: BrowseListItemProps) {
       }}
       className={className}
     >
-      {/* <img
-        src={IconPlayer}
+      <img
+        src={img}
         alt=""
-        className="h-14 w-14 m-1 rounded-xl border border-primary-light"
-      /> */}
+        className="h-14 w-14 m-1 rounded-xl object-scale-down"
+      />
       {item.title}
     </li>
   );

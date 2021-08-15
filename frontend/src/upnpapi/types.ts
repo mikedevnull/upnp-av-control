@@ -24,6 +24,7 @@ export type LibraryListItem = {
   id: string;
   parentID?: string;
   upnpclass: string;
+  image?: string;
 };
 
 export interface UpnpApi {
