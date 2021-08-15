@@ -35,6 +35,7 @@ class LibraryListItem(BaseModel):
     parentID: typing.Optional[str]
     title: str
     upnpclass: LibraryItemType
+    image: typing.Optional[str]
 
     class Config:
         orm_mode = True

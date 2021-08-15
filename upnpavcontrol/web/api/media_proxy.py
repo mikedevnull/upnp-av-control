@@ -16,7 +16,7 @@ def encode_url_proxy_token(url):
 def get_media_proxy_url(url: str):
     from .api import router as api_router
     token = encode_url_proxy_token(url)
-    url = api_router.url_path_for('proxy_request', token=token)
+    url = '/api' + api_router.url_path_for('proxy_request', token=token)
     _logger.debug(url)
     return url
 
