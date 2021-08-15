@@ -3,7 +3,7 @@ import IconPlayer from "../assets/icon-player.svg";
 
 interface PlayerListItemProps {
   player: PlayerDevice;
-  selected: boolean;
+  selected?: boolean;
   clickHandler?: CallableFunction;
 }
 
