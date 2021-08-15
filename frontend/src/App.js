@@ -18,6 +18,7 @@ function App() {
     playbackControl.current.selectedPlayerId
   );
   useEffect(() => {
+    setDevices(playbackControl.current.availablePlayers);
     playbackControl.current.on(
       PlaybackControl.Event.DEVICES_CHANGED,
       setDevices
