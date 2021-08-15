@@ -89,12 +89,10 @@ export default function LibraryBrowser(props: LibraryBrowserProps) {
   }, [id]);
 
   return (
-    <div className="App">
-      <div className="h-screen w-full flex flex-col">
-        <LibraryNav isRoot={id === undefined} {...currentItemMeta}></LibraryNav>
-        <Browser id={id} clickHandler={onSelect}></Browser>
-        <Miniplayer playbackControl={props.playbackControl}></Miniplayer>
-      </div>
+    <div className="h-screen w-full flex flex-col">
+      <LibraryNav isRoot={id === undefined} {...currentItemMeta}></LibraryNav>
+      <Browser id={id} clickHandler={onSelect}></Browser>
+      <Miniplayer playbackControl={props.playbackControl}></Miniplayer>
     </div>
   );
 }
