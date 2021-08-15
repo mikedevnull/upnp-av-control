@@ -45,6 +45,16 @@ def _fixup_item_media_urls(item):
     return item
 
 
+def get_item_artwork_url(item):
+    albumArtURI = getattr(item, 'albumArtURI', None)
+    if albumArtURI is not None:
+        return get_media_proxy_url(albumArtURI.uri)
+    artistDiscographyURI = getattr(item, 'artistDiscographyURI', None)
+    if artistDiscographyURI is not None:
+        return get_media_proxy_url(artistDiscographyURI.uri)
+    return None
+
+
 def _fixup_item_ids(item, udn):
     item.id = create_library_item_id(udn, item.id)
     if item.parentID == '-1':
@@ -62,9 +72,14 @@ def _map_item_class(itemclass: str):
 
 
 def format_library_item(item, udn: str):
-    item = _fixup_item_media_urls(item)
     item = _fixup_item_ids(item, udn)
-    return {'title': item.title, 'id': item.id, 'parentID': item.parentID, 'upnpclass': _map_item_class(item.upnpclass)}
+    return {
+        'title': item.title,
+        'id': item.id,
+        'parentID': item.parentID,
+        'upnpclass': _map_item_class(item.upnpclass),
+        'image': get_item_artwork_url(item)
+    }
 
 
 @router.get('/', response_model=typing.List[models.LibraryListItem])
