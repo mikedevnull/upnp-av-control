@@ -30,7 +30,7 @@ export default function Browser({ id, clickHandler }: BrowserProps) {
     />
   ));
   return (
-    <div className="flex-grow">
+    <div className="flex-grow pb-16">
       <ul>{content}</ul>
     </div>
   );

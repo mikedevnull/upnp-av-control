@@ -8,7 +8,7 @@ interface BrowseListItemProps {
 
 export function BrowseListItem({ item, clickHandler }: BrowseListItemProps) {
   let className =
-    "block flex items-center px-4 h-16 hover:bg-primary-lightest cursor-pointer";
+    "block flex items-center px-4 h-16 hover:bg-primary-lightest cursor-pointer text-left";
   return (
     <li
       onClick={() => {

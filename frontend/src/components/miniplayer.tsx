@@ -33,7 +33,7 @@ export default function Miniplayer({ playbackControl }: MiniplayerProps) {
   }
 
   return (
-    <div className="p-4 h-16 flex items-center border-t">
+    <div className="p-4 h-16 flex items-center border-t w-full bg-white fixed bottom-0">
       <Link to="/player">
         <NavUp />
       </Link>
