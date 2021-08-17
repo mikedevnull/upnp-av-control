@@ -13,9 +13,9 @@ export enum TransportState {
 
 export type PlaybackInfo = {
   volumePercent: number;
-  title: string;
-  artist: string;
-  album: string;
+  title: string | null;
+  artist: string | null;
+  album: string | null;
   transport: TransportState;
 };
 

@@ -13,15 +13,14 @@ interface PlayerProps {
 }
 
 const Player = (props: PlayerProps) => {
-  const { playerPresent, playerName } = usePlayerControl(props.playbackControl);
+  const { playerPresent, playerName, volumePercent, artist, title } =
+    usePlayerControl(props.playbackControl);
   let overlayClass =
     "absolute top-0 mt-16 right-0 bottom-0 left-0 opacity-90 bg-gray-50";
   if (playerPresent) {
     overlayClass += " hidden";
   }
-  const current_volume = 0;
-  const current_title = "Dummy Title";
-  const current_artist = "Dummy Artist";
+
   const nav = (
     <Link to="/">
       <NavDownIcon />
@@ -52,8 +51,8 @@ const Player = (props: PlayerProps) => {
           />
         </div>
         <div className="flex-grow p-8 max-h-44 text-center text-primary">
-          <h3 className="text-4xl font-bold">{current_title}</h3>
-          <h4>{current_artist}</h4>
+          <h3 className="text-4xl font-bold">{title}</h3>
+          <h4>{artist}</h4>
         </div>
         <div className="mb-4 flex justify-around items-center">
           <svg
@@ -95,7 +94,7 @@ const Player = (props: PlayerProps) => {
             type="range"
             max="100"
             min="0"
-            value={current_volume}
+            value={volumePercent}
             name="volume"
           />
         </div>
