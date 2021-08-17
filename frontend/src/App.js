@@ -11,8 +11,10 @@ function createPlaybackControl() {
   return playbackControl;
 }
 
+const playbackControlInstance = createPlaybackControl();
+
 function App() {
-  const playbackControl = useRef(createPlaybackControl());
+  const playbackControl = useRef(playbackControlInstance);
   const [devices, setDevices] = useState([]);
   const [selectedPlayerId, setSelectedPlayerId] = useState(
     playbackControl.current.selectedPlayerId
