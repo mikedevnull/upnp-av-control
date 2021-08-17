@@ -95,7 +95,12 @@ export default class ControlPointEventBus {
     });
     this.jrpc.on("playbackinfo", (params: any) => {
       if (this.onPlaybackInfo) {
-        this.onPlaybackInfo(adaptTo<PlaybackInfoMessage>(params.playbackinfo));
+        this.onPlaybackInfo(
+          adaptTo<PlaybackInfoMessage>({
+            id: params.udn,
+            playbackinfo: params.playbackinfo,
+          })
+        );
       }
     });
 

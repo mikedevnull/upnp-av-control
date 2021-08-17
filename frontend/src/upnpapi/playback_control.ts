@@ -1,12 +1,13 @@
-import ControlPointEventBus from "./event_bus";
-import { PlayerDevice } from "./types";
-import { getDevices } from "./player";
+import ControlPointEventBus, { PlaybackInfoMessage } from "./event_bus";
+import { PlaybackInfo, PlayerDevice, TransportState } from "./types";
+import * as api from "./player";
 import EventEmitter from "eventemitter3";
 import _ from "lodash";
 
 enum PlaybackControlEvent {
   DEVICES_CHANGED = "playback-devices-changed",
   ACTIVE_PLAYER_PRESENCE_CHANGED = "active-player-presence",
+  PLAYBACK_INFO_CHANGED = "playback-info-changed",
 }
 export default class PlaybackControl extends EventEmitter {
   public static readonly Event = PlaybackControlEvent;
@@ -14,6 +15,13 @@ export default class PlaybackControl extends EventEmitter {
   private _selectedPlayerId?: string;
   private _playerPresent: boolean = false;
   private _players: ArrayLike<PlayerDevice> = [];
+  private _playbackInfo: PlaybackInfo = {
+    volumePercent: 0,
+    transport: TransportState.STOPPED,
+    album: null,
+    title: null,
+    artist: null,
+  };
 
   constructor(private readonly _eventBus: ControlPointEventBus) {
     super();
@@ -23,7 +31,21 @@ export default class PlaybackControl extends EventEmitter {
     }
     this._eventBus.onNewDevice = this.updateDevices.bind(this);
     this._eventBus.onDeviceLost = this.updateDevices.bind(this);
+    this._eventBus.onPlaybackInfo = (message: PlaybackInfoMessage) => {
+      this._playbackInfo = message.playbackinfo;
+      this.emit(PlaybackControlEvent.PLAYBACK_INFO_CHANGED, this._playbackInfo);
+    };
     this.updateDevices();
+  }
+
+  play(itemId: string) {
+    if (this._selectedPlayerId) {
+      api.play(this._selectedPlayerId, itemId);
+    }
+  }
+
+  get playbackInfo() {
+    return this._playbackInfo;
   }
 
   get availablePlayers() {
@@ -41,6 +63,9 @@ export default class PlaybackControl extends EventEmitter {
   set selectedPlayerId(playerId: string | undefined) {
     if (this._selectedPlayerId === playerId) {
       return;
+    }
+    if (this.isPlayerPresent && this._selectedPlayerId) {
+      this._eventBus.unsubscribePlaybackInfo(this._selectedPlayerId);
     }
     this._selectedPlayerId = playerId;
     if (playerId) {
@@ -65,7 +90,7 @@ export default class PlaybackControl extends EventEmitter {
   }
 
   private async updateDevices() {
-    const devices = await getDevices();
+    const devices = await api.getDevices();
     if (_.isEqual(devices, this._players) === false) {
       this._players = devices;
       this.emit(PlaybackControl.Event.DEVICES_CHANGED, devices);
@@ -74,27 +99,34 @@ export default class PlaybackControl extends EventEmitter {
   }
 
   private checkSelectedPlayerPresence() {
+    let changed = false;
     if (this._selectedPlayerId === undefined) {
       if (this._playerPresent === true) {
         this._playerPresent = false;
-        this.emit(
-          PlaybackControl.Event.ACTIVE_PLAYER_PRESENCE_CHANGED,
-          this._playerPresent
-        );
+        changed = true;
       }
-      return;
+    } else {
+      const selectedPlayer = _.find(
+        this._players,
+        (p) => p.id === this._selectedPlayerId
+      );
+      const newState = selectedPlayer !== undefined;
+      if (newState !== this._playerPresent) {
+        this._playerPresent = newState;
+        changed = true;
+      }
     }
-    const selectedPlayer = _.find(
-      this._players,
-      (p) => p.id === this._selectedPlayerId
-    );
-    const newState = selectedPlayer !== undefined;
-    if (newState !== this._playerPresent) {
-      this._playerPresent = newState;
+    if (changed) {
       this.emit(
         PlaybackControl.Event.ACTIVE_PLAYER_PRESENCE_CHANGED,
         this._playerPresent
       );
+    }
+    if (this._playerPresent && this._selectedPlayerId) {
+      this._eventBus.subscribePlaybackInfo(this._selectedPlayerId);
+      api.playbackInfo(this._selectedPlayerId).then((data) => {
+        this._playbackInfo = data;
+      });
     }
   }
 }
