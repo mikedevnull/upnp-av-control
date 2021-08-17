@@ -11,6 +11,7 @@ from .playback import parse_protocol_infos
 import enum
 import xml.dom.minidom
 import typing
+import html
 
 _logger = logging.getLogger(__name__)
 
@@ -44,7 +45,7 @@ def prettify_xml(xml_frame):
 
 
 def _set_current_track_metadata(xml: str, info: PlaybackInfo):
-    didl = didllite.from_xml_string(xml)
+    didl = didllite.from_xml_string(html.unescape(xml))
     if len(didl) > 0:
         current = didl[0]
         if current.upnpclass.startswith('object.item.audioItem.musicTrack'):
@@ -59,7 +60,7 @@ def update_playback_info_from_event(info: PlaybackInfo, event: str) -> bool:
     _logger.debug(event)
     tree = etree.fromstring(event)
     any_value_changed = False
-    vol = tree.find("./rcs:InstanceID[@val='0']/rcs:Volume[@channel='Master']", namespaces=_nsmap)
+    vol = tree.find("./rcs:InstanceID[@val='0']/rcs:Volume[@Channel='Master']", namespaces=_nsmap)
     if vol is not None:
         value = int(vol.attrib['val'])
         if value != info.volume_percent:
@@ -72,7 +73,7 @@ def update_playback_info_from_event(info: PlaybackInfo, event: str) -> bool:
             info.transport = value
             any_value_changed = True
     transportMeta = tree.find("./avt-event:InstanceID[@val='0']/avt-event:AVTransportURIMetaData", namespaces=_nsmap)
-    if transportMeta is not None and len(transportMeta) > 0:
+    if transportMeta is not None:
         info = _set_current_track_metadata(transportMeta.attrib['val'], info)
         any_value_changed = True
     return any_value_changed

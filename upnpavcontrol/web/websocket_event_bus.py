@@ -91,6 +91,7 @@ class EventBusConnection(object):
 
     async def _notifiy_playbackinfo(self, udn, playbackinfo):
         msg = json_rpc.JsonRPCNotification(method='playbackinfo', params={'udn': udn, 'playbackinfo': playbackinfo})
+        _logger.debug('Sending playbackinfo event "%s" for device %s', playbackinfo, udn)
         await self._websocket.send_text(msg.json())
 
 

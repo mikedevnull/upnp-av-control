@@ -157,5 +157,7 @@ class NotificationBackend(object):
         if service in self._subscriptions:
             sid = self._subscriptions[service]['sid']
             await self._handler.async_unsubscribe(sid)
+
+            _logger.info('Unsubscribed service %s upnp events (sid: %s)', service, sid)
         else:
             _logger.warning('Cannot unsubscribe service %s, no known subscription')
