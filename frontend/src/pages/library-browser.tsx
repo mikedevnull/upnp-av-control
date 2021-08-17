@@ -57,14 +57,18 @@ export default function LibraryBrowser(props: LibraryBrowserProps) {
     title: "",
   });
   const onSelect = (item: LibraryListItem) => {
-    setCurrentItemMeta({
-      ...currentItemMeta,
-      title: item.title,
-    });
-    history.push({
-      pathname: "/",
-      search: "?" + new URLSearchParams({ id: item.id }).toString(),
-    });
+    if (item.upnpclass.startsWith("container")) {
+      setCurrentItemMeta({
+        ...currentItemMeta,
+        title: item.title,
+      });
+      history.push({
+        pathname: "/",
+        search: "?" + new URLSearchParams({ id: item.id }).toString(),
+      });
+    } else if (item.upnpclass.startsWith("item")) {
+      props.playbackControl.play(item.id);
+    }
   };
 
   useEffect(() => {

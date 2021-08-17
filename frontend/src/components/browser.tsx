@@ -17,8 +17,7 @@ export default function Browser({ id, clickHandler }: BrowserProps) {
     library.browse(id).then(setItems);
   }, [id]);
   const defaultActionHandler = (item: LibraryListItem) => {
-    console.log(item.upnpclass);
-    if (item.upnpclass.startsWith("container") && clickHandler) {
+    if (clickHandler) {
       clickHandler(item);
     }
   };
