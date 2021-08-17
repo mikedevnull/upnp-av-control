@@ -10,7 +10,7 @@ interface MiniplayerProps {
 }
 
 export default function Miniplayer({ playbackControl }: MiniplayerProps) {
-  const { playerPresent } = usePlayerControl(playbackControl);
+  const { playerPresent, title, artist } = usePlayerControl(playbackControl);
   let main;
   if (playerPresent) {
     main = (
@@ -20,8 +20,10 @@ export default function Miniplayer({ playbackControl }: MiniplayerProps) {
           src="logo192.png"
           alt="cover art"
         ></img>
-        <span className="m-2 text-left flex-grow">Miniplayer</span>
-        <span>0:00</span>
+        <div className="flex flex-col flex-grow justify-center">
+          <span className="text-left">{title}</span>
+          <span className="text-left text-sm">{artist}</span>
+        </div>
         <div className="m-4 flex flex-row">
           <PlayIcon className="h-10 w-10 text-primary" />
           <NextIcon className="h-10 w-10 text-primary" />
