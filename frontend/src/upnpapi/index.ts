@@ -10,7 +10,7 @@ export default class UpnpApi {
     return player.getDevices();
   }
   play(device: types.PlayerDevice, itemid: string) {
-    return player.play(device, itemid);
+    return player.play(device.id, itemid);
   }
   getPlaybackInfo(id: string) {
     return player.playbackInfo(id);

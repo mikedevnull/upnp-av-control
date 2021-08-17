@@ -9,10 +9,13 @@ export function getDevices() {
   );
 }
 
-export function play(player: PlayerDevice, itemid: string) {
-  const url = `/api/player/${player.id}/queue`;
+export function play(playerId: string, itemid: string) {
+  const url = `/api/player/${playerId}/queue`;
   fetch(url, {
     method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
     body: JSON.stringify({ library_item_id: itemid }),
   });
 }
