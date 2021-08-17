@@ -1,11 +1,11 @@
 from . import json_rpc
 from typing import Callable, Awaitable
-
 from upnpavcontrol.core.typing_compat import Protocol
 from upnpavcontrol.core.discovery import MediaDeviceDiscoveryEvent
 from upnpavcontrol.core.mediarenderer import PlaybackInfo
 from upnpavcontrol.core.oberserver import Subscription
 import logging
+from contextlib import asynccontextmanager
 
 _event_type_map = {'NEW_DEVICE': 'new_device', 'DEVICE_LOST': 'device_lost'}
 
@@ -30,7 +30,7 @@ class EventBusConnection(object):
         self._discovery_subscription = None
         self._playback_subscriptions = {}
 
-    async def handle(self):
+    async def serve(self):
         await self._websocket.send_text(
             json_rpc.JsonRPCNotification(method='initialize', params={
                 'version': '0.2.0'
@@ -44,6 +44,14 @@ class EventBusConnection(object):
                 await self._websocket.send_text(response.json())
             except json_rpc.JsonRPCException as e:
                 await self._websocket.send_text(e.to_response().json())
+
+    async def cleanup(self):
+        if self._discovery_subscription:
+            await self._discovery_subscription.unsubscribe()
+            self._discovery_subscription = None
+        for sub in self._playback_subscriptions.values():
+            await sub.unsubscribe()
+        self._playback_subscriptions.clear()
 
     async def _handle_request(self, request: json_rpc.JsonRPCRequest):
         if request.method not in ('subscribe', 'unsubscribe'):
@@ -95,6 +103,17 @@ class EventBusConnection(object):
         await self._websocket.send_text(msg.json())
 
 
+@asynccontextmanager
+async def event_bus_connection(websocket, connector):
+    _logger.info('accepted eventbus connection')
+    connection = EventBusConnection(websocket, connector)
+    try:
+        yield connection
+    finally:
+        await connection.cleanup()
+        _logger.info('eventbus connection closed')
+
+
 class WebsocketEventBus(object):
     def __init__(self, connector: EventBusConnector):
         self._notification_sockets = []
@@ -103,6 +122,5 @@ class WebsocketEventBus(object):
     async def accept(self, websocket):
         _logger.debug('incoming event bus websocket connection')
         await websocket.accept()
-        _logger.info('accepted eventbus connection')
-        connection = EventBusConnection(websocket, self._connector)
-        await connection.handle()
+        async with event_bus_connection(websocket, self._connector) as connection:
+            await connection.serve()
