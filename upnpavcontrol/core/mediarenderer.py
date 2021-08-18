@@ -60,7 +60,7 @@ def update_playback_info_from_event(info: PlaybackInfo, event: str) -> bool:
     _logger.debug(event)
     tree = etree.fromstring(event)
     any_value_changed = False
-    vol = tree.find("./rcs:InstanceID[@val='0']/rcs:Volume[@Channel='Master']", namespaces=_nsmap)
+    vol = tree.find("./rcs:InstanceID[@val='0']/rcs:Volume", namespaces=_nsmap)
     if vol is not None:
         value = int(vol.attrib['val'])
         if value != info.volume_percent:
