@@ -26,3 +26,17 @@ export function playbackInfo(playerId: string) {
     .then((response: any) => response.json())
     .then((data: any) => adaptTo<PlaybackInfo>(data));
 }
+
+export function setVolume(playerId: string, volume: number) {
+  if (volume < 0 || volume > 100) {
+    throw new Error("volume out of valid range");
+  }
+  const url = `/api/player/${playerId}/playback`;
+  fetch(url, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ volume_percent: volume }),
+  });
+}

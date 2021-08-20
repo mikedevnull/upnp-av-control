@@ -22,6 +22,14 @@ const Player = (props: PlayerProps) => {
     overlayClass += " hidden";
   }
 
+  const changeVolume = (e: any) => {
+    const targetVolume = parseInt(e.target.value);
+    if (targetVolume !== volumePercent) {
+      console.log(targetVolume);
+      props.playbackControl.setVolume(targetVolume);
+    }
+  };
+
   const nav = (
     <Link to="/">
       <NavDownIcon />
@@ -102,6 +110,7 @@ const Player = (props: PlayerProps) => {
             max="100"
             min="0"
             value={volumePercent}
+            onChange={changeVolume}
             name="volume"
           />
         </div>

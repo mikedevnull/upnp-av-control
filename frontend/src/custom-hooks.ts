@@ -1,6 +1,5 @@
 import { useEffect, useReducer } from "react";
 import { PlaybackControl } from "./upnpapi";
-import { PlaybackInfoMessage } from "./upnpapi/event_bus";
 import { PlaybackInfo } from "./upnpapi/types";
 
 interface PlayerControlState {
