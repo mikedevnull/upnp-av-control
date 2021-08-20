@@ -1,6 +1,8 @@
 import { ReactComponent as NavUp } from "../assets/nav-up.svg";
 import { ReactComponent as NextIcon } from "../assets/control-next.svg";
-import { ReactComponent as PlayIcon } from "../assets/control-play-outline.svg";
+import { ReactComponent as PlayIcon } from "../assets/control-play.svg";
+import { ReactComponent as PauseIcon } from "../assets/control-pause.svg";
+import ImgPlaceholder from "../assets/track.svg";
 import { Link } from "react-router-dom";
 import { PlaybackControl } from "../upnpapi";
 import { usePlayerControl } from "../custom-hooks";
@@ -10,14 +12,21 @@ interface MiniplayerProps {
 }
 
 export default function Miniplayer({ playbackControl }: MiniplayerProps) {
-  const { playerPresent, title, artist } = usePlayerControl(playbackControl);
+  const { playerPresent, title, artist, transport } =
+    usePlayerControl(playbackControl);
   let main;
+  const PlayPauseIcon =
+    transport === "PLAYING" ? (
+      <PauseIcon className="w-10 h-10 text-primary" />
+    ) : (
+      <PlayIcon className="w-10 h-10 text-primary" />
+    );
   if (playerPresent) {
     main = (
       <>
         <img
-          className="mx-2 border h-12"
-          src="logo192.png"
+          className="mx-2 border h-12 rounded-xl"
+          src={ImgPlaceholder}
           alt="cover art"
         ></img>
         <div className="flex flex-col flex-grow justify-center">
@@ -25,7 +34,7 @@ export default function Miniplayer({ playbackControl }: MiniplayerProps) {
           <span className="text-left text-sm">{artist}</span>
         </div>
         <div className="m-4 flex flex-row">
-          <PlayIcon className="h-10 w-10 text-primary" />
+          {PlayPauseIcon}
           <NextIcon className="h-10 w-10 text-primary" />
         </div>
       </>

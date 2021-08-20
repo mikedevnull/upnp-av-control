@@ -1,5 +1,5 @@
 import ControlPointEventBus, { PlaybackInfoMessage } from "./event_bus";
-import { PlaybackInfo, PlayerDevice, TransportState } from "./types";
+import { PlaybackInfo, PlayerDevice } from "./types";
 import * as api from "./player";
 import EventEmitter from "eventemitter3";
 import _ from "lodash";
@@ -17,7 +17,7 @@ export default class PlaybackControl extends EventEmitter {
   private _players: ArrayLike<PlayerDevice> = [];
   private _playbackInfo: PlaybackInfo = {
     volumePercent: 0,
-    transport: TransportState.STOPPED,
+    transport: "STOPPED",
     album: null,
     title: null,
     artist: null,
@@ -41,6 +41,12 @@ export default class PlaybackControl extends EventEmitter {
   play(itemId: string) {
     if (this._selectedPlayerId) {
       api.play(this._selectedPlayerId, itemId);
+    }
+  }
+
+  setVolume(volume: number) {
+    if (this._selectedPlayerId) {
+      api.setVolume(this._selectedPlayerId, volume);
     }
   }
 
