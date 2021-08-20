@@ -61,7 +61,7 @@ const Player = (props: PlayerProps) => {
           shadow-2xl
           border-primary-light border
         "
-            src="logo192.png"
+            src="android-chrome-192x192.png"
             alt="cover art"
           />
         </div>
