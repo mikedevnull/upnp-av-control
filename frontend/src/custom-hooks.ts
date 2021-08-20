@@ -10,6 +10,7 @@ interface PlayerControlState {
   title: string | null;
   album: string | null;
   artist: string | null;
+  transport: string;
 }
 
 const initialState = {
@@ -19,6 +20,7 @@ const initialState = {
   title: null,
   artist: null,
   album: null,
+  transport: "STOPPED",
 };
 
 type Action =

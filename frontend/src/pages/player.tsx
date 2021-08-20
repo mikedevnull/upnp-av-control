@@ -1,6 +1,7 @@
 import { ReactComponent as PrevIcon } from "../assets/control-prev.svg";
 import { ReactComponent as NextIcon } from "../assets/control-next.svg";
 import { ReactComponent as PlayIcon } from "../assets/control-play.svg";
+import { ReactComponent as PauseIcon } from "../assets/control-pause.svg";
 import { ReactComponent as NavDownIcon } from "../assets/nav-down.svg";
 import { ReactComponent as DevicesIcon } from "../assets/control-devices.svg";
 import { TopBar } from "../components/TopBar";
@@ -13,7 +14,7 @@ interface PlayerProps {
 }
 
 const Player = (props: PlayerProps) => {
-  const { playerPresent, playerName, volumePercent, artist, title } =
+  const { playerPresent, playerName, volumePercent, artist, title, transport } =
     usePlayerControl(props.playbackControl);
   let overlayClass =
     "absolute top-0 mt-16 right-0 bottom-0 left-0 opacity-90 bg-gray-50";
@@ -26,6 +27,12 @@ const Player = (props: PlayerProps) => {
       <NavDownIcon />
     </Link>
   );
+  const PlayPauseIcon =
+    transport === "PLAYING" ? (
+      <PauseIcon className="w-24 h-24 text-primary" />
+    ) : (
+      <PlayIcon className="w-24 h-24 text-primary" />
+    );
   const action = (
     <Link to="/select-player">
       <DevicesIcon />
@@ -86,7 +93,7 @@ const Player = (props: PlayerProps) => {
         </div>
         <div className="mb-8 flex justify-around items-center">
           <PrevIcon className="h-12 w-12 text-primary" />
-          <PlayIcon className="w-24 h-24 text-primary" />
+          {PlayPauseIcon}
           <NextIcon className="h-12 w-12 text-primary" />
         </div>
         <div className="mb-8 flex justify-around items-center">

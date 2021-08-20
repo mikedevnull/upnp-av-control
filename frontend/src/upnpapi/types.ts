@@ -5,18 +5,12 @@ export type PlayerDevice = {
   name: string;
 };
 
-export enum TransportState {
-  STOPPED,
-  PLAYING,
-  PAUSED,
-}
-
 export type PlaybackInfo = {
   volumePercent: number;
   title: string | null;
   artist: string | null;
   album: string | null;
-  transport: TransportState;
+  transport: string;
 };
 
 export type LibraryListItem = {
