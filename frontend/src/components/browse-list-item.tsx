@@ -1,4 +1,4 @@
-import { LibraryListItem, PlayerDevice } from "../upnpapi/types";
+import { LibraryListItem } from "../upnpapi/types";
 import IconContainer from "../assets/folder.svg";
 import IconTrack from "../assets/track.svg";
 
