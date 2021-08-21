@@ -20,12 +20,3 @@ export type LibraryListItem = {
   upnpclass: string;
   image?: string;
 };
-
-export interface UpnpApi {
-  eventBus: ControlPointEventBus;
-  getMediaRenderers(): Promise<PlayerDevice[]>;
-  play(device: PlayerDevice, itemid: string): void;
-  getPlaybackInfo(id: string): Promise<PlaybackInfo>;
-  browseLibrary(id: string): Promise<LibraryListItem[]>;
-  getLibraryItem(id: string): any;
-}

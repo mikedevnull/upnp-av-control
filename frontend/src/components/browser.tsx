@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useState } from "react";
-import * as library from "../upnpapi/library";
+import { api } from "../upnpapi";
 import { LibraryListItem } from "../upnpapi/types";
 import { BrowseListItem as ListItemComponent } from "./browse-list-item";
 
@@ -14,7 +14,7 @@ export default function Browser({ id, clickHandler }: BrowserProps) {
 
   useEffect(() => {
     setItems([]);
-    library.browse(id).then(setItems);
+    api.browse(id).then(setItems);
   }, [id]);
   const defaultActionHandler = (item: LibraryListItem) => {
     if (clickHandler) {

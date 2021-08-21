@@ -1,14 +1,14 @@
-import * as api from "./player";
+import { api } from ".";
 import PlaybackControl from "./playback_control";
 import EventBus from "./event_bus";
 import { MapLike } from "typescript";
 
 jest.mock("./event_bus");
-jest.mock("./player");
+jest.mock("./api");
 
 const MockEventBus = <jest.Mock<EventBus>>EventBus;
 const mockedGetDevice = api.getDevices as jest.Mock;
-const mockedPlaybackInfo = api.playbackInfo as jest.Mock;
+const mockedPlaybackInfo = api.getPlaybackInfo as jest.Mock;
 class LocalStorageMock {
   private store: MapLike<string>;
   constructor() {
