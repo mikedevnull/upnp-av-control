@@ -49,6 +49,7 @@
   "devDependencies": {
     "autoprefixer": "^9",
     "http-proxy-middleware": "^2.0.1",
+    "jest-fetch-mock": "^3.0.3",
     "postcss": "^7",
     "tailwindcss": "npm:@tailwindcss/postcss7-compat"
   }

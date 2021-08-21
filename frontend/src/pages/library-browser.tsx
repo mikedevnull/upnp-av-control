@@ -29,7 +29,7 @@ function LibraryNav(props: LibraryNavProps) {
   if (props.parentID) {
     const uri = "/?" + new URLSearchParams({ id: props.parentID }).toString();
     backlink = (
-      <NavLink to={uri}>
+      <NavLink aria-label="Back" to={uri}>
         <NavBackIcon />
       </NavLink>
     );
