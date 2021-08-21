@@ -2,12 +2,13 @@ import * as api from "./player";
 import PlaybackControl from "./playback_control";
 import EventBus from "./event_bus";
 import { MapLike } from "typescript";
-import { before } from "lodash";
+
 jest.mock("./event_bus");
 jest.mock("./player");
 
 const MockEventBus = <jest.Mock<EventBus>>EventBus;
 const mockedGetDevice = api.getDevices as jest.Mock;
+const mockedPlaybackInfo = api.playbackInfo as jest.Mock;
 class LocalStorageMock {
   private store: MapLike<string>;
   constructor() {
@@ -54,6 +55,11 @@ describe("PlaybackControl", () => {
   beforeEach(() => {
     eventBus = new MockEventBus();
     mockedGetDevice.mockClear();
+    mockedPlaybackInfo.mockClear();
+    mockedPlaybackInfo.mockResolvedValue({
+      id: "1234",
+      playbackinfo: { volumePercent: 20 },
+    });
     localStorage.clear();
   });
 

@@ -151,6 +151,9 @@ describe("UpnpEventBus", () => {
     }); // actual event
 
     expect(bus.onPlaybackInfo).toHaveBeenCalledTimes(1);
-    expect(bus.onPlaybackInfo).toHaveBeenLastCalledWith({ volumePercent: 20 });
+    expect(bus.onPlaybackInfo).toHaveBeenLastCalledWith({
+      id: "1234",
+      playbackinfo: { volumePercent: 20 },
+    });
   });
 });
