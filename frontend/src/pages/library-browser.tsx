@@ -1,10 +1,9 @@
 import { TopBar, Miniplayer, Browser } from "../components";
-import { PlaybackControl } from "../upnpapi";
+import { PlaybackControl, api } from "../upnpapi";
 import { useState } from "react";
 import { LibraryListItem } from "../upnpapi/types";
 import { NavLink, useHistory, useLocation } from "react-router-dom";
 import { useEffect } from "react";
-import * as library from "../upnpapi/library";
 import { ReactComponent as NavBackIcon } from "../assets/nav-back.svg";
 interface LibraryBrowserProps {
   playbackControl: PlaybackControl;
@@ -73,7 +72,7 @@ export default function LibraryBrowser(props: LibraryBrowserProps) {
 
   useEffect(() => {
     if (id) {
-      library.getItem(id).then((item) => {
+      api.getItem(id).then((item) => {
         setCurrentItemMeta((meta) => {
           return {
             ...meta,

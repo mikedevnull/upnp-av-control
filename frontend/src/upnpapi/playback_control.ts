@@ -1,6 +1,6 @@
 import ControlPointEventBus, { PlaybackInfoMessage } from "./event_bus";
 import { PlaybackInfo, PlayerDevice } from "./types";
-import * as api from "./player";
+import { api } from ".";
 import EventEmitter from "eventemitter3";
 import _ from "lodash";
 
@@ -130,7 +130,7 @@ export default class PlaybackControl extends EventEmitter {
     }
     if (this._playerPresent && this._selectedPlayerId) {
       this._eventBus.subscribePlaybackInfo(this._selectedPlayerId);
-      api.playbackInfo(this._selectedPlayerId).then((data) => {
+      api.getPlaybackInfo(this._selectedPlayerId).then((data) => {
         this._playbackInfo = data;
       });
     }
