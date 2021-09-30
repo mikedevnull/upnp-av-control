@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 import typing
-from . import typing_compat
-from . import didllite
+from .. import typing_compat
+from .. import didllite
 
 
 @dataclass
