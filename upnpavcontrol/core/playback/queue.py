@@ -23,5 +23,5 @@ class PlaybackQueue():
 
     def next_item(self):
         if len(self._items) > 0:
-            return self._items.pop()
+            return self._items.pop(0)
         return None
