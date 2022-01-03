@@ -45,10 +45,15 @@ class PlaybackController():
             return
 
         self._prepare_current_item()
-        if self._current_item is not None:
-            if self._player_subscription is None:
-                self._player_subscription = await self._player.subscribe(self._on_transport_state_changed)
-            if not await self._player.play(self._current_item):
+        if self._current_item is None:
+            return
+
+        if self._player_subscription is None:
+            self._player_subscription = await self._player.subscribe(self._on_transport_state_changed)
+        try:
+            await self._player.play(self._current_item)
+        except Exception:
+            if self._player_subscription is not None:
                 await self._player_subscription.unsubscribe()
 
     async def stop(self):

@@ -30,7 +30,6 @@ class FakePlayerInterface():
 
     async def _do_play(self, item):
         await self._change_transport_state(TransportState.PLAYING)
-        return True
 
     async def _do_stop(self):
         await self._change_transport_state(TransportState.STOPPED)
@@ -138,8 +137,7 @@ async def test_starting_first_playback_fails_player_never_starts(queueWithItems)
     await controller.setup_player(player)
     item1 = queueWithItems[0]
 
-    player.play.return_value = False
-    player.play.side_effect = None
+    player.play.side_effect = RuntimeError('Playback failed for some reason')
     await controller.play()
     player.play.assert_called_with(item1)
     player.subscribe.assert_called_once()
@@ -164,8 +162,7 @@ async def test_starting_playback_fails_playback_stops(queueWithItems):
     assert controller.is_playing
     player.play.reset_mock()
 
-    player.play.return_value = False
-    player.play.side_effect = None
+    player.play.side_effect = RuntimeError('Playback failed for some reason')
 
     await player.fake_stopped_event()
     player.play.assert_called_with(item2)
