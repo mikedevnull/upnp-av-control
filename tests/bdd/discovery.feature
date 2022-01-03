@@ -7,7 +7,7 @@ Feature: Device discovery
     Given a client listens for discovery events
     When a MediaServer FooMediaServer appears on the network
     Then the client will be notified about the new FooMediaServer
-    And  the media server FooMediaServer will be in the library API device list
+    And the media server FooMediaServer will be in the library API device list
 
   Scenario: No advertisement events when client unsubscribed
     Given a client listens for discovery events
@@ -19,7 +19,7 @@ Feature: Device discovery
     Given a client listens for discovery events
     When a MediaRenderer AcmeRenderer appears on the network
     Then the client will be notified about the new AcmeRenderer
-    And  the media renderer AcmeRenderer will be in the player API device list
+    And the media renderer AcmeRenderer will be in the player API device list
 
   Scenario: New Printer advertised
     Given a client listens for discovery events
