@@ -17,7 +17,8 @@ NS = {
     "event": "urn:schemas-upnp-org:event-1-0",
     "control": "urn:schemas-upnp-org:control-1-0",
     'upnp': 'urn:schemas-upnp-org:metadata-1-0/upnp/',
-    'dc': 'http://purl.org/dc/elements/1.1/'
+    'dc': 'http://purl.org/dc/elements/1.1/',
+    'didl': 'urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/'
 }
 
 
@@ -26,7 +27,7 @@ def add_subelement_if(parent, tag, ns, text):
         return
     nsuri = NS[ns]
     element = ET.SubElement(parent, f'{{{nsuri}}}{tag}')
-    element.text = text
+    element.text = str(text)
     return element
 
 
@@ -48,5 +49,10 @@ def format_music_item(didlelement: didllite.MusicTrack):
     add_subelement_if(item, 'album', 'upnp', didlelement.album)
     add_subelement_if(item, 'artist', 'upnp', didlelement.artist)
     add_subelement_if(item, 'originalTrackNumber', 'upnp', didlelement.originalTrackNumber)
+    for res in didlelement.res:
+        nsuri = NS['didl']
+        element = ET.SubElement(item, f'{{{nsuri}}}res')
+        element.attrib['protocolInfo'] = res.protocolInfo
+        element.text = res.uri
 
     return item
