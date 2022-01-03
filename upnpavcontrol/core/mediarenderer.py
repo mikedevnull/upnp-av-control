@@ -2,12 +2,12 @@ import logging
 from .notification_backend import NotificationBackend
 from .oberserver import Observable, Subscription
 from . import didllite
+from .playback.protocol_info import parse_protocol_infos
 from async_upnp_client import UpnpStateVariable, UpnpDevice, UpnpService
 import defusedxml.ElementTree as etree
 from typing import Iterable, Optional, cast
 import asyncio
 from pydantic import BaseModel
-from .playback import parse_protocol_infos
 import enum
 import xml.dom.minidom
 import typing
