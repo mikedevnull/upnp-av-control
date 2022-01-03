@@ -2,7 +2,7 @@ from enum import Enum
 from pydantic import Field, BaseModel
 import typing
 from upnpavcontrol.core import typing_compat
-from upnpavcontrol.core.mediarenderer import PlaybackInfo
+from upnpavcontrol.core.mediarenderer import TransportState
 
 
 class ApiInfo(BaseModel):
@@ -18,7 +18,20 @@ class PlayerDevice(BaseModel):
         allow_population_by_field_name = True
 
 
-PlaybackState = PlaybackInfo
+class PlaybackState(BaseModel):
+    volume_percent: int = 0
+    transport: TransportState = TransportState.STOPPED
+    title: typing.Optional[str]
+    artist: typing.Optional[str]
+    album: typing.Optional[str]
+
+    class Config:
+        use_enum_values = True
+
+
+class PlaybackStateIn(BaseModel):
+    volume_percent: typing.Optional[int]
+    transport: typing.Optional[TransportState]
 
 
 class PlaybackQueueItem(BaseModel):
