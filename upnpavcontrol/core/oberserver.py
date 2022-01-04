@@ -1,6 +1,7 @@
 from typing import Callable, Awaitable, TypeVar, Generic, Dict, List, Optional
 import asyncio
 import logging
+from contextlib import asynccontextmanager
 
 T = TypeVar('T')
 _logger = logging.getLogger(__name__)
@@ -110,3 +111,35 @@ class Observable(Generic[T]):
                 subscription.reset()
             if at_least_one_removed and self._change_callback_cb is not None:
                 await self._change_callback_cb(len(self._subscriptions))
+
+
+@asynccontextmanager
+async def wait_for_value_if(observerable: Observable[T], predicate: Callable[[T], bool], timeout: int = 15):
+    """
+    Async contextmanager that blocks on exit until some predicate for the observable value became true.
+
+    Implmenetation as a contextmanager helps to avoid race conditions:
+    ```
+    # setup expectation by creating the context manager
+    async with wait_for_value_if(obs, lamdba x: x==42): 
+        # carry out the action that will trigger that change
+        await some_operation_that_will_eventually_change_obs_to_42()
+    # on exit, the context manager will block until the predicate has been fullfilled
+    ```
+    """
+    future = asyncio.get_running_loop().create_future()
+
+    async def f(v: T):
+        try:
+            if predicate(v):
+                future.set_result(True)
+        except Exception as e:
+            _logger.exception('predicate')
+            raise e
+
+    subscription = await observerable.subscribe(f)
+    yield
+    try:
+        await asyncio.wait_for(future, timeout)
+    finally:
+        await subscription.unsubscribe()
