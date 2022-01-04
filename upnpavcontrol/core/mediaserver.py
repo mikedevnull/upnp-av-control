@@ -59,7 +59,7 @@ class MediaServer(object):
                                                                  Filter='*')
         regex = re.compile(r"&(?!amp;|lt;|gt;)")
         didl = regex.sub("&amp;", payload['Result'])
-        _logger.debug(prettify_xml(didl))
+        # _logger.debug(prettify_xml(didl))
         return didllite.DidlLite(didl)
 
     async def browse_metadata(self, object_id: str):
