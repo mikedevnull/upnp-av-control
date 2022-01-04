@@ -3,6 +3,12 @@ import typing
 from .queue import PlaybackItem
 from .protocol_info import match_resources
 from ..oberserver import Subscription
+from async_upnp_client.exceptions import UpnpActionResponseError
+import logging
+if typing.TYPE_CHECKING:
+    from .. import MediaRenderer, MediaServer, TransportState
+
+_logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -31,11 +37,17 @@ async def play(dms: 'MediaServer', object_id: str, dmr: 'MediaRenderer'):  # noq
     assert len(resources) > 0
     play_resource = resources[0]
     connection = prepare_for_connection(dmr, dms)
-    await dmr.av_transport.async_call_action('SetAVTransportURI',
-                                             InstanceID=connection.av_transport_id,
-                                             CurrentURI=play_resource.uri,
-                                             CurrentURIMetaData=playback_meta)
-    await dmr.av_transport.async_call_action('Play', InstanceID=connection.av_transport_id, Speed="1")
+    try:
+        await dmr.av_transport.async_call_action('SetAVTransportURI',
+                                                 InstanceID=connection.av_transport_id,
+                                                 CurrentURI=play_resource.uri,
+                                                 CurrentURIMetaData=playback_meta)
+        await dmr.av_transport.async_call_action('Play', InstanceID=connection.av_transport_id, Speed="1")
+    except UpnpActionResponseError as e:
+        _logger.exception(e)
+        _logger.debug("%s (%s)", e.error_desc, e.error_code)
+        raise e
+
     return connection
 
 
