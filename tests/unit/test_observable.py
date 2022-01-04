@@ -1,6 +1,7 @@
 from upnpavcontrol.core import oberserver
 from ..testsupport import AsyncMock
 import pytest
+import asyncio
 
 
 @pytest.mark.asyncio
@@ -83,3 +84,34 @@ async def test_subscription_callback():
     subscription_cb.assert_not_called()
     await subscription2.unsubscribe()
     subscription_cb.assert_called_once_with(0)
+
+
+@pytest.mark.asyncio
+async def test_wait_for_with_predicate_resolves_immediately():
+    observable = oberserver.Observable[int]()
+
+    async with oberserver.wait_for_value_if(observable, lambda x: x == 42):
+        await observable.notify(41)
+        await observable.notify(42)
+
+    assert True
+
+
+@pytest.mark.asyncio
+async def test_wait_for_with_predicate_resolves_later():
+    observable = oberserver.Observable[int]()
+
+    async with oberserver.wait_for_value_if(observable, lambda x: x == 42):
+        await observable.notify(41)
+        asyncio.get_running_loop().create_task(observable.notify(42))
+
+    assert True
+
+
+@pytest.mark.asyncio
+async def test_wait_for_with_predicate_times_out():
+    observable = oberserver.Observable[int]()
+
+    with pytest.raises(asyncio.TimeoutError):
+        async with oberserver.wait_for_value_if(observable, lambda x: x == 42, 1):
+            await observable.notify(41)
