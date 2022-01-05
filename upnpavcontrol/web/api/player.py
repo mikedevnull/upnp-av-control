@@ -72,7 +72,7 @@ async def add_item_to_queue(request: Request, udn: str, payload: models.Playback
     try:
         dms, playbackitemid = split_library_item_id(payload.library_item_id)
         pc = request.app.av_control_point.get_controller_for_renderer(udn)
-        pc.queue.insert(dms, playbackitemid, '')
+        pc.queue.append(dms, playbackitemid, '')
 
     except Exception as e:
         _logger.exception(e)
@@ -83,10 +83,10 @@ async def add_item_to_queue(request: Request, udn: str, payload: models.Playback
 async def set_queue(request: Request, udn: str, payload: List[models.PlaybackQueueItem]):
     try:
         pc = request.app.av_control_point.get_controller_for_renderer(udn)
-        pc.queue.clear()
+        pc.clear()
         for item in payload:
             dms, playbackitemid = split_library_item_id(item.library_item_id)
-            pc.queue.insert(dms, playbackitemid, '')
+            pc.queue.append(dms, playbackitemid, '')
 
     except Exception as e:
         _logger.exception(e)

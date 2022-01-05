@@ -36,7 +36,7 @@ async def preset_playback_queue(test_context, table):
     for entry in data:
         dms_udn = test_context.get_device(entry['dms']).udn
         object_id = entry['item id']
-        pc.queue.insert(dms_udn, object_id, title=None)
+        pc.queue.append(dms_udn, object_id, title=None)
 
 
 @when(parsers.cfparse('the client requests to play item with id {object_id} from FooMediaServer on AcmeRenderer'))
