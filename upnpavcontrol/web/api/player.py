@@ -39,7 +39,7 @@ async def get_playback_info(request: Request, udn: str):
 
 
 @router.patch('/{udn}/playback', response_model_exclude_unset=True, response_model=models.PlaybackState)
-async def patch_playback_info(request: Request, udn: str, info: models.PlaybackStateIn):
+async def change_player_playback_state(request: Request, udn: str, info: models.PlaybackStateIn):
     try:
         renderer = request.app.av_control_point.get_mediarenderer_by_UDN(udn)
         if info.volume_percent is not None:
@@ -57,22 +57,24 @@ async def patch_playback_info(request: Request, udn: str, info: models.PlaybackS
         raise HTTPException(status_code=404)
 
 
-@router.get('/{udn}/queue', status_code=200, response_model=List[models.PlaybackQueueItem])
-async def get_queue_items(request: Request, udn: str):
+@router.get('/{udn}/queue', status_code=200, response_model=models.PlaybackQueue)
+async def get_queued_items(request: Request, udn: str):
     try:
         pc = request.app.av_control_point.get_controller_for_renderer(udn)
-        return [{'library_item_id': create_library_item_id(x.dms, x.object_id)} for x in pc.queue.items]
+        items = [{'library_item_id': create_library_item_id(x.dms, x.object_id)} for x in pc.queue.items]
+        return {'items': items, 'current_item_index': pc.queue.current_item_index}
     except Exception as e:
         _logger.exception(e)
         raise HTTPException(status_code=404)
 
 
 @router.post('/{udn}/queue', status_code=201)
-async def add_item_to_queue(request: Request, udn: str, payload: models.PlaybackQueueItem):
+async def append_items_to_queue(request: Request, udn: str, payload: models.PlaybackQueueIn):
     try:
-        dms, playbackitemid = split_library_item_id(payload.library_item_id)
         pc = request.app.av_control_point.get_controller_for_renderer(udn)
-        pc.queue.append(dms, playbackitemid, '')
+        for item in payload.items:
+            dms, playbackitemid = split_library_item_id(item.library_item_id)
+            pc.queue.append(dms, playbackitemid, '')
 
     except Exception as e:
         _logger.exception(e)
@@ -80,11 +82,11 @@ async def add_item_to_queue(request: Request, udn: str, payload: models.Playback
 
 
 @router.put('/{udn}/queue', status_code=200)
-async def set_queue(request: Request, udn: str, payload: List[models.PlaybackQueueItem]):
+async def set_queue_items(request: Request, udn: str, payload: models.PlaybackQueueIn):
     try:
         pc = request.app.av_control_point.get_controller_for_renderer(udn)
         pc.clear()
-        for item in payload:
+        for item in payload.items:
             dms, playbackitemid = split_library_item_id(item.library_item_id)
             pc.queue.append(dms, playbackitemid, '')
 

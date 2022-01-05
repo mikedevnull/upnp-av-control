@@ -96,32 +96,3 @@ async def test_play():
     call1 = mock.call('SetAVTransportURI', InstanceID=0, CurrentURI='someURI', CurrentURIMetaData='xmldata')
     call2 = mock.call('Play', InstanceID=0, Speed='1')
     dmr.av_transport.async_call_action.assert_has_calls([call1, call2])
-
-
-def test_playback_queue():
-    expected = [
-        core.playback.queue.PlaybackItem('dms1', 'object1', 'title1'),
-        core.playback.queue.PlaybackItem('dms2', 'object2', 'title2'),
-        core.playback.queue.PlaybackItem('dms3', 'object3', 'title3')
-    ]
-    queue = core.playback.queue.PlaybackQueue()
-    queue.insert('dms1', 'object1', 'title1')
-    queue.insert('dms2', 'object2', 'title2')
-    queue.insert('dms3', 'object3', 'title3')
-
-    assert queue.items == expected
-
-    item0 = queue.next_item()
-    assert item0 == expected[0]
-    assert queue.items == expected[1:]
-
-    item1 = queue.next_item()
-    assert item1 == expected[1]
-    assert queue.items == expected[2:]
-
-    item2 = queue.next_item()
-    assert item2 == expected[2]
-    assert queue.items == expected[3:]
-
-    end_of_queue_item = queue.next_item()
-    assert end_of_queue_item is None
