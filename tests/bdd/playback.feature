@@ -36,6 +36,7 @@ Feature: Playback
     And the device AcmeRenderer is playing item 0/2/2 from FooMediaServer
     And the playback queue of AcmeRenderer contains the following items:
       | item id | dms            |
+      | 0/2/2   | FooMediaServer |
       | 0/1/1   | FooMediaServer |
 
   Scenario: Replace contents of playback queue
@@ -73,6 +74,8 @@ Feature: Playback
     Then the device AcmeRenderer is playing item 0/1/1 from FooMediaServer
     And the playback queue of AcmeRenderer contains the following items:
       | item id | dms            |
+      | 0/2/2   | FooMediaServer |
+      | 0/1/1   | FooMediaServer |
       | 0/3/4   | FooMediaServer |
       | 0/7/8   | FooMediaServer |
       | 0/5/6   | FooMediaServer |
@@ -89,4 +92,7 @@ Feature: Playback
     And AcmeRenderer finishes playback of current track
     And AcmeRenderer finishes playback of current track
     Then the playback state reported by the API of AcmeRenderer is STOPPED
-    And the playback queue of AcmeRenderer is empty
+    And the playback queue of AcmeRenderer contains the following items:
+      | item id | dms            |
+      | 0/7/8   | FooMediaServer |
+      | 0/5/6   | FooMediaServer |

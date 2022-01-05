@@ -1,5 +1,6 @@
 import pytest
-from upnpavcontrol.core.playback.controller import PlaybackController, PlaybackItem, TransportState
+from upnpavcontrol.core.playback.controller import PlaybackController, TransportState
+from upnpavcontrol.core.playback.queue import PlaybackQueue
 from upnpavcontrol.core.oberserver import Observable
 from upnpavcontrol.core.mediarenderer import PlaybackInfo
 import unittest.mock as mock
@@ -43,31 +44,22 @@ class FakePlayerInterface():
             await self._state_observable.notify(self._state)
 
 
-class FakePlaybackQueue(list):
-    def next_item(self) -> typing.Optional[PlaybackItem]:
-        if len(self) == 0:
-            return None
-        return self.pop(0)
-
-
 @pytest.fixture
-def queueWithItems():
-    queue = FakePlaybackQueue()
-    item1 = PlaybackItem(dms='1234', object_id='9876', title='First song')
-    item2 = PlaybackItem(dms='1234', object_id='9876', title='First song')
-    queue.append(item1)
-    queue.append(item2)
+def queue_with_items():
+    queue = PlaybackQueue()
+    queue.append(dms='1234', object_id='9876', title='First song')
+    queue.append(dms='1234', object_id='9876', title='First song')
     return queue
 
 
 @pytest.mark.asyncio
 async def test_empty_queue_play_nothing_happens():
     player = FakePlayerInterface()
-    queue = FakePlaybackQueue()
+    queue = PlaybackQueue()
     controller = PlaybackController(queue)
     await controller.setup_player(player)
     assert not controller.is_playing
-    assert len(controller.queue) == 0
+    assert len(controller.queue.items) == 0
 
     await controller.play()
 
@@ -75,26 +67,28 @@ async def test_empty_queue_play_nothing_happens():
     player.stop.assert_not_called()
     player.subscribe.assert_not_called()
     assert not controller.is_playing
+    assert player.state_subscription_count == 0
 
 
 @pytest.mark.asyncio
-async def test_stopped_device_play_device_starts_playing(queueWithItems):
+async def test_stopped_device_play_device_starts_playing(queue_with_items):
     player = FakePlayerInterface()
-    item1 = queueWithItems[0]
-    controller = PlaybackController(queueWithItems)
+    item1 = queue_with_items.items[0]
+    controller = PlaybackController(queue_with_items)
     await controller.setup_player(player)
 
     await controller.play()
 
-    player.subscribe.assert_called_once()
+    player.subscribe.assert_called()
     player.play.assert_called_with(item1)
     assert controller.is_playing
+    assert player.state_subscription_count == 1
 
 
 @pytest.mark.asyncio
-async def test_playing_device_play_nothing_happens(queueWithItems):
+async def test_playing_device_play_nothing_happens(queue_with_items):
     player = FakePlayerInterface()
-    controller = PlaybackController(queueWithItems)
+    controller = PlaybackController(queue_with_items)
     await controller.setup_player(player)
 
     await controller.play()
@@ -102,63 +96,64 @@ async def test_playing_device_play_nothing_happens(queueWithItems):
 
     await controller.play()
     player.play.assert_called_once()  # only call on first play()
-    player.subscribe.assert_called_once()  # only call on first play()
+    player.subscribe.assert_called()
     player.stop.assert_not_called()
     assert controller.is_playing
+    assert player.state_subscription_count == 1
 
 
 @pytest.mark.asyncio
-async def test_playing_song_finishes_next_item_is_player(queueWithItems):
+async def test_playing_song_finishes_next_item_is_player(queue_with_items):
     player = FakePlayerInterface()
 
-    controller = PlaybackController(queueWithItems)
+    controller = PlaybackController(queue_with_items)
     await controller.setup_player(player)
-    item1 = queueWithItems[0]
-    item2 = queueWithItems[1]
+    item1 = queue_with_items.items[0]
+    item2 = queue_with_items.items[1]
     await controller.play()
     player.play.assert_called_with(item1)
-    player.subscribe.assert_called_once()
+    player.subscribe.assert_called()
+    assert player.state_subscription_count == 1
 
-    assert len(queueWithItems) == 1
     assert controller.is_playing
     player.play.reset_mock()
 
     await player.fake_stopped_event()
     player.play.assert_called_with(item2)
-    assert len(queueWithItems) == 0
     assert controller.is_playing
+    assert player.state_subscription_count == 1
 
 
 @pytest.mark.asyncio
-async def test_starting_first_playback_fails_player_never_starts(queueWithItems):
+async def test_starting_first_playback_fails_player_never_starts(queue_with_items):
     player = FakePlayerInterface()
 
-    controller = PlaybackController(queueWithItems)
+    controller = PlaybackController(queue_with_items)
     await controller.setup_player(player)
-    item1 = queueWithItems[0]
+    item1 = queue_with_items.items[0]
 
     player.play.side_effect = RuntimeError('Playback failed for some reason')
     await controller.play()
     player.play.assert_called_with(item1)
-    player.subscribe.assert_called_once()
-    assert len(queueWithItems) == 1
+    player.subscribe.assert_called()
+    assert queue_with_items.current_item_index == 0
     assert not controller.is_playing
     player.play.assert_called_once()
     assert player.state_subscription_count == 0
 
 
 @pytest.mark.asyncio
-async def test_starting_playback_fails_playback_stops(queueWithItems):
+async def test_starting_playback_fails_playback_stops(queue_with_items):
     player = FakePlayerInterface()
 
-    controller = PlaybackController(queueWithItems)
+    controller = PlaybackController(queue_with_items)
     await controller.setup_player(player)
-    item1 = queueWithItems[0]
-    item2 = queueWithItems[1]
+    item1 = queue_with_items.items[0]
+    item2 = queue_with_items.items[1]
 
     await controller.play()
     player.play.assert_called_with(item1)
-    player.subscribe.assert_called_once()
+    player.subscribe.assert_called()
     assert controller.is_playing
     player.play.reset_mock()
 
@@ -167,5 +162,4 @@ async def test_starting_playback_fails_playback_stops(queueWithItems):
     await player.fake_stopped_event()
     player.play.assert_called_with(item2)
     assert player.state_subscription_count == 0
-    assert len(queueWithItems) == 0
     assert not controller.is_playing
