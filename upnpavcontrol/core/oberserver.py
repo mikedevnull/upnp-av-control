@@ -53,6 +53,10 @@ class Observable(Generic[T]):
         self._change_callback_cb: Optional[Callable[[int], Awaitable[None]]] = None
 
     @property
+    def subscription_count(self):
+        return len(self._subscriptions)
+
+    @property
     def on_subscription_change(self) -> Optional[Callable[[int], Awaitable[None]]]:
         return self._change_callback_cb
 
@@ -121,7 +125,7 @@ async def wait_for_value_if(observerable: Observable[T], predicate: Callable[[T]
     Implmenetation as a contextmanager helps to avoid race conditions:
     ```
     # setup expectation by creating the context manager
-    async with wait_for_value_if(obs, lamdba x: x==42): 
+    async with wait_for_value_if(obs, lamdba x: x==42):
         # carry out the action that will trigger that change
         await some_operation_that_will_eventually_change_obs_to_42()
     # on exit, the context manager will block until the predicate has been fullfilled
@@ -138,8 +142,8 @@ async def wait_for_value_if(observerable: Observable[T], predicate: Callable[[T]
             raise e
 
     subscription = await observerable.subscribe(f)
-    yield
     try:
+        yield
         await asyncio.wait_for(future, timeout)
     finally:
         await subscription.unsubscribe()
