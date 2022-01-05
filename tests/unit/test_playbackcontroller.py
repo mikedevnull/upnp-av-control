@@ -163,3 +163,20 @@ async def test_starting_playback_fails_playback_stops(queue_with_items):
     player.play.assert_called_with(item2)
     assert player.state_subscription_count == 0
     assert not controller.is_playing
+
+
+@pytest.mark.asyncio
+async def test_playing_device_stops_after_last_item(queue_with_items):
+    queue_with_items._current_item_index = 1
+    player = FakePlayerInterface()
+    controller = PlaybackController(queue_with_items)
+    await controller.setup_player(player)
+
+    await controller.play()
+    assert controller.is_playing
+    player.play.assert_called_once()  # only call on first play()
+
+    await player.fake_stopped_event()
+
+    assert not controller.is_playing
+    assert player.state_subscription_count == 0

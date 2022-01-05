@@ -38,6 +38,15 @@ class PlaybackQueueItem(BaseModel):
     library_item_id: str
 
 
+class PlaybackQueue(BaseModel):
+    items: typing.List[PlaybackQueueItem]
+    current_item_index: typing.Optional[int]
+
+
+class PlaybackQueueIn(BaseModel):
+    items: typing.List[PlaybackQueueItem]
+
+
 class LibraryItemType(Enum):
     CONTAINER = 'container'
     ITEM = 'item'
