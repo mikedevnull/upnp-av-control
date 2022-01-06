@@ -4,6 +4,7 @@ import { ReactComponent as PlayIcon } from "../assets/control-play.svg";
 import { ReactComponent as PauseIcon } from "../assets/control-pause.svg";
 import { ReactComponent as NavDownIcon } from "../assets/nav-down.svg";
 import { ReactComponent as DevicesIcon } from "../assets/control-devices.svg";
+import { ReactComponent as ImgPlaceholder } from "../assets/track.svg";
 import { TopBar } from "../components/TopBar";
 import { Link, useHistory } from "react-router-dom";
 import { usePlayerControl } from "../custom-hooks";
@@ -52,19 +53,7 @@ const Player = (props: PlayerProps) => {
       <TopBar nav={nav} action={action} title={playerName} />
       <div className="container mx-auto flex flex-col w-full h-full">
         <div className="flex-grow-2">
-          <img
-            className="
-          rounded-3xl
-          mx-auto
-          h-48
-          w-auto
-          text-primary-light
-          shadow-2xl
-          border-primary-light border
-        "
-            src="android-chrome-192x192.png"
-            alt="cover art"
-          />
+          <ImgPlaceholder className="rounded-3xl mx-auto h-48 w-auto text-primary shadow-2xl border-primary-light border" />
         </div>
         <div className="flex-grow p-8 max-h-44 text-center text-primary">
           <h3 className="text-4xl font-bold">{title}</h3>
@@ -73,7 +62,7 @@ const Player = (props: PlayerProps) => {
         <div className="mb-4 flex justify-around items-center">
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            className="h-6 w-6 text-primary-light"
+            className="h-6 w-6 text-primary-lightest"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -86,26 +75,28 @@ const Player = (props: PlayerProps) => {
             />
           </svg>
           <Link to="/player-queue">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-6 w-6 text-primary"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M4 6h16M4 12h16m-7 6h7"
-            />
-          </svg>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6 text-primary"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 6h16M4 12h16m-7 6h7"
+              />
+            </svg>
           </Link>
         </div>
         <div className="mb-8 flex justify-around items-center">
+          <PrevIcon className="h-12 w-12 text-primary-lightest" />
           <button onClick={() => props.playbackControl.playPause()}>
-          {PlayPauseIcon}
+            {PlayPauseIcon}
           </button>
+          <NextIcon className="h-12 w-12 text-primary-lightest" />
         </div>
         <div className="mb-8 flex justify-around items-center">
           <input
