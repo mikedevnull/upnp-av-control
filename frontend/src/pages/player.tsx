@@ -1,10 +1,10 @@
-import { ReactComponent as PrevIcon } from "../assets/control-prev.svg";
-import { ReactComponent as NextIcon } from "../assets/control-next.svg";
-import { ReactComponent as PlayIcon } from "../assets/control-play.svg";
-import { ReactComponent as PauseIcon } from "../assets/control-pause.svg";
-import { ReactComponent as NavDownIcon } from "../assets/nav-down.svg";
-import { ReactComponent as DevicesIcon } from "../assets/control-devices.svg";
-import { ReactComponent as ImgPlaceholder } from "../assets/track.svg";
+import PrevIcon from "../assets/control-prev.svg";
+import NextIcon from "../assets/control-next.svg";
+import PlayIcon from "../assets/control-play.svg";
+import PauseIcon from "../assets/control-pause.svg";
+import NavDownIcon from "../assets/nav-down.svg";
+import DevicesIcon from "../assets/control-devices.svg";
+import ImgPlaceholder from "../assets/track.svg";
 import { TopBar } from "../components/TopBar";
 import { Link, useNavigate } from "react-router-dom";
 import { usePlayerControl } from "../custom-hooks";
@@ -34,18 +34,18 @@ const Player = (props: PlayerProps) => {
 
   const nav = (
     <button>
-      <NavDownIcon onClick={() => navigate(-1)} />
+      <img className="w-6 h-6" src={NavDownIcon} onClick={() => navigate(-1)} />
     </button>
   );
   const PlayPauseIcon =
     transport === "PLAYING" ? (
-      <PauseIcon className="w-24 h-24 text-primary" />
+      <img src={PauseIcon} className="w-24 h-24 text-primary" />
     ) : (
-      <PlayIcon className="w-24 h-24 text-primary" />
+      <img src={PlayIcon} className="w-24 h-24 text-primary" />
     );
   const action = (
     <Link to="/select-player">
-      <DevicesIcon />
+      <img className="w-6 h-6" src={DevicesIcon} />
     </Link>
   );
   return (
@@ -53,7 +53,10 @@ const Player = (props: PlayerProps) => {
       <TopBar nav={nav} action={action} title={playerName} />
       <div className="container mx-auto flex flex-col w-full h-full">
         <div className="flex-grow-2">
-          <ImgPlaceholder className="rounded-3xl mx-auto h-48 w-auto text-primary shadow-2xl border-primary-light border" />
+          <img
+            src={ImgPlaceholder}
+            className="rounded-3xl mx-auto h-48 w-auto text-primary shadow-2xl border-primary-light border"
+          />
         </div>
         <div className="flex-grow p-8 max-h-44 text-center text-primary">
           <h3 className="text-4xl font-bold">{title}</h3>
@@ -92,11 +95,11 @@ const Player = (props: PlayerProps) => {
           </Link>
         </div>
         <div className="mb-8 flex justify-around items-center">
-          <PrevIcon className="h-12 w-12 text-primary-lightest" />
+          <img src={PrevIcon} className="h-12 w-12 text-primary-lightest" />
           <button onClick={() => props.playbackControl.playPause()}>
             {PlayPauseIcon}
           </button>
-          <NextIcon className="h-12 w-12 text-primary-lightest" />
+          <img src={NextIcon} className="h-12 w-12 text-primary-lightest" />
         </div>
         <div className="mb-8 flex justify-around items-center">
           <input

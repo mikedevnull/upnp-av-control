@@ -1,5 +1,5 @@
 import { TopBar, PlayerListItem } from "../components";
-import { ReactComponent as NavBackIcon } from "../assets/nav-back.svg";
+import NavBackIcon from "../assets/nav-back.svg";
 import { useNavigate } from "react-router-dom";
 import { PlayerDevice } from "../upnpapi/types";
 
@@ -13,7 +13,7 @@ export default function PlayerSelection(props: PlayerSelectionProps) {
   const navigate = useNavigate();
   const nav = (
     <button>
-      <NavBackIcon onClick={() => navigate(-1)} />
+      <img className="w-6 h-6" src={NavBackIcon} onClick={() => navigate(-1)} />
     </button>
   );
 
