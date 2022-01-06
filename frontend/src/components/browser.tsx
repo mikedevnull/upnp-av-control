@@ -1,21 +1,12 @@
-import { useEffect } from "react";
-import { useState } from "react";
-import { api } from "../upnpapi";
 import { LibraryListItem } from "../upnpapi/types";
 import { BrowseListItem as ListItemComponent } from "./browse-list-item";
 
 interface BrowserProps {
-  id?: string;
+  items: LibraryListItem[];
   clickHandler?: CallableFunction;
 }
 
-export default function Browser({ id, clickHandler }: BrowserProps) {
-  const [items, setItems] = useState<LibraryListItem[]>([]);
-
-  useEffect(() => {
-    setItems([]);
-    api.browse(id).then(setItems);
-  }, [id]);
+export default function Browser({ items, clickHandler }: BrowserProps) {
   const defaultActionHandler = (item: LibraryListItem) => {
     if (clickHandler) {
       clickHandler(item);

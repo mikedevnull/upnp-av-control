@@ -55,6 +55,8 @@ export default function LibraryBrowser(props: LibraryBrowserProps) {
   const [currentItemMeta, setCurrentItemMeta] = useState<CurrentItemMetadata>({
     title: "",
   });
+  const [items, setItems] = useState<LibraryListItem[]>([]);
+
   const onSelect = (item: LibraryListItem) => {
     if (item.upnpclass.startsWith("container")) {
       setCurrentItemMeta({
@@ -66,11 +68,15 @@ export default function LibraryBrowser(props: LibraryBrowserProps) {
         search: "?" + new URLSearchParams({ id: item.id }).toString(),
       });
     } else if (item.upnpclass.startsWith("item")) {
-      props.playbackControl.play(item.id);
+      const idx = items.indexOf(item);
+      const itemsToPlay = items.slice(idx);
+      props.playbackControl.playItemsImmediatly(itemsToPlay.map((i) => i.id));
     }
   };
 
   useEffect(() => {
+    setItems([]);
+    api.browse(id).then(setItems);
     if (id) {
       api.getItem(id).then((item) => {
         setCurrentItemMeta((meta) => {
@@ -95,7 +101,7 @@ export default function LibraryBrowser(props: LibraryBrowserProps) {
   return (
     <div className="h-screen w-full flex flex-col">
       <LibraryNav isRoot={id === undefined} {...currentItemMeta}></LibraryNav>
-      <Browser id={id} clickHandler={onSelect}></Browser>
+      <Browser items={items} clickHandler={onSelect}></Browser>
       <Miniplayer playbackControl={props.playbackControl}></Miniplayer>
     </div>
   );

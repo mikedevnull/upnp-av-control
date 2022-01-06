@@ -1,4 +1,4 @@
-from pytest_bdd import scenarios, when, then, scenario, parsers
+from pytest_bdd import scenarios, when, then, parsers
 from .async_utils import sync
 import logging
 from .common_steps import *  # noqa: F401, F403
@@ -12,11 +12,6 @@ def find_item_with_title(payload, title):
         return item
     except StopIteration:
         return None
-
-
-@scenario("media_server_api.feature", "Pagination", example_converters=dict(first_element=int, last_element=int))
-def test_browse_pagination():
-    pass
 
 
 scenarios('media_server_api.feature')
@@ -51,10 +46,11 @@ async def the_client_requests_metadata_of_item(test_context, webclient, item_nam
     test_context.last_response = await webclient.get(uri)
 
 
-@when('the client requests page <pagenumber> with size <pagesize> of object FakeLongArtistListing')
+@when(parsers.parse('the client requests page {pagenumber} with size {pagesize} of object FakeLongArtistListing'),
+      converters=dict(pagenumber=int, pagesize=int))
 @sync
 async def the_client_requests_paginated(test_context, webclient, pagenumber, pagesize):
-    """the client requests page <pagenumber> with size <pagesize> of object FakeLongArtistListing."""
+
     response_json = test_context.last_response.json()
     item = find_item_with_title(response_json, "FakeLongArtistListing")
     item_id = item['id']
@@ -63,7 +59,8 @@ async def the_client_requests_paginated(test_context, webclient, pagenumber, pag
     test_context.last_response = await webclient.get(browse_uri, query_string=pagination_params)
 
 
-@then(parsers.cfparse('the response will contain elements from index <first_element> to index <last_element>'))
+@then(parsers.parse('the response will contain elements from index {first_element} to index {last_element}'),
+      converters=dict(first_element=int, last_element=int))
 def the_response_will_contain_elements_from_index_first_element_to_index_last_element(
         test_context, first_element, last_element):
     """the response will contain elements from index <first_element> to index <last_element>."""

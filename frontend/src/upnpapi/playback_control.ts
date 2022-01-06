@@ -38,16 +38,31 @@ export default class PlaybackControl extends EventEmitter {
     this.updateDevices();
   }
 
-  play(itemId: string) {
-    if (this._selectedPlayerId) {
-      api.play(this._selectedPlayerId, itemId);
+  async playItemsImmediatly(itemIds: string[]) {
+    if (this._selectedPlayerId === undefined) {
+      return;
+    }
+    await api.stop(this._selectedPlayerId);
+    await api.setPlaybackQueue(this._selectedPlayerId, itemIds);
+    await api.play(this._selectedPlayerId);
+  }
+
+  async playPause() {
+    if (this._selectedPlayerId === undefined) {
+      return;
+    }
+    if (this._playbackInfo.transport === "PLAYING") {
+      api.stop(this._selectedPlayerId);
+    } else if (this._playbackInfo.transport === "STOPPED") {
+      api.play(this._selectedPlayerId);
     }
   }
 
   setVolume(volume: number) {
-    if (this._selectedPlayerId) {
-      api.setVolume(this._selectedPlayerId, volume);
+    if (this._selectedPlayerId === undefined) {
+      return;
     }
+    api.setVolume(this._selectedPlayerId, volume);
   }
 
   get playbackInfo() {
@@ -132,6 +147,10 @@ export default class PlaybackControl extends EventEmitter {
       this._eventBus.subscribePlaybackInfo(this._selectedPlayerId);
       api.getPlaybackInfo(this._selectedPlayerId).then((data) => {
         this._playbackInfo = data;
+        this.emit(
+          PlaybackControl.Event.PLAYBACK_INFO_CHANGED,
+          this._playbackInfo
+        );
       });
     }
   }

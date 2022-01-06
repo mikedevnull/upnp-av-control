@@ -21,6 +21,7 @@ export default function Miniplayer({ playbackControl }: MiniplayerProps) {
     ) : (
       <PlayIcon className="w-10 h-10 text-primary" />
     );
+
   if (playerPresent) {
     main = (
       <>
@@ -30,12 +31,14 @@ export default function Miniplayer({ playbackControl }: MiniplayerProps) {
           alt="cover art"
         ></img>
         <div className="flex flex-col flex-grow justify-center">
-          <span className="text-left">{title}</span>
-          <span className="text-left text-sm">{artist}</span>
+          <span className="text-left text-sm">{title}</span>
+          <span className="text-left text-xs">{artist}</span>
         </div>
         <div className="m-4 flex flex-row">
-          {PlayPauseIcon}
-          <NextIcon className="h-10 w-10 text-primary" />
+          <button onClick={() => playbackControl.playPause()}>
+            {PlayPauseIcon}
+          </button>
+          <NextIcon className="h-10 w-10 text-primary-lightest" />
         </div>
       </>
     );
@@ -44,7 +47,7 @@ export default function Miniplayer({ playbackControl }: MiniplayerProps) {
   }
 
   return (
-    <div className="p-4 h-16 flex items-center border-t w-full bg-white fixed bottom-0">
+    <div className="p-4 pr-0 h-16 flex items-center border-t w-full bg-white fixed bottom-0">
       <Link to="/player">
         <NavUp />
       </Link>

@@ -73,7 +73,6 @@ class AiohttpNotificationEndpoint(NotificationEndpointBase):
         self._notify_callback = None
 
     async def _async_handle_notify(self, request):
-        _logger.debug('NOTIFY: %s', request.headers)
         body = await request.content.read()
         body = body.decode('utf-8')
         _logger.debug('NOTIFY: %s', body)
@@ -101,7 +100,7 @@ class NotificationBackend(object):
     def __init__(self, endpoint: NotificationEndpointBase, requester: UpnpRequester):
         self._endpoint = endpoint
         self._handler = UpnpEventHandler(self._endpoint.callback_url, requester)
-        self._subscription_timeout = timedelta(seconds=1800)
+        self._subscription_timeout = timedelta(seconds=120)
         # time until subscription renewals are send, a little bit less then the
         # timeout so we have some time for the renewal process _before_ the subscription
         # actually times out

@@ -33,3 +33,10 @@ class JsonRPCTestConnection(object):
         raw_reply = await asyncio.wait_for(self._websocket.receive_json(), timeout=self.timeout)
         reply = json_rpc.JsonRPCNotification(**raw_reply)
         return reply
+
+    async def clear_pending_notifications(self):
+        try:
+            while True:
+                await asyncio.wait_for(self._websocket.receive_json(), 0.5)
+        except asyncio.TimeoutError:
+            pass
