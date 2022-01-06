@@ -2,14 +2,8 @@ import enum
 import re
 from . import didllite
 import logging
-import xml.dom.minidom
 
 _logger = logging.getLogger(__name__)
-
-
-def prettify_xml(xml_frame):
-    dom = xml.dom.minidom.parseString(xml_frame)
-    return dom.toprettyxml()
 
 
 class BrowseFlags(enum.Enum):
@@ -18,6 +12,7 @@ class BrowseFlags(enum.Enum):
 
 
 class MediaServer(object):
+
     def __init__(self, device):
         self._device = device
 
@@ -59,7 +54,6 @@ class MediaServer(object):
                                                                  Filter='*')
         regex = re.compile(r"&(?!amp;|lt;|gt;)")
         didl = regex.sub("&amp;", payload['Result'])
-        # _logger.debug(prettify_xml(didl))
         return didllite.DidlLite(didl)
 
     async def browse_metadata(self, object_id: str):
