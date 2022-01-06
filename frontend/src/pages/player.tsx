@@ -5,7 +5,7 @@ import { ReactComponent as PauseIcon } from "../assets/control-pause.svg";
 import { ReactComponent as NavDownIcon } from "../assets/nav-down.svg";
 import { ReactComponent as DevicesIcon } from "../assets/control-devices.svg";
 import { TopBar } from "../components/TopBar";
-import { Link } from "react-router-dom";
+import { Link, useHistory } from "react-router-dom";
 import { usePlayerControl } from "../custom-hooks";
 import { PlaybackControl } from "../upnpapi";
 
@@ -16,6 +16,7 @@ interface PlayerProps {
 const Player = (props: PlayerProps) => {
   const { playerPresent, playerName, volumePercent, artist, title, transport } =
     usePlayerControl(props.playbackControl);
+  const history = useHistory();
   let overlayClass =
     "absolute top-0 mt-16 right-0 bottom-0 left-0 opacity-90 bg-gray-50";
   if (playerPresent) {
@@ -31,9 +32,9 @@ const Player = (props: PlayerProps) => {
   };
 
   const nav = (
-    <Link to="/">
-      <NavDownIcon />
-    </Link>
+    <button>
+      <NavDownIcon onClick={() => history.goBack()} />
+    </button>
   );
   const PlayPauseIcon =
     transport === "PLAYING" ? (
