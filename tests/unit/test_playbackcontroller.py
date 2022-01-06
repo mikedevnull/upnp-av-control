@@ -4,14 +4,15 @@ from upnpavcontrol.core.playback.queue import PlaybackQueue
 from upnpavcontrol.core.oberserver import Observable
 from upnpavcontrol.core.mediarenderer import PlaybackInfo
 import unittest.mock as mock
+from ..testsupport import AsyncMock
 import typing
 
 
 class FakePlayerInterface():
     def __init__(self):
-        self.play = mock.AsyncMock(side_effect=self._do_play)
-        self.stop = mock.AsyncMock(side_effect=self._do_stop)
-        self.subscribe = mock.AsyncMock(side_effect=self._do_subscribe)
+        self.play = AsyncMock(side_effect=self._do_play)
+        self.stop = AsyncMock(side_effect=self._do_stop)
+        self.subscribe = AsyncMock(side_effect=self._do_subscribe)
         self._state = PlaybackInfo()
         self._state.transport = TransportState.STOPPED
         self._state_observable = Observable[PlaybackInfo]()
