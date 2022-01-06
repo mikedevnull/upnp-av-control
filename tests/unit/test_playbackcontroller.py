@@ -3,12 +3,12 @@ from upnpavcontrol.core.playback.controller import PlaybackController, Transport
 from upnpavcontrol.core.playback.queue import PlaybackQueue
 from upnpavcontrol.core.oberserver import Observable
 from upnpavcontrol.core.mediarenderer import PlaybackInfo
-import unittest.mock as mock
 from ..testsupport import AsyncMock
 import typing
 
 
 class FakePlayerInterface():
+
     def __init__(self):
         self.play = AsyncMock(side_effect=self._do_play)
         self.stop = AsyncMock(side_effect=self._do_stop)
@@ -101,6 +101,35 @@ async def test_playing_device_play_nothing_happens(queue_with_items):
     player.stop.assert_not_called()
     assert controller.is_playing
     assert player.state_subscription_count == 1
+
+
+@pytest.mark.asyncio
+async def test_playing_device_stop_playback_stops(queue_with_items):
+    player = FakePlayerInterface()
+    controller = PlaybackController(queue_with_items)
+    await controller.setup_player(player)
+
+    await controller.play()
+    assert controller.is_playing
+
+    await controller.stop()
+    player.stop.assert_called_once()
+    assert not controller.is_playing
+    assert player.state_subscription_count == 0
+
+
+@pytest.mark.asyncio
+async def test_stopped_device_stop_nothing_happens(queue_with_items):
+    player = FakePlayerInterface()
+    controller = PlaybackController(queue_with_items)
+    await controller.setup_player(player)
+
+    await controller.stop()
+
+    player.stop.assert_not_called()
+    player.play.assert_not_called()
+    assert not controller.is_playing
+    assert player.state_subscription_count == 0
 
 
 @pytest.mark.asyncio

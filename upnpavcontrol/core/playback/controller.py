@@ -4,28 +4,12 @@ from upnpavcontrol.core.oberserver import Subscription, wait_for_value_if
 from .queue import PlaybackQueue, PlaybackItem
 import typing
 import logging
-import asyncio
 
 _logger = logging.getLogger(__name__)
 
 
-async def wait_for(oberserable, predicate: typing.Callable[[PlaybackInfo], bool], timeout: int = 5):
-    future = asyncio.get_running_loop().create_future()
-
-    async def f(v: PlaybackInfo):
-        if predicate(v):
-            future.set_result(True)
-
-    subscription = await oberserable.subscribe(f)
-
-    def unsub(*args):
-        asyncio.create_task(subscription.unsubscribe())
-
-    future.add_done_callback(unsub)
-    return future
-
-
 class PlaybackControllable(Protocol):
+
     async def play(self, item: PlaybackItem):
         ...
 
@@ -37,6 +21,7 @@ class PlaybackControllable(Protocol):
 
 
 class QueueInterface(Protocol):
+
     def next_item(self) -> typing.Optional[PlaybackItem]:
         ...
 
@@ -45,6 +30,7 @@ class QueueInterface(Protocol):
 
 
 class PlaybackController():
+
     def __init__(self, queue: QueueInterface = PlaybackQueue()):
         self._player = None
         self._queue = queue
@@ -100,28 +86,24 @@ class PlaybackController():
 
         async with wait_for_value_if(self._player, lambda x: x.transport == TransportState.STOPPED):
             _logger.debug("Stopping player ...")
-            await self._player.stop()
             self._is_playing = False
+            await self._player.stop()
         _logger.debug('got stopped feedback')
         if self._player_subscription is not None:
             await self._player_subscription.unsubscribe()
             self._player_subscription = None
 
     async def _on_transport_state_changed(self, info: PlaybackInfo):
-        try:
-            player_is_playing = (info.transport == TransportState.PLAYING)
-            if self._is_playing == player_is_playing:
-                return
-            _logger.debug("Switched playing state to %s", player_is_playing)
-            self._is_playing = player_is_playing
+        player_is_playing = (info.transport == TransportState.PLAYING)
+        if self._is_playing == player_is_playing:
+            return
+        _logger.debug("Switched playing state to %s", player_is_playing)
+        self._is_playing = player_is_playing
 
-            if not player_is_playing:  # switched from playing to stopped
-                if self._queue.next_item() is not None:
-                    _logger.debug("Trying to play next item in queue")
-                    await self.play()
-                elif self._player_subscription is not None:
-                    await self._player_subscription.unsubscribe()
-                    self._player_subscription = None
-        except Exception as e:
-            _logger.exception('transport state handler')
-            raise e
+        if not player_is_playing:  # switched from playing to stopped
+            if self._queue.next_item() is not None:
+                _logger.debug("Trying to play next item in queue")
+                await self.play()
+            elif self._player_subscription is not None:
+                await self._player_subscription.unsubscribe()
+                self._player_subscription = None
