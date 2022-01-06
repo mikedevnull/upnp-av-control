@@ -84,6 +84,8 @@ didl_music_content = """
 </DIDL-Lite>
 """  # noqa: 501
 
+_dummy_protocol_info = "http-get:*:audio/mpeg:DLNA.ORG_PN=MP3;DLNA.ORG_OP=11;DLNA.ORG_FLAGS=01700000000000000000000000000000"  # noqa: 501
+
 
 def create_fake_entries(count: int):
     parentId = 'foo'
@@ -118,6 +120,8 @@ class FakeContentDirectoryService(UpnpServiceMock):
         self.add_async_action('Browse', self._browse)
 
     async def _browse(self, ObjectID, BrowseFlag, StartingIndex, RequestedCount, SortCriteria, Filter):
+        if BrowseFlag == 'BrowseMetadata':
+            return self.get_metadata(ObjectID)
         if ObjectID == '0':
             return {'Result': didl_fake_root, 'NumberReturned': 3, 'TotalMatches': 3, 'UpdateID': 1}
         elif ObjectID == '/music':
@@ -132,6 +136,28 @@ class FakeContentDirectoryService(UpnpServiceMock):
             }
         else:
             return {'Result': didl_musictrack, 'NumberReturned': 1, 'TotalMatches': 1, 'UpdateID': 1}
+
+    def get_metadata(self, ObjectID):
+        for item in fakeMusicDidl:
+            if item.id == ObjectID:
+                result = format_didllite([item])
+                return {'Result': result, 'NumberReturned': 1, 'TotalMatches': 1, 'UpdateID': 1}
+
+        fakeresource = didllite.Resource(**{
+            '@protocolInfo': _dummy_protocol_info,
+            '#text': f'htto://192.168.1.2/files/{ObjectID}'
+        })
+        fakedata = {
+            '@id': ObjectID,
+            '@parentID': '/music^',
+            '#upnp:class': 'object.item.audioItem.musicTrack',
+            '#dc:title': f'Title {ObjectID}',
+            '#upnp:album': f'Album {ObjectID}',
+            '#upnp:artist': f'Artist {ObjectID}',
+            '*dl:res': [fakeresource]
+        }
+        didl = didllite.MusicTrack(**fakedata)
+        return {'Result': format_didllite([didl]), 'NumberReturned': 1, 'TotalMatches': 1, 'UpdateID': 1}
 
 
 def factory():

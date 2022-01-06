@@ -20,3 +20,16 @@ export type LibraryListItem = {
   upnpclass: string;
   image?: string;
 };
+
+export type PlaybackQueueItem = {
+  id: string;
+  title: string;
+  artist?: string;
+  album?: string;
+  image?: string;
+};
+
+export type PlaybackQueue = {
+  currentItemIndex?: number;
+  items: PlaybackQueueItem[];
+};

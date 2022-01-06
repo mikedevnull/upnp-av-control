@@ -1,7 +1,7 @@
 import { LibraryListItem } from "../upnpapi/types";
 import IconContainer from "../assets/folder.svg";
 import IconTrack from "../assets/track.svg";
-
+import { ReactComponent as PlayIcon } from "../assets/control-play.svg";
 interface BrowseListItemProps {
   item: LibraryListItem;
   clickHandler?: CallableFunction;
@@ -9,9 +9,15 @@ interface BrowseListItemProps {
 
 export function BrowseListItem({ item, clickHandler }: BrowseListItemProps) {
   let className =
-    "block flex items-center px-4 h-16 hover:bg-primary-lightest cursor-pointer text-left";
+    "block group flex items-center px-4 h-16 hover:bg-primary-lightest cursor-pointer text-left";
   const placeholderIcon = item.upnpclass === "item" ? IconTrack : IconContainer;
   const img = item.image ? item.image : placeholderIcon;
+  const overlay =
+    item.upnpclass === "item" ? (
+      <div className="flex justify-center items-center absolute opacity-0 group-hover:opacity-70 m-1 rounded-xl h-14 w-14 bg-gray-800 text-white font-semibold">
+        <PlayIcon className="h-10 w-10" />
+      </div>
+    ) : null;
   return (
     <li
       onClick={() => {
@@ -23,9 +29,10 @@ export function BrowseListItem({ item, clickHandler }: BrowseListItemProps) {
     >
       <img
         src={img}
-        alt=""
+        alt="album art"
         className="h-14 w-14 m-1 rounded-xl object-scale-down"
       />
+      {overlay}
       {item.title}
     </li>
   );

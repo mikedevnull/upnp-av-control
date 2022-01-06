@@ -42,7 +42,7 @@ class UpnpTestRequester(UpnpRequester):
         key = (method, url)
         self._response_map[key] = handler
 
-    async def async_do_http_request(self, method, url, headers=None, body=None, body_type='text'):
+    async def async_http_request(self, method, url, headers=None, body=None, body_type='text'):
 
         key = (method, url)
         if key not in self._response_map:

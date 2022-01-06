@@ -88,8 +88,8 @@ describe("LibraryBrowser", () => {
     expect(await component.findByText("two")).toBeTruthy();
     const item = component.getByText("two");
     fireEvent.click(item);
-    expect(control.play).toHaveBeenCalledTimes(1);
-    expect(control.play).toHaveBeenCalledWith("2");
+    expect(control.playItemsImmediatly).toHaveBeenCalledTimes(1);
+    expect(control.playItemsImmediatly).toHaveBeenCalledWith(["2", "3"]);
   });
 
   it("browses subitems on click on container ", async () => {

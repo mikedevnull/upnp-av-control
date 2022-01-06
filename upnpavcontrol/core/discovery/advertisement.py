@@ -3,7 +3,7 @@ from .utils import is_media_device, udn_from_usn
 from .events import SSDPEvent, DiscoveryEventType
 from abc import ABC, abstractmethod
 import typing
-from async_upnp_client.advertisement import UpnpAdvertisementListener
+from async_upnp_client.advertisement import SsdpAdvertisementListener
 
 
 class AdvertisementListenerInterface(ABC):
@@ -38,7 +38,7 @@ class AdvertisementListenerInterface(ABC):
 class AdvertisementListener(AdvertisementListenerInterface):
     def __init__(self, event_queue: asyncio.Queue):
         self._handler = _DeviceAdvertisementHandler(event_queue)
-        self._listener = UpnpAdvertisementListener(on_alive=self._handler.on_alive,
+        self._listener = SsdpAdvertisementListener(on_alive=self._handler.on_alive,
                                                    on_byebye=self._handler.on_byebye,
                                                    on_update=self._handler.on_update)
 
@@ -51,7 +51,7 @@ class AdvertisementListener(AdvertisementListenerInterface):
 
 class _DeviceAdvertisementHandler(object):
     """
-    Handles advertisement messages produced by a `async_upnp_client.UpnpAdvertisementListener`
+    Handles advertisement messages produced by a `async_upnp_client.SsdpAdvertisementListener`
     and transforms them into `DeviceDiscoveryEvents`.
 
     These discovery events are put into a queue so they can be processed
