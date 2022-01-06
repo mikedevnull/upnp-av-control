@@ -1,4 +1,4 @@
-import { ReactComponent as NavBackIcon } from "../assets/nav-back.svg";
+import NavBackIcon from "../assets/nav-back.svg";
 import IconTrack from "../assets/track.svg";
 import { TopBar } from "../components/TopBar";
 import { useNavigate } from "react-router-dom";
@@ -14,7 +14,7 @@ const PlayerQueue = (props: PlayerQueueProps) => {
   const navigate = useNavigate();
   const nav = (
     <button>
-      <NavBackIcon onClick={() => navigate(-1)} />
+      <img className="w-6 h-6" src={NavBackIcon} onClick={() => navigate(-1)} />
     </button>
   );
   const [queueItems, setQueueItems] = useState<PlaybackQueueItem[]>([]);

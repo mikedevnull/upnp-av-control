@@ -1,7 +1,7 @@
-import { ReactComponent as NavUp } from "../assets/nav-up.svg";
-import { ReactComponent as NextIcon } from "../assets/control-next.svg";
-import { ReactComponent as PlayIcon } from "../assets/control-play.svg";
-import { ReactComponent as PauseIcon } from "../assets/control-pause.svg";
+import NavUp from "../assets/nav-up.svg";
+import NextIcon from "../assets/control-next.svg";
+import PlayIcon from "../assets/control-play.svg";
+import PauseIcon from "../assets/control-pause.svg";
 import ImgPlaceholder from "../assets/track.svg";
 import { Link } from "react-router-dom";
 import { PlaybackControl } from "../upnpapi";
@@ -17,9 +17,9 @@ export default function Miniplayer({ playbackControl }: MiniplayerProps) {
   let main;
   const PlayPauseIcon =
     transport === "PLAYING" ? (
-      <PauseIcon className="w-10 h-10 text-primary" />
+      <img src={PauseIcon} className="w-10 h-10 text-primary" />
     ) : (
-      <PlayIcon className="w-10 h-10 text-primary" />
+      <img src={PlayIcon} className="w-10 h-10 text-primary" />
     );
 
   if (playerPresent) {
@@ -38,7 +38,7 @@ export default function Miniplayer({ playbackControl }: MiniplayerProps) {
           <button onClick={() => playbackControl.playPause()}>
             {PlayPauseIcon}
           </button>
-          <NextIcon className="h-10 w-10 text-primary-lightest" />
+          <img src={NextIcon} className="h-10 w-10 text-primary-lightest" />
         </div>
       </>
     );
@@ -49,7 +49,7 @@ export default function Miniplayer({ playbackControl }: MiniplayerProps) {
   return (
     <div className="p-4 pr-0 h-16 flex items-center border-t w-full bg-white fixed bottom-0">
       <Link to="/player">
-        <NavUp />
+        <img className="w-6 h-6" src={NavUp} />
       </Link>
       {main}
     </div>

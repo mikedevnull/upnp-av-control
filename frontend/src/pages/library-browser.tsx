@@ -4,7 +4,8 @@ import { useState } from "react";
 import { LibraryListItem } from "../upnpapi/types";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useEffect } from "react";
-import { ReactComponent as NavBackIcon } from "../assets/nav-back.svg";
+import NavBackIcon from "../assets/nav-back.svg";
+
 interface LibraryBrowserProps {
   playbackControl: PlaybackControl;
 }
@@ -30,13 +31,13 @@ function LibraryNav(props: LibraryNavProps) {
     const uri = "/?" + new URLSearchParams({ id: props.parentID }).toString();
     backlink = (
       <NavLink aria-label="Back" to={uri}>
-        <NavBackIcon />
+        <img className="w-6 h-6" src={NavBackIcon} />
       </NavLink>
     );
   } else if (!props.isRoot) {
     backlink = (
       <NavLink to="/">
-        <NavBackIcon />
+        <img className="w-6 h-6" src={NavBackIcon} />
       </NavLink>
     );
   }

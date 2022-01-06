@@ -1,7 +1,7 @@
 import { LibraryListItem } from "../upnpapi/types";
 import IconContainer from "../assets/folder.svg";
 import IconTrack from "../assets/track.svg";
-import { ReactComponent as PlayIcon } from "../assets/control-play.svg";
+import PlayIcon from "../assets/control-play.svg";
 interface BrowseListItemProps {
   item: LibraryListItem;
   clickHandler?: CallableFunction;
@@ -15,7 +15,7 @@ export function BrowseListItem({ item, clickHandler }: BrowseListItemProps) {
   const overlay =
     item.upnpclass === "item" ? (
       <div className="flex justify-center items-center absolute opacity-0 group-hover:opacity-70 m-1 rounded-xl h-14 w-14 bg-gray-800 text-white font-semibold">
-        <PlayIcon className="h-10 w-10" />
+        <img src={PlayIcon} className="h-10 w-10" />
       </div>
     ) : null;
   return (
