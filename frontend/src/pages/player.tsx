@@ -103,9 +103,9 @@ const Player = (props: PlayerProps) => {
           </Link>
         </div>
         <div className="mb-8 flex justify-around items-center">
-          <PrevIcon className="h-12 w-12 text-primary" />
+          <button onClick={() => props.playbackControl.playPause()}>
           {PlayPauseIcon}
-          <NextIcon className="h-12 w-12 text-primary" />
+          </button>
         </div>
         <div className="mb-8 flex justify-around items-center">
           <input
