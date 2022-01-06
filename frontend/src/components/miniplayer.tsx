@@ -34,8 +34,9 @@ export default function Miniplayer({ playbackControl }: MiniplayerProps) {
           <span className="text-left text-sm">{artist}</span>
         </div>
         <div className="m-4 flex flex-row">
+          <button onClick={() => playbackControl.playPause()}>
           {PlayPauseIcon}
-          <NextIcon className="h-10 w-10 text-primary" />
+          </button>
         </div>
       </>
     );
