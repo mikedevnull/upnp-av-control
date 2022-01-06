@@ -146,8 +146,8 @@ describe("PlaybackControl", () => {
     await flushPromises();
     expect(control.isPlayerPresent).toBeTruthy();
 
-    eventBus.triggerDeviceLost({ udn: "1234", deviceType: "renderer" });
     mockedGetDevice.mockReturnValueOnce([]);
+    eventBus.triggerDeviceLost({ udn: "1234", deviceType: "renderer" });
     await flushPromises();
 
     expect(playerCb).toHaveBeenCalledTimes(2);
