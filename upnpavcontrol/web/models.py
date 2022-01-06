@@ -35,7 +35,11 @@ class PlaybackStateIn(BaseModel):
 
 
 class PlaybackQueueItem(BaseModel):
-    library_item_id: str
+    id: str
+    title: typing.Optional[str]
+    artist: typing.Optional[str]
+    album: typing.Optional[str]
+    image: typing.Optional[str]
 
 
 class PlaybackQueue(BaseModel):

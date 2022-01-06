@@ -1,14 +1,29 @@
 from fastapi import APIRouter, Request, HTTPException
 import logging
 from .json_api_response import JsonApiResponse
-from .library import split_library_item_id, create_library_item_id
+from .library import split_library_item_id, create_library_item_id, get_item_artwork_url
 from .. import models
 from ...core import AVControlPoint
 from ...core.mediarenderer import TransportState
+from ...core.playback.queue import PlaybackItem
 from typing import List
 
 router = APIRouter(default_response_class=JsonApiResponse)
 _logger = logging.getLogger(__name__)
+
+
+async def _resolve_queue_item(cp: AVControlPoint, item: models.PlaybackQueueItem):
+    dms_udn, object_id = split_library_item_id(item.id)
+    dms = cp.get_mediaserver_by_UDN(dms_udn)
+    didl = await dms.browse_metadata(object_id)
+    meta = didl.objects[0]
+    img = get_item_artwork_url(meta)
+    return PlaybackItem(dms_udn,
+                        object_id,
+                        meta.title,
+                        album=getattr(meta, 'album', None),
+                        artist=getattr(meta, 'artist', None),
+                        image=img)
 
 
 def control_point_from_request(request) -> AVControlPoint:
@@ -61,7 +76,13 @@ async def change_player_playback_state(request: Request, udn: str, info: models.
 async def get_queued_items(request: Request, udn: str):
     try:
         pc = request.app.av_control_point.get_controller_for_renderer(udn)
-        items = [{'library_item_id': create_library_item_id(x.dms, x.object_id)} for x in pc.queue.items]
+        items = [{
+            'id': create_library_item_id(x.dms, x.object_id),
+            'title': x.title,
+            'album': x.album,
+            'artist': x.artist,
+            'image': x.image
+        } for x in pc.queue.items]
         return {'items': items, 'current_item_index': pc.queue.current_item_index}
     except Exception as e:
         _logger.exception(e)
@@ -72,9 +93,9 @@ async def get_queued_items(request: Request, udn: str):
 async def append_items_to_queue(request: Request, udn: str, payload: models.PlaybackQueueIn):
     try:
         pc = request.app.av_control_point.get_controller_for_renderer(udn)
-        for item in payload.items:
-            dms, playbackitemid = split_library_item_id(item.library_item_id)
-            pc.queue.append(dms, playbackitemid, '')
+        items = [await _resolve_queue_item(request.app.av_control_point, i) for i in payload.items]
+        for item in items:
+            pc.queue.appendItem(item)
 
     except Exception as e:
         _logger.exception(e)
@@ -85,10 +106,10 @@ async def append_items_to_queue(request: Request, udn: str, payload: models.Play
 async def set_queue_items(request: Request, udn: str, payload: models.PlaybackQueueIn):
     try:
         pc = request.app.av_control_point.get_controller_for_renderer(udn)
+        items = [await _resolve_queue_item(request.app.av_control_point, i) for i in payload.items]
         pc.clear()
-        for item in payload.items:
-            dms, playbackitemid = split_library_item_id(item.library_item_id)
-            pc.queue.append(dms, playbackitemid, '')
+        for item in items:
+            pc.queue.appendItem(item)
 
     except Exception as e:
         _logger.exception(e)

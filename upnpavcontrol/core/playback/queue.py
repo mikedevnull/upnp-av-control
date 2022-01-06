@@ -7,6 +7,8 @@ class PlaybackItem():
     dms: str
     object_id: str
     title: str
+    album: typing.Optional[str] = None
+    artist: typing.Optional[str] = None
     image: typing.Optional[str] = None
 
 
@@ -31,6 +33,9 @@ class PlaybackQueue():
 
     def append(self, dms, object_id, title):
         self._items.append(PlaybackItem(dms=dms, object_id=object_id, title=title))
+
+    def appendItem(self, item: PlaybackItem):
+        self._items.append(item)
 
     def clear(self):
         self._items.clear()
