@@ -1,0 +1,10 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+upnpavcontrol-mikedevnull = {editable = true, path = "."}
+
+[dev-packages]
+upnpavcontrol-mikedevnull = {editable = true, extras = ["dev", "test"], path = "."}
