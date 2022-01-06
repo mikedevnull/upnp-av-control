@@ -2,7 +2,7 @@ import React from "react";
 import { cleanup, fireEvent, render } from "@testing-library/react";
 import PlayerSelection from "./player-selection";
 import { createMemoryHistory } from "history";
-import { Router } from "react-router-dom";
+import { MemoryRouter, Router } from "react-router-dom";
 
 afterEach(cleanup);
 
@@ -19,13 +19,13 @@ describe("PlayerSelection", () => {
     ];
     const selectCallback = jest.fn();
     const { queryByText, getByText } = render(
-      <Router history={history}>
+      <MemoryRouter>
         <PlayerSelection
           devices={players}
           selectedPlayerId="5678"
           selectionHandler={selectCallback}
         />
-      </Router>
+      </MemoryRouter>
     );
 
     expect(queryByText("Foobar")).toBeTruthy();
@@ -45,13 +45,13 @@ describe("PlayerSelection", () => {
     ];
     const selectCallback = jest.fn();
     const { queryByText, getByText } = render(
-      <Router history={history}>
+      <MemoryRouter>
         <PlayerSelection
           devices={players}
           selectedPlayerId="5678"
           selectionHandler={selectCallback}
         />
-      </Router>
+      </MemoryRouter>
     );
 
     expect(queryByText("Foobar")).toBeTruthy();

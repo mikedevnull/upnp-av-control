@@ -1,7 +1,7 @@
 import { ReactComponent as NavBackIcon } from "../assets/nav-back.svg";
 import IconTrack from "../assets/track.svg";
 import { TopBar } from "../components/TopBar";
-import { useHistory } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { api } from "../upnpapi";
 import { PlaybackQueueItem } from "../upnpapi/types";
@@ -11,10 +11,10 @@ interface PlayerQueueProps {
 }
 
 const PlayerQueue = (props: PlayerQueueProps) => {
-  const history = useHistory();
+  const navigate = useNavigate();
   const nav = (
     <button>
-      <NavBackIcon onClick={() => history.goBack()} />
+      <NavBackIcon onClick={() => navigate(-1)} />
     </button>
   );
   const [queueItems, setQueueItems] = useState<PlaybackQueueItem[]>([]);

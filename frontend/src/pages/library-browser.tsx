@@ -2,7 +2,7 @@ import { TopBar, Miniplayer, Browser } from "../components";
 import { PlaybackControl, api } from "../upnpapi";
 import { useState } from "react";
 import { LibraryListItem } from "../upnpapi/types";
-import { NavLink, useHistory, useLocation } from "react-router-dom";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import { ReactComponent as NavBackIcon } from "../assets/nav-back.svg";
 interface LibraryBrowserProps {
@@ -45,7 +45,7 @@ function LibraryNav(props: LibraryNavProps) {
 
 export default function LibraryBrowser(props: LibraryBrowserProps) {
   const query = useQuery();
-  const history = useHistory();
+  const navigate = useNavigate();
   const queryId = query.get("id");
   let id: string | undefined;
   if (queryId !== null) {
@@ -63,7 +63,7 @@ export default function LibraryBrowser(props: LibraryBrowserProps) {
         ...currentItemMeta,
         title: item.title,
       });
-      history.push({
+      navigate({
         pathname: "/",
         search: "?" + new URLSearchParams({ id: item.id }).toString(),
       });

@@ -1,6 +1,6 @@
 import "./App.css";
 import { LibraryBrowser } from "./pages";
-import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Player, PlayerSelection, PlayerQueue } from "./pages";
 import { useEffect, useState, useRef } from "react";
 import { ControlPointEventBus, PlaybackControl } from "./upnpapi";
@@ -32,28 +32,36 @@ function App() {
   }
 
   return (
-    <Router>
+    <BrowserRouter>
       <div className="App">
-        <Switch>
-          <Route path="/player">
-            <Player playbackControl={playbackControl.current} />
-          </Route>
-          <Route path="/select-player">
-            <PlayerSelection
-              devices={devices}
-              selectedPlayerId={selectedPlayerId}
-              selectionHandler={selectPlayer}
-            />
-          </Route>
-          <Route path="/player-queue">
-            <PlayerQueue selectedPlayerId={selectedPlayerId} />
-          </Route>
-          <Route path="/">
-            <LibraryBrowser playbackControl={playbackControl.current} />
-          </Route>
-        </Switch>
+        <Routes>
+          <Route
+            path="/player"
+            element={<Player playbackControl={playbackControl.current} />}
+          ></Route>
+          <Route
+            path="/select-player"
+            element={
+              <PlayerSelection
+                devices={devices}
+                selectedPlayerId={selectedPlayerId}
+                selectionHandler={selectPlayer}
+              />
+            }
+          ></Route>
+          <Route
+            path="/player-queue"
+            element={<PlayerQueue selectedPlayerId={selectedPlayerId} />}
+          ></Route>
+          <Route
+            path="/"
+            element={
+              <LibraryBrowser playbackControl={playbackControl.current} />
+            }
+          ></Route>
+        </Routes>
       </div>
-    </Router>
+    </BrowserRouter>
   );
 }
 
