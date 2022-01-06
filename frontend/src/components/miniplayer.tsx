@@ -21,6 +21,7 @@ export default function Miniplayer({ playbackControl }: MiniplayerProps) {
     ) : (
       <PlayIcon className="w-10 h-10 text-primary" />
     );
+
   if (playerPresent) {
     main = (
       <>
@@ -35,8 +36,9 @@ export default function Miniplayer({ playbackControl }: MiniplayerProps) {
         </div>
         <div className="m-4 flex flex-row">
           <button onClick={() => playbackControl.playPause()}>
-          {PlayPauseIcon}
+            {PlayPauseIcon}
           </button>
+          <NextIcon className="h-10 w-10 text-primary-lightest" />
         </div>
       </>
     );
