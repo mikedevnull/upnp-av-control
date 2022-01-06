@@ -1,6 +1,6 @@
 import { TopBar, PlayerListItem } from "../components";
 import { ReactComponent as NavBackIcon } from "../assets/nav-back.svg";
-import { useHistory } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { PlayerDevice } from "../upnpapi/types";
 
 interface PlayerSelectionProps {
@@ -10,10 +10,10 @@ interface PlayerSelectionProps {
 }
 
 export default function PlayerSelection(props: PlayerSelectionProps) {
-  const history = useHistory();
+  const navigate = useNavigate();
   const nav = (
     <button>
-      <NavBackIcon onClick={() => history.goBack()} />
+      <NavBackIcon onClick={() => navigate(-1)} />
     </button>
   );
 

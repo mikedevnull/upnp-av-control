@@ -45,7 +45,7 @@ const devices = [
   { id: "1234", name: "foo" },
   { id: "5678", name: "bar" },
 ];
-const flushPromises = () => new Promise(setImmediate);
+const flushPromises = () => new Promise(process.nextTick);
 
 describe("PlaybackControl", () => {
   let eventBus: any;
