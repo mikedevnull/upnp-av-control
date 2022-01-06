@@ -1,7 +1,7 @@
 import "./App.css";
 import { LibraryBrowser } from "./pages";
 import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
-import { Player, PlayerSelection } from "./pages";
+import { Player, PlayerSelection, PlayerQueue } from "./pages";
 import { useEffect, useState, useRef } from "react";
 import { ControlPointEventBus, PlaybackControl } from "./upnpapi";
 
@@ -44,6 +44,9 @@ function App() {
               selectedPlayerId={selectedPlayerId}
               selectionHandler={selectPlayer}
             />
+          </Route>
+          <Route path="/player-queue">
+            <PlayerQueue selectedPlayerId={selectedPlayerId} />
           </Route>
           <Route path="/">
             <LibraryBrowser playbackControl={playbackControl.current} />
