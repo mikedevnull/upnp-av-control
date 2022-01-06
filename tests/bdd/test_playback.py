@@ -56,7 +56,7 @@ async def enqueue_on_dmr(test_context, object_id, webclient):
     dms_udn = dms_device.udn
 
     item_id = create_library_item_id(dms_udn, object_id)
-    payload = {'items': [{"library_item_id": item_id}]}
+    payload = {'items': [{"id": item_id}]}
     uri = f"/api/player/{dmr_udn}/queue"
 
     response = await webclient.post(uri, json=payload)
@@ -75,7 +75,7 @@ async def set_queue_on_dmr(test_context, table, webclient):
         dms_udn = test_context.get_device(entry['dms']).udn
         object_id = entry['item id']
         item_id = create_library_item_id(dms_udn, object_id)
-        items.append({"library_item_id": item_id})
+        items.append({"id": item_id})
     payload = {'items': items}
     uri = f"/api/player/{dmr_udn}/queue"
     response = await webclient.put(uri, json=payload)
@@ -157,7 +157,7 @@ async def check_playback_queue_contents(test_context, dmr, table, webclient):
         dms_udn = test_context.get_device(expected_entry['dms']).udn
         object_id = expected_entry['item id']
         item_id = create_library_item_id(dms_udn, object_id)
-        assert entry['library_item_id'] == item_id
+        assert entry['id'] == item_id
 
 
 @then(parsers.cfparse('the playback queue of {dmr} is empty'))
