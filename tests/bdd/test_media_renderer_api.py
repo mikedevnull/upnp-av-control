@@ -1,17 +1,9 @@
-from pytest_bdd import scenarios, when, then, parsers, scenario
+from pytest_bdd import scenarios, when, then, parsers
 from .async_utils import sync
 import logging
 from .common_steps import *  # noqa: F401, F403
 
 _logger = logging.getLogger(__name__)
-
-
-@scenario("media_renderer_api.feature",
-          "Device transport changes are evented",
-          example_converters=dict(devicestate=str, apistate=str))
-def test_device_transport_changes_are_evented():
-    pass
-
 
 scenarios('media_renderer_api.feature')
 
@@ -50,7 +42,7 @@ async def query_renderer_volume(test_context, device_name, webclient):
     test_context.last_response = await webclient.get(f'/api/player/{udn}/playback')
 
 
-@when(parsers.cfparse('the transport state of {device_name} changes to <devicestate>'))
+@when(parsers.parse('the transport state of {device_name} changes to {devicestate}'), converters=dict(devicestate=str))
 @sync
 async def external_playback_state_changes(test_context, device_name, devicestate):
     device = test_context.get_device(device_name)
@@ -77,7 +69,7 @@ async def check_device_volume_notification(event_bus_connection, volume):
     assert info['volume_percent'] == volume
 
 
-@then(parsers.cfparse('the client will be notified about the new state <apistate>'))
+@then(parsers.parse('the client will be notified about the new state {apistate}'), converters=dict(apistate=str))
 @sync
 async def check_device_transport_state_notification(event_bus_connection, apistate):
     event = await event_bus_connection.wait_for_notification()
