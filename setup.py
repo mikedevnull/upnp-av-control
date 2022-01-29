@@ -4,7 +4,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setup(name='upnpavcontrol',
-      description='UPNP AV control point library',
+      description='Web UPNP AV control point',
       version='0.0.1',
       url='https://github.com/mikedevnull/upnp-av-control',
       author='Michael Meier',
