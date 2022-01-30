@@ -1,4 +1,4 @@
-from pytest_bdd import scenarios, when, then, parsers, given
+from pytest_bdd import scenarios, when, then, parsers, given, scenario
 from .async_utils import sync
 import logging
 from .common_steps import *  # noqa: F401, F403
@@ -6,7 +6,12 @@ from upnpavcontrol.web.api.library import create_library_item_id
 
 _logger = logging.getLogger(__name__)
 
-scenarios('playback.feature')
+#scenarios('playback.feature')
+
+
+@scenario('playback.feature', 'Independent playback queues')
+def test_independent_playback_queues():
+    pass
 
 
 def parse_data_table(tabledata: str):
@@ -47,12 +52,12 @@ async def preset_playback_queue(test_context, table):
         pc.queue.append(dms_udn, object_id, title=None)
 
 
-@when(parsers.cfparse('the client adds item with id {object_id} from FooMediaServer to AcmeRenderer playback queue'))
+@when(parsers.cfparse('the client adds item with id {object_id} from {dms} to {dmr} playback queue'))
 @sync
-async def enqueue_on_dmr(test_context, object_id, webclient):
-    dmr_device = test_context.get_device('AcmeRenderer')
+async def enqueue_on_dmr(test_context, object_id, dms, dmr, webclient):
+    dmr_device = test_context.get_device(dmr)
     dmr_udn = dmr_device.udn
-    dms_device = test_context.get_device('FooMediaServer')
+    dms_device = test_context.get_device(dms)
     dms_udn = dms_device.udn
 
     item_id = create_library_item_id(dms_udn, object_id)
