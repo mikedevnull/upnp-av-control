@@ -1,4 +1,4 @@
-from pytest_bdd import scenarios, when, then, parsers, given, scenario
+from pytest_bdd import scenarios, when, then, parsers, given
 from .async_utils import sync
 import logging
 from .common_steps import *  # noqa: F401, F403
@@ -6,12 +6,7 @@ from upnpavcontrol.web.api.library import create_library_item_id
 
 _logger = logging.getLogger(__name__)
 
-#scenarios('playback.feature')
-
-
-@scenario('playback.feature', 'Independent playback queues')
-def test_independent_playback_queues():
-    pass
+scenarios('playback.feature')
 
 
 def parse_data_table(tabledata: str):
