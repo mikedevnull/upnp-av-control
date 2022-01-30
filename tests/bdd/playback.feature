@@ -93,3 +93,17 @@ Feature: Playback
       | 0/7/8   | FooMediaServer |
       | 0/5/6   | FooMediaServer |
     And the playback queue current item index of AcmeRenderer is not defined
+
+
+  Scenario: Independent playback queues
+    Given a device AcmeRenderer already present on the network
+    And a device PhonoRenderer already present on the network
+    And a device FooMediaServer already present on the network
+    When the client adds item with id 0/2/2 from FooMediaServer to PhonoRenderer playback queue
+    And the client adds item with id 0/1/1 from FooMediaServer to PhonoRenderer playback queue
+    Then the playback queue of PhonoRenderer contains the following items:
+      | item id | dms            |
+      | 0/2/2   | FooMediaServer |
+      | 0/1/1   | FooMediaServer |
+    And the playback queue of AcmeRenderer is empty
+
