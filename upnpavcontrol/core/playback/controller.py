@@ -31,9 +31,12 @@ class QueueInterface(Protocol):
 
 class PlaybackController():
 
-    def __init__(self, queue: QueueInterface = PlaybackQueue()):
+    def __init__(self, queue: QueueInterface = None):
         self._player = None
-        self._queue = queue
+        if queue is not None:
+            self._queue = queue
+        else:
+            self._queue = PlaybackQueue()
         self._is_playing = False
         self._player_subscription: Subscription = None
 
