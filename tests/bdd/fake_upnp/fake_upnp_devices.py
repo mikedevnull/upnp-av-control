@@ -2,10 +2,12 @@ from .fake_upnp_device import FakeDeviceDescriptor
 from . import acme_renderer
 from . import foo_media_server
 from . import baz_printer
+from . import phono_renderer
 import typing
 
 _fake_devices = {
     'FooMediaServer': foo_media_server.factory,
+    'PhonoRenderer': phono_renderer.factory,
     'AcmeRenderer': acme_renderer.factory,
     'BazPrinter': baz_printer.factory
 }
