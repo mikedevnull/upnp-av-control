@@ -15,6 +15,7 @@ repository = "https://github.com/mikedevnull/upnp-av-control"
 packages = [
     { include = "upnpavcontrol" }
 ]
+include = ['upnpavcontrol/web/static/**/*']
 
 [tool.poetry.dependencies]
 python = ">=3.7"
