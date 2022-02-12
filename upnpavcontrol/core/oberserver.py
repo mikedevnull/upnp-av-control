@@ -84,7 +84,7 @@ class Observable(Generic[T]):
             if self._change_callback_cb is not None:
                 await self._change_callback_cb(len(self._subscriptions))
             if self._has_last_value and self._is_replaying:
-                await subscriber(self._last_value)
+                asyncio.create_task(subscriber(self._last_value))
         return subscription
 
     async def notify(self, payload: T):
