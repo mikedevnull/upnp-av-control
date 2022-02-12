@@ -148,6 +148,19 @@ async def test_wait_for_with_predicate_resolves_later():
 
 
 @pytest.mark.asyncio
+async def test_wait_for_value_reraises_exceptions_from_predicate():
+    observable = oberserver.Observable[int]()
+
+    def throwing_predicate(value):
+        raise RuntimeError('exception raised in predicate')
+
+    with pytest.raises(RuntimeError):
+        async with oberserver.wait_for_value_if(observable, throwing_predicate, 1):
+            await observable.notify(41)
+    assert observable.subscription_count == 0
+
+
+@pytest.mark.asyncio
 async def test_wait_for_with_predicate_times_out():
     observable = oberserver.Observable[int]()
 
