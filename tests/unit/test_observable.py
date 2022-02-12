@@ -98,6 +98,7 @@ async def test_replay_last_value_on_subscription():
 
     await observable.subscribe(callback)
     subscription_cb.assert_called_once_with(1)
+    await asyncio.sleep(0)
     callback.assert_called_once_with(42)
 
     callback.reset_mock()
