@@ -13,6 +13,7 @@ class Subscription(object):
 
     Can be used to unsubscribe from notifications later on
     """
+
     def __init__(self, observable):
         self._observable = observable
 
@@ -47,10 +48,14 @@ class Observable(Generic[T]):
     While the callback is invoked, the subscription count is guaranteed not to change.
     The callback must not add or remove subscriptions, as this will cause a deadlock.
     """
-    def __init__(self):
+
+    def __init__(self, replay=False):
         self._subscriptions: Dict[Subscription, Callable[[T], Awaitable[None]]] = {}
         self._lock = asyncio.Lock()
         self._change_callback_cb: Optional[Callable[[int], Awaitable[None]]] = None
+        self._is_replaying = replay
+        self._last_value: Optional[T] = None
+        self._has_last_value = False
 
     @property
     def subscription_count(self):
@@ -78,6 +83,8 @@ class Observable(Generic[T]):
             self._subscriptions[subscription] = subscriber
             if self._change_callback_cb is not None:
                 await self._change_callback_cb(len(self._subscriptions))
+            if self._has_last_value and self._is_replaying:
+                await subscriber(self._last_value)
         return subscription
 
     async def notify(self, payload: T):
@@ -87,6 +94,8 @@ class Observable(Generic[T]):
         subscriptions = []
         tasks = []
         async with self._lock:
+            self._last_value = payload
+            self._has_last_value = True
             for subscription, callable in self._subscriptions.items():
                 subscriptions.append(subscription)
                 tasks.append(callable(payload))

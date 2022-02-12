@@ -1,6 +1,7 @@
 from upnpavcontrol.core import oberserver
 from ..testsupport import AsyncMock
 import pytest
+import typing
 import asyncio
 
 
@@ -84,6 +85,41 @@ async def test_subscription_callback():
     subscription_cb.assert_not_called()
     await subscription2.unsubscribe()
     subscription_cb.assert_called_once_with(0)
+
+
+@pytest.mark.asyncio
+async def test_replay_last_value_on_subscription():
+    callback = AsyncMock()
+
+    subscription_cb = AsyncMock()
+    observable = oberserver.Observable[int](replay=True)
+    observable.on_subscription_change = subscription_cb
+    await observable.notify(42)
+
+    await observable.subscribe(callback)
+    subscription_cb.assert_called_once_with(1)
+    callback.assert_called_once_with(42)
+
+    callback.reset_mock()
+
+    await observable.notify(21)
+    callback.assert_called_once_with(21)
+
+
+@pytest.mark.asyncio
+async def test_no_replay_on_subscription_without_initial_value():
+    callback = AsyncMock()
+
+    subscription_cb = AsyncMock()
+    observable = oberserver.Observable[typing.Optional[int]](replay=True)
+    observable.on_subscription_change = subscription_cb
+
+    await observable.subscribe(callback)
+    subscription_cb.assert_called_once_with(1)
+    callback.assert_not_called()
+
+    await observable.notify(None)
+    callback.assert_called_once_with(None)
 
 
 @pytest.mark.asyncio
