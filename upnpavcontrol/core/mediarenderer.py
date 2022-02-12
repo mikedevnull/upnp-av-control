@@ -90,10 +90,12 @@ async def create_media_renderer(device: UpnpDevice, notification_backend: Option
     """
     renderer = MediaRenderer(device, notification_backend)
     await renderer.update_playback_info()
+    await renderer._playback_observable.notify(renderer.playback_info)
     return renderer
 
 
 class MediaRenderer(object):
+
     def __init__(self, device: UpnpDevice, notification_backend: Optional[NotificationBackend] = None):
         self._device = device
         self._notify_backend = notification_backend
@@ -102,7 +104,7 @@ class MediaRenderer(object):
         if self.av_transport is not None:
             self.av_transport.on_event = self._on_event
         self._playback_info = PlaybackInfo()
-        self._playback_observable = Observable[PlaybackInfo]()
+        self._playback_observable = Observable[PlaybackInfo](replay=True)
         self._playback_observable.on_subscription_change = self._handle_subscription_change
 
     def _on_event(self, service: UpnpService, variables: Iterable[UpnpStateVariable]):

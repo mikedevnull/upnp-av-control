@@ -11,16 +11,28 @@ def a_device_foomediaserver_already_present_on_the_network(test_context, name):
     test_context.add_device_to_network(name, device, notify=True)
 
 
-@given(parsers.parse('a client subscribed to playback notifications from {renderer_name}'))
-@sync
-async def playbackinfo_events_subscribed(test_context, event_bus_connection, renderer_name):
-    descriptor = test_context.get_device(renderer_name)
+async def _subscribe_to_events(renderer, event_bus_connection):
     result = await event_bus_connection.send(method='subscribe',
                                              params={
                                                  'category': 'playbackinfo',
-                                                 'udn': descriptor.udn
+                                                 'udn': renderer.udn
                                              })
     assert result is True
+
+
+@given(parsers.parse('a client subscribed to playback notifications from {renderer_name}'))
+@sync
+async def playbackinfo_events_subscribed(test_context, event_bus_connection, renderer_name):
+    renderer = test_context.get_device(renderer_name)
+    await _subscribe_to_events(renderer, event_bus_connection)
+    await event_bus_connection.clear_pending_notifications()
+
+
+@when(parsers.parse('a client subscribes to playback notifications from {renderer_name}'))
+@sync
+async def subscribe_to_playbackinfo_events(test_context, event_bus_connection, renderer_name):
+    renderer = test_context.get_device(renderer_name)
+    await _subscribe_to_events(renderer, event_bus_connection)
 
 
 @when(parsers.parse('the client unsubscribes from playback notifications from {renderer_name}'))

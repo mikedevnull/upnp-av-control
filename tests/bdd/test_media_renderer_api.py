@@ -78,6 +78,17 @@ async def check_device_transport_state_notification(event_bus_connection, apista
     assert info['transport'] == apistate
 
 
+@then(parsers.parse('the client will be notified about the current state of {renderer}'))
+@sync
+async def check_device_state_notification(test_context, event_bus_connection, renderer):
+    dmr = test_context.get_device(renderer)
+    event = await event_bus_connection.wait_for_notification()
+    assert event.method == 'playbackinfo'
+    info = event.params['playbackinfo']
+    assert info['volume_percent'] == dmr.service("urn:schemas-upnp-org:service:RenderingControl:1").volume
+    assert info['transport'] == dmr.service("urn:schemas-upnp-org:service:AVTransport:1").state
+
+
 @then('an error has been reported')
 def check_last_webclient_response(test_context):
     assert test_context.last_response.status_code >= 300
