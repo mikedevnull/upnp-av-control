@@ -30,7 +30,7 @@
     "babel-jest": "^27.5.1",
     "babel-preset-react-app": "^10.0.1",
     "eventemitter3": "^4.0.7",
-    "jest": "^27.4.7",
+    "jest": "^27.5.1",
     "jest-fetch-mock": "^3.0.3",
     "lodash": "^4.17.21",
     "postcss": "^8.4.6",
