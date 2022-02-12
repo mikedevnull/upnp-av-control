@@ -46,6 +46,7 @@ build-backend = "poetry.core.masonry.api"
     
 [tool.poetry-dynamic-versioning]
 enable = true
+format-jinja = "{% if distance == 0 %}{{ base }}{% else %}{{ base }}.dev{{ distance }}{% endif %}"
 
 [tool.poetry.scripts]
 upnp-av-web-cp = "upnpavcontrol.tools.web_control_point:main"
