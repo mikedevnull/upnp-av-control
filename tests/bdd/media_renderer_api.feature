@@ -13,6 +13,11 @@ Feature: Renderer state notifications
     When the playback volume of AcmeRenderer changes to 10
     Then the client will be notified about the new volume 10
 
+  Scenario: Current playback info is evented on client subscription
+    Given a device AcmeRenderer already present on the network
+    When a client subscribes to playback notifications from AcmeRenderer
+    Then the client will be notified about the current state of AcmeRenderer
+
   Scenario: Client can unsubscribe from playback info change events
     Given a device AcmeRenderer already present on the network
     And a client subscribed to playback notifications from AcmeRenderer
