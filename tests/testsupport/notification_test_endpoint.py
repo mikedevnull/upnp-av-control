@@ -1,7 +1,8 @@
-from upnpavcontrol.core.notification_backend import NotificationEndpointBase
+from async_upnp_client import UpnpNotifyServer
 
 
-class NotificationTestEndpoint(NotificationEndpointBase):
+class NotificationTestEndpoint(UpnpNotifyServer):
+
     def __init__(self):
         self._callback = None
 
