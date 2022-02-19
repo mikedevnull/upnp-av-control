@@ -22,7 +22,7 @@ function App() {
   useEffect(() => {
     setDevices(playbackControl.current.availablePlayers);
     playbackControl.current.on(
-      PlaybackControl.Event.DEVICES_CHANGED,
+      "playback-devices-changed",
       setDevices
     );
   }, []);

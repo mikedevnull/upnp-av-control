@@ -24,11 +24,11 @@ const initialState = {
 
 type Action =
   | {
-      type: typeof PlaybackControl.Event.ACTIVE_PLAYER_PRESENCE_CHANGED;
+      type: "active-player-presence";
       isPresent: boolean;
     }
   | {
-      type: typeof PlaybackControl.Event.PLAYBACK_INFO_CHANGED;
+      type: "playback-info-changed";
       playbackInfo: PlaybackInfo;
     };
 
@@ -38,13 +38,13 @@ function reducer(
   action: Action
 ) {
   switch (action.type) {
-    case PlaybackControl.Event.ACTIVE_PLAYER_PRESENCE_CHANGED:
+    case "active-player-presence":
       let playerName = "";
       if (action.isPresent) {
         playerName = pc.selectedPlayerName;
       }
       return { ...state, playerPresent: action.isPresent, playerName };
-    case PlaybackControl.Event.PLAYBACK_INFO_CHANGED:
+    case "playback-info-changed":
       return { ...state, ...action.playbackInfo };
     default:
       throw new Error();
@@ -58,34 +58,22 @@ export function usePlayerControl(playbackControl: PlaybackControl) {
   );
   const presenceDispatch = (isPresent: boolean) =>
     dispatch({
-      type: PlaybackControl.Event.ACTIVE_PLAYER_PRESENCE_CHANGED,
+      type: "active-player-presence",
       isPresent,
     });
   const playbackInfoDispatch = (playbackInfo: PlaybackInfo) =>
     dispatch({
-      type: PlaybackControl.Event.PLAYBACK_INFO_CHANGED,
+      type: "playback-info-changed",
       playbackInfo,
     });
   useEffect(() => {
     presenceDispatch(playbackControl.isPlayerPresent);
     playbackInfoDispatch(playbackControl.playbackInfo);
-    playbackControl.on(
-      PlaybackControl.Event.ACTIVE_PLAYER_PRESENCE_CHANGED,
-      presenceDispatch
-    );
-    playbackControl.on(
-      PlaybackControl.Event.PLAYBACK_INFO_CHANGED,
-      playbackInfoDispatch
-    );
+    playbackControl.on("active-player-presence", presenceDispatch);
+    playbackControl.on("playback-info-changed", playbackInfoDispatch);
     return () => {
-      playbackControl.off(
-        PlaybackControl.Event.ACTIVE_PLAYER_PRESENCE_CHANGED,
-        presenceDispatch
-      );
-      playbackControl.off(
-        PlaybackControl.Event.PLAYBACK_INFO_CHANGED,
-        playbackInfoDispatch
-      );
+      playbackControl.off("active-player-presence", presenceDispatch);
+      playbackControl.off("playback-info-changed", playbackInfoDispatch);
     };
   }, [playbackControl]);
   return state;
