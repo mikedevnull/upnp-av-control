@@ -33,7 +33,7 @@ typing-extensions = {version = "^4.1.1", python = "3.7"}
 [tool.poetry.dev-dependencies]
 pytest = "^7.0.0"
 pytest-cov = "^3.0.0"
-pytest-asyncio = "^0.17.2"
+pytest-asyncio = "^0.18.1"
 pytest-bdd = "^5.0.0"
 async-asgi-testclient = "^1.4.9"
 flake8 = "^4.0.1"
