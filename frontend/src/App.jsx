@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Player, PlayerSelection, PlayerQueue } from "./pages";
 import { useEffect, useState, useRef } from "react";
 import { ControlPointEventBus, PlaybackControl } from "./upnpapi";
+import { BackendConnectionStateView} from './components';
 
 function createPlaybackControl() {
   const eventBus = new ControlPointEventBus();
@@ -34,6 +35,7 @@ function App() {
   return (
     <BrowserRouter>
       <div className="App">
+        <BackendConnectionStateView playbackControl={playbackControl.current}/>
         <Routes>
           <Route
             path="/player"

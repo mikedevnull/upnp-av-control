@@ -1,6 +1,7 @@
-import { useEffect, useReducer } from "react";
+import { useEffect, useReducer, useState } from "react";
 import { PlaybackControl } from "./upnpapi";
 import { PlaybackInfo } from "./upnpapi/types";
+import { PlaybackControlState } from "./upnpapi/playback_control";
 
 interface PlayerControlState {
   playerPresent: boolean;
@@ -76,5 +77,20 @@ export function usePlayerControl(playbackControl: PlaybackControl) {
       playbackControl.off("playback-info-changed", playbackInfoDispatch);
     };
   }, [playbackControl]);
+  return state;
+}
+
+export function useBackendConnectionState(playbackControl: PlaybackControl) {
+  const [state, setState] = useState(playbackControl.backendState);
+  const updateBackendState = () => {
+    setState(playbackControl.backendState);
+  };
+  useEffect(() => {
+    playbackControl.on("backend-state-changed", updateBackendState);
+    return () => {
+      playbackControl.off("backend-state-changed", updateBackendState);
+    };
+  }, [playbackControl]);
+
   return state;
 }
