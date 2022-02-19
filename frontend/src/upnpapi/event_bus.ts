@@ -9,10 +9,6 @@ function websocketUrl(socketPath: string) {
   );
 }
 
-interface WebSocketFactory {
-  (url: string): WebSocket;
-}
-
 type InitMessage = {
   version: string;
 };
@@ -47,14 +43,9 @@ interface PlaybackInfoCallback {
   (message: PlaybackInfoMessage): void;
 }
 
-function createWebsocket(url: string) {
-  return new WebSocket(url);
-}
-
 type ControlPointState = "closed" | "connected";
 export default class ControlPointEventBus {
   socketUrl: string;
-  socketFactory: WebSocketFactory;
   socket: WebSocket;
   jrpc: JsonRPCClient;
   state: ControlPointState;
@@ -63,19 +54,17 @@ export default class ControlPointEventBus {
   onDeviceLost: OnDeviceLostCallback | undefined;
   onPlaybackInfo: PlaybackInfoCallback | undefined;
 
-  constructor(socketFactory: WebSocketFactory = createWebsocket) {
+  constructor() {
     this.socketUrl = websocketUrl("/api/ws/events");
-    this.socketFactory = socketFactory;
-    this.socket = this.socketFactory(this.socketUrl);
+    this.socket = new WebSocket(this.socketUrl);
     this.jrpc = new JsonRPCClient();
     this.state = "closed";
     this.onerror = undefined;
 
     this.jrpc.onerror = (message: string) => {
-      if (this.state === "connected") {
-        this.socket.close();
-        this.state = "closed";
-      }
+      this.socket.close();
+      this.state = "closed";
+
       if (this.onerror) {
         this.onerror("JSONRPC Error: " + message);
       }
