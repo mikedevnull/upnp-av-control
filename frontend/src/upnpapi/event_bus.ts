@@ -28,46 +28,27 @@ export type PlaybackInfoMessage = {
   playbackinfo: PlaybackInfo;
 };
 
-interface OnDeviceLostCallback {
-  (message: DeviceLostMessage): void;
-}
-
-interface OnNewDeviceCallback {
-  (message: NewDeviceMessage): void;
-}
-
-interface OnErrorCallback {
-  (message: string): void;
-}
-interface PlaybackInfoCallback {
-  (message: PlaybackInfoMessage): void;
-}
-
 type ControlPointState = "closed" | "connected";
 export default class ControlPointEventBus {
   socketUrl: string;
   socket: WebSocket;
   jrpc: JsonRPCClient;
   state: ControlPointState;
-  onerror: OnErrorCallback | undefined;
-  onNewDevice: OnNewDeviceCallback | undefined;
-  onDeviceLost: OnDeviceLostCallback | undefined;
-  onPlaybackInfo: PlaybackInfoCallback | undefined;
+  onClosed?: () => void;
+  onNewDevice?: (message: NewDeviceMessage) => void;
+  onDeviceLost?: (message: DeviceLostMessage) => void;
+  onPlaybackInfo?: (message: PlaybackInfoMessage) => void;
 
   constructor() {
     this.socketUrl = websocketUrl("/api/ws/events");
     this.socket = new WebSocket(this.socketUrl);
     this.jrpc = new JsonRPCClient();
     this.state = "closed";
-    this.onerror = undefined;
+    this.onClosed = undefined;
 
     this.jrpc.onerror = (message: string) => {
       this.socket.close();
       this.state = "closed";
-
-      if (this.onerror) {
-        this.onerror("JSONRPC Error: " + message);
-      }
     };
     this.jrpc.on("initialize", (params: InitMessage) =>
       this._onInitialize(params.version)
@@ -96,7 +77,12 @@ export default class ControlPointEventBus {
     this.socket.onmessage = (event) => {
       this.jrpc.handleMessage(event.data);
     };
-    this.socket.onclose = () => {};
+    this.socket.onclose = () => {
+      console.log("websocket connection closed");
+      if (this.onClosed) {
+        this.onClosed();
+      }
+    };
     this.jrpc.streamTo = (_msg: string) => {
       this.socket.send(_msg);
     };

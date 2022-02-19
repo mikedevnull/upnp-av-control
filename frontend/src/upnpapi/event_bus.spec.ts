@@ -7,15 +7,27 @@ describe("UpnpEventBus", () => {
   let bus: ControlPointEventBus;
   beforeEach(async () => {
     server = new WS("ws://localhost/api/ws/events", { jsonProtocol: true });
-    bus = new ControlPointEventBus();
-    await server.connected;
   });
   afterEach(() => {
     WS.clean();
   });
 
   describe("connection handling", () => {
+    it("should invoke closed callback when connection cannot be established", async () => {
+      server.on("connection", (socket) => {
+        socket.close({ wasClean: false, code: 1042, reason: "NONONO" });
+      });
+      bus = new ControlPointEventBus();
+      bus.onClosed = jest.fn();
+      await server.connected;
+      await server.closed;
+      expect(bus.onClosed).toHaveBeenCalledTimes(1);
+    });
+
     it("should set its state to connected on initial handsake", async () => {
+      bus = new ControlPointEventBus();
+      await server.connected;
+
       expect(bus.state).toBe("closed");
 
       server.send({
@@ -27,6 +39,8 @@ describe("UpnpEventBus", () => {
     });
 
     it("should ignore additional handshake message if already connected", async () => {
+      bus = new ControlPointEventBus();
+      await server.connected;
       expect(bus.state).toBe("closed");
 
       server.send({
@@ -45,6 +59,9 @@ describe("UpnpEventBus", () => {
     });
 
     it("should reject wrong versions on initial handsake", async () => {
+      bus = new ControlPointEventBus();
+      await server.connected;
+
       expect(bus.state).toBe("closed");
       server.send({
         jsonrpc: "2.0",
@@ -56,7 +73,7 @@ describe("UpnpEventBus", () => {
     });
 
     it("should handle wrong payload data on initial handsake", async () => {
-      const bus = new ControlPointEventBus();
+      bus = new ControlPointEventBus();
       await server.connected;
       expect(bus.state).toBe("closed");
 
@@ -65,10 +82,29 @@ describe("UpnpEventBus", () => {
       await server.closed;
       expect(bus.state).toBe("closed");
     });
+
+    it(" invoke closed callback when connection is lost", async () => {
+      bus = new ControlPointEventBus();
+      await server.connected;
+
+      server.send({
+        jsonrpc: "2.0",
+        method: "initialize",
+        params: { version: "0.2.0" },
+      });
+      expect(bus.state).toBe("connected");
+      bus.onClosed = jest.fn();
+      server.close();
+      await server.closed;
+      expect(bus.onClosed).toBeCalledTimes(1);
+    });
   });
 
   describe("event processing", () => {
     beforeEach(async () => {
+      bus = new ControlPointEventBus();
+      await server.connected;
+
       server.send({
         jsonrpc: "2.0",
         method: "initialize",
@@ -86,10 +122,10 @@ describe("UpnpEventBus", () => {
     });
 
     it("should handle wrong payload data by closing the connection", async () => {
-      bus.onerror = jest.fn();
+      bus.onClosed = jest.fn();
       server.send({ foo: "bar" });
       await server.closed;
-      expect(bus.onerror).toHaveBeenCalledTimes(1);
+      expect(bus.onClosed).toHaveBeenCalledTimes(1);
       expect(bus.state).toBe("closed");
     });
 
