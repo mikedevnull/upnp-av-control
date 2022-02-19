@@ -28,7 +28,7 @@ describe("UpnpEventBus", () => {
       bus = new ControlPointEventBus();
       await server.connected;
 
-      expect(bus.state).toBe("closed");
+      expect(bus.state).toBe("connecting");
 
       server.send({
         jsonrpc: "2.0",
@@ -41,7 +41,7 @@ describe("UpnpEventBus", () => {
     it("should ignore additional handshake message if already connected", async () => {
       bus = new ControlPointEventBus();
       await server.connected;
-      expect(bus.state).toBe("closed");
+      expect(bus.state).toBe("connecting");
 
       server.send({
         jsonrpc: "2.0",
@@ -62,7 +62,7 @@ describe("UpnpEventBus", () => {
       bus = new ControlPointEventBus();
       await server.connected;
 
-      expect(bus.state).toBe("closed");
+      expect(bus.state).toBe("connecting");
       server.send({
         jsonrpc: "2.0",
         method: "initialize",
@@ -75,7 +75,7 @@ describe("UpnpEventBus", () => {
     it("should handle wrong payload data on initial handsake", async () => {
       bus = new ControlPointEventBus();
       await server.connected;
-      expect(bus.state).toBe("closed");
+      expect(bus.state).toBe("connecting");
 
       server.send({ foo: "bar" });
 

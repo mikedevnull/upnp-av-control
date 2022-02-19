@@ -28,7 +28,7 @@ export type PlaybackInfoMessage = {
   playbackinfo: PlaybackInfo;
 };
 
-type ControlPointState = "closed" | "connected";
+type ControlPointState = "closed" | "connecting" | "connected";
 export default class ControlPointEventBus {
   socketUrl: string;
   socket: WebSocket;
@@ -43,12 +43,11 @@ export default class ControlPointEventBus {
     this.socketUrl = websocketUrl("/api/ws/events");
     this.socket = new WebSocket(this.socketUrl);
     this.jrpc = new JsonRPCClient();
-    this.state = "closed";
+    this.state = "connecting";
     this.onClosed = undefined;
 
     this.jrpc.onerror = (message: string) => {
       this.socket.close();
-      this.state = "closed";
     };
     this.jrpc.on("initialize", (params: InitMessage) =>
       this._onInitialize(params.version)
@@ -79,6 +78,7 @@ export default class ControlPointEventBus {
     };
     this.socket.onclose = () => {
       console.log("websocket connection closed");
+      this.state = "closed";
       if (this.onClosed) {
         this.onClosed();
       }
