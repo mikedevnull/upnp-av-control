@@ -4,14 +4,14 @@ import { api } from ".";
 import EventEmitter from "eventemitter3";
 import _ from "lodash";
 
-enum PlaybackControlEvent {
-  DEVICES_CHANGED = "playback-devices-changed",
-  ACTIVE_PLAYER_PRESENCE_CHANGED = "active-player-presence",
-  PLAYBACK_INFO_CHANGED = "playback-info-changed",
-}
-export default class PlaybackControl extends EventEmitter {
-  public static readonly Event = PlaybackControlEvent;
-  readonly Event = PlaybackControl.Event;
+export type PlaybackControlEvent =
+  | "playback-devices-changed"
+  | "active-player-presence"
+  | "playback-info-changed"
+  | "backend-state-changed";
+
+export type PlaybackControlState = "connected" | "disconnected";
+export default class PlaybackControl extends EventEmitter<PlaybackControlEvent> {
   private _selectedPlayerId?: string;
   private _playerPresent: boolean = false;
   private _players: ArrayLike<PlayerDevice> = [];
@@ -33,7 +33,8 @@ export default class PlaybackControl extends EventEmitter {
     this._eventBus.onDeviceLost = this.updateDevices.bind(this);
     this._eventBus.onPlaybackInfo = (message: PlaybackInfoMessage) => {
       this._playbackInfo = message.playbackinfo;
-      this.emit(PlaybackControlEvent.PLAYBACK_INFO_CHANGED, this._playbackInfo);
+      this.emit("playback-info-changed", this._playbackInfo);
+    };
     };
     this.updateDevices();
   }
@@ -114,7 +115,7 @@ export default class PlaybackControl extends EventEmitter {
     const devices = await api.getDevices();
     if (_.isEqual(devices, this._players) === false) {
       this._players = devices;
-      this.emit(PlaybackControl.Event.DEVICES_CHANGED, devices);
+      this.emit("playback-devices-changed", devices);
       this.checkSelectedPlayerPresence();
     }
   }
@@ -138,19 +139,13 @@ export default class PlaybackControl extends EventEmitter {
       }
     }
     if (changed) {
-      this.emit(
-        PlaybackControl.Event.ACTIVE_PLAYER_PRESENCE_CHANGED,
-        this._playerPresent
-      );
+      this.emit("active-player-presence", this._playerPresent);
     }
     if (this._playerPresent && this._selectedPlayerId) {
       this._eventBus.subscribePlaybackInfo(this._selectedPlayerId);
       api.getPlaybackInfo(this._selectedPlayerId).then((data) => {
         this._playbackInfo = data;
-        this.emit(
-          PlaybackControl.Event.PLAYBACK_INFO_CHANGED,
-          this._playbackInfo
-        );
+        this.emit("playback-info-changed", this._playbackInfo);
       });
     }
   }
