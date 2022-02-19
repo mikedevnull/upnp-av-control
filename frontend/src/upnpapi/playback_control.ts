@@ -35,6 +35,8 @@ export default class PlaybackControl extends EventEmitter<PlaybackControlEvent> 
       this._playbackInfo = message.playbackinfo;
       this.emit("playback-info-changed", this._playbackInfo);
     };
+    this._eventBus.onClosed = () => {
+      this.emit("backend-state-changed");
     };
     this.updateDevices();
   }
@@ -64,6 +66,10 @@ export default class PlaybackControl extends EventEmitter<PlaybackControlEvent> 
       return;
     }
     api.setVolume(this._selectedPlayerId, volume);
+  }
+
+  get backendState(): PlaybackControlState {
+    return this._eventBus.state === "closed" ? "disconnected" : "connected";
   }
 
   get playbackInfo() {

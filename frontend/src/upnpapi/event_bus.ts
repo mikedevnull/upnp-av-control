@@ -13,12 +13,12 @@ type InitMessage = {
   version: string;
 };
 
-type NewDeviceMessage = {
+export type NewDeviceMessage = {
   udn: string;
   deviceType: string;
 };
 
-type DeviceLostMessage = {
+export type DeviceLostMessage = {
   udn: string;
   deviceType: string;
 };
@@ -28,7 +28,7 @@ export type PlaybackInfoMessage = {
   playbackinfo: PlaybackInfo;
 };
 
-type ControlPointState = "closed" | "connecting" | "connected";
+export type ControlPointState = "closed" | "connecting" | "connected";
 export default class ControlPointEventBus {
   socketUrl: string;
   socket: WebSocket;
@@ -77,7 +77,6 @@ export default class ControlPointEventBus {
       this.jrpc.handleMessage(event.data);
     };
     this.socket.onclose = () => {
-      console.log("websocket connection closed");
       this.state = "closed";
       if (this.onClosed) {
         this.onClosed();

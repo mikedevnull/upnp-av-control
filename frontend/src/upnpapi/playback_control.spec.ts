@@ -195,4 +195,20 @@ describe("PlaybackControl", () => {
       expect(localStorage.getItem("selected-player-id")).toEqual("abcd");
     });
   });
+
+  describe("backend connection state", () => {
+    it("emits state change event backend becomes is lost", async () => {
+      const control = new PlaybackControl(eventBus);
+      expect(control.backendState).toBe("connected");
+      const stateCb = jest.fn();
+      control.on("backend-state-changed", stateCb);
+
+      await flushPromises();
+
+      eventBus.triggerClosed();
+      expect(eventBus.state).toBe("closed");
+      expect(control.backendState).toBe("disconnected");
+      expect(stateCb).toBeCalledTimes(1);
+    });
+  });
 });
