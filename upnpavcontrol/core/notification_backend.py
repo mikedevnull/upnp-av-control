@@ -1,8 +1,7 @@
 from aiohttp import web
 import logging
 import socket
-from async_upnp_client import UpnpEventHandler, UpnpService, UpnpRequester
-from abc import ABCMeta, abstractmethod, abstractproperty
+from async_upnp_client import UpnpEventHandler, UpnpService, UpnpRequester, UpnpNotifyServer
 from typing import Callable, Awaitable, Mapping, Optional
 from datetime import timedelta
 import http
@@ -13,48 +12,7 @@ _logger = logging.getLogger(__name__)
 NotifyReceivedCallable = Callable[[Mapping[str, str], str], Awaitable[http.HTTPStatus]]
 
 
-class NotificationEndpointBase(metaclass=ABCMeta):
-    """
-    Abstract base class to receive upnp device event messages
-    by providing a callback endpoint.
-
-    Implement `callback_url` so the URL of the notifcation endpoint can be
-    retrieved.
-    Clients using that class may set a callable which will be invoked when
-    a event message has been received.
-
-
-    See [1]_ (Section 4: Eventing) for more information,
-
-    .. [1] UPnP Device Architecture 2.0, 2015
-    """
-    @abstractmethod
-    async def async_start(self, callback: NotifyReceivedCallable) -> str:
-        """
-        Start the notifcation endpoint.
-
-        The `callback` will be called from now on for every notify event.
-
-        :param callback: The callback will be called with the request body and header fields
-            for each `NOTIFY` http request received by the endpoint.
-        :return: URL of the endpoint where requests will be accepted.
-            This URL can be passed to upnp devices when subscribing to receive events.
-        """
-        pass
-
-    @abstractmethod
-    async def async_stop(self) -> None:
-        """
-        Stop the notifcation endpoint.
-        """
-        pass
-
-    @abstractproperty
-    def callback_url(self) -> str:
-        raise NotImplementedError("To be provided in derived classes")
-
-
-class AiohttpNotificationEndpoint(NotificationEndpointBase):
+class AiohttpNotificationEndpoint(UpnpNotifyServer):
     """
     Notifcation receiver implemented using `aiohttp`.
     """
@@ -97,9 +55,10 @@ class AiohttpNotificationEndpoint(NotificationEndpointBase):
 
 
 class NotificationBackend(object):
-    def __init__(self, endpoint: NotificationEndpointBase, requester: UpnpRequester):
+
+    def __init__(self, endpoint: UpnpNotifyServer, requester: UpnpRequester):
         self._endpoint = endpoint
-        self._handler = UpnpEventHandler(self._endpoint.callback_url, requester)
+        self._handler = UpnpEventHandler(self._endpoint, requester)
         self._subscription_timeout = timedelta(seconds=120)
         # time until subscription renewals are send, a little bit less then the
         # timeout so we have some time for the renewal process _before_ the subscription
