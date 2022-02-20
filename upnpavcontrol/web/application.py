@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
+from .static_files_spa import StaticFilesSPA
 from starlette.websockets import WebSocket
 from upnpavcontrol.core import AVControlPoint
 from upnpavcontrol.core import notification_backend
@@ -13,6 +13,7 @@ from typing import Optional
 
 
 class AVControlPointAPI(FastAPI):
+
     def __init__(self, *args, **kwargs):
         super(AVControlPointAPI, self).__init__(*args, **kwargs)
         self._av_control_point: Optional[AVControlPoint] = None
@@ -56,7 +57,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
 
 static_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'static')
-static_files = StaticFiles(directory=static_dir, html=True, check_dir=False)
+static_files = StaticFilesSPA(directory=static_dir, html=True, check_dir=False)
 app.mount('/', static_files, name='static')
 
 
