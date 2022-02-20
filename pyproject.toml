@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "upnpavcontrol"
-version = "0.0.2"
+version = "0.0.5"
 description = "Web UPNP AV control point"
 authors = ["Michael Meier <michael-meier@bluesheep.de>"]
 license = "MIT License"
