@@ -39,9 +39,13 @@ const Player = (props: PlayerProps) => {
   );
   const PlayPauseIcon =
     transport === "PLAYING" ? (
-      <img src={PauseIcon} className="w-24 h-24 text-primary" />
+      <img alt="playing" src={PauseIcon} className="w-24 h-24 text-primary" />
     ) : (
-      <img src={PlayIcon} className="w-24 h-24 text-primary" />
+      <img
+        alt="playback stopped"
+        src={PlayIcon}
+        className="w-24 h-24 text-primary"
+      />
     );
   const action = (
     <Link to="/select-player">
@@ -96,7 +100,10 @@ const Player = (props: PlayerProps) => {
         </div>
         <div className="mb-8 flex justify-around items-center">
           <img src={PrevIcon} className="h-12 w-12 text-primary-lightest" />
-          <button onClick={() => props.playbackControl.playPause()}>
+          <button
+            aria-label="PlayPause"
+            onClick={() => props.playbackControl.playPause()}
+          >
             {PlayPauseIcon}
           </button>
           <img src={NextIcon} className="h-12 w-12 text-primary-lightest" />
@@ -109,6 +116,7 @@ const Player = (props: PlayerProps) => {
             value={volumePercent}
             onChange={changeVolume}
             name="volume"
+            aria-label="Volume"
           />
         </div>
         <div className={overlayClass}></div>
