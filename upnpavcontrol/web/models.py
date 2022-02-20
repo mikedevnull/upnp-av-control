@@ -6,7 +6,8 @@ from upnpavcontrol.core.mediarenderer import TransportState
 
 
 class ApiInfo(BaseModel):
-    version: typing_compat.Literal[1]
+    api_version: typing_compat.Literal[1]
+    backend_version: str
 
 
 class PlayerDevice(BaseModel):

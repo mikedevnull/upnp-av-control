@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Request
+import pkg_resources
 from . import library
 from . import player
 from . import media_proxy
@@ -10,11 +11,17 @@ router.include_router(player.router, prefix='/player')
 router.include_router(media_proxy.router, prefix='/proxy')
 
 
+def _get_version():
+    dist = pkg_resources.get_distribution('upnpavcontrol')
+    if dist is None:
+        return 'dev'
+    return dist.version
+
+
 @router.get('/', response_model=ApiInfo)
 def api_info(request: Request):
-    return {
-        'version': 1,
-    }
+
+    return {'api_version': 1, 'backend_version': _get_version()}
 
 
 @router.get('/list_endpoints/')
