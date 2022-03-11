@@ -1,6 +1,40 @@
 import ControlPointEventBus from "./event_bus";
+import {
+  ControlPointState,
+  ControlPointEvents,
+  DeviceLostMessage,
+  NewDeviceMessage,
+} from "./event_bus";
 import WS from "jest-websocket-mock";
-import { executionAsyncId } from "async_hooks";
+
+import * as util from "util";
+
+function waitForState(
+  bus: ControlPointEventBus,
+  state: ControlPointState
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const success = (val: ControlPointState) => {
+      if (val === state) {
+        resolve();
+        bus.off("connection-state-changed", success);
+      }
+    };
+    bus.on("connection-state-changed", success);
+  });
+}
+
+function waitForEvent<T>(
+  bus: ControlPointEventBus,
+  event: ControlPointEvents
+): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const success = (val: T) => {
+      resolve(val);
+    };
+    bus.once(event, success);
+  });
+}
 
 describe("UpnpEventBus", () => {
   let server: WS;
@@ -13,22 +47,11 @@ describe("UpnpEventBus", () => {
   });
 
   describe("connection handling", () => {
-    it("should invoke closed callback when connection cannot be established", async () => {
-      server.on("connection", (socket) => {
-        socket.close({ wasClean: false, code: 1042, reason: "NONONO" });
-      });
-      bus = new ControlPointEventBus();
-      bus.onClosed = jest.fn();
-      await server.connected;
-      await server.closed;
-      expect(bus.onClosed).toHaveBeenCalledTimes(1);
-    });
-
     it("should set its state to connected on initial handsake", async () => {
       bus = new ControlPointEventBus();
       await server.connected;
 
-      expect(bus.state).toBe("connecting");
+      waitForState(bus, "connecting");
 
       server.send({
         jsonrpc: "2.0",
@@ -36,12 +59,13 @@ describe("UpnpEventBus", () => {
         params: { version: "0.2.0" },
       });
       expect(bus.state).toBe("connected");
+      const closedCb = jest.fn();
     });
 
     it("should ignore additional handshake message if already connected", async () => {
       bus = new ControlPointEventBus();
       await server.connected;
-      expect(bus.state).toBe("connecting");
+      waitForState(bus, "connecting");
 
       server.send({
         jsonrpc: "2.0",
@@ -62,7 +86,7 @@ describe("UpnpEventBus", () => {
       bus = new ControlPointEventBus();
       await server.connected;
 
-      expect(bus.state).toBe("connecting");
+      waitForState(bus, "connecting");
       server.send({
         jsonrpc: "2.0",
         method: "initialize",
@@ -75,7 +99,8 @@ describe("UpnpEventBus", () => {
     it("should handle wrong payload data on initial handsake", async () => {
       bus = new ControlPointEventBus();
       await server.connected;
-      expect(bus.state).toBe("connecting");
+      expect(bus.state).toBe("closed");
+      waitForState(bus, "connected");
 
       server.send({ foo: "bar" });
 
@@ -83,7 +108,7 @@ describe("UpnpEventBus", () => {
       expect(bus.state).toBe("closed");
     });
 
-    it(" invoke closed callback when connection is lost", async () => {
+    it("invoke closed callback when connection is lost", async () => {
       bus = new ControlPointEventBus();
       await server.connected;
 
@@ -93,10 +118,12 @@ describe("UpnpEventBus", () => {
         params: { version: "0.2.0" },
       });
       expect(bus.state).toBe("connected");
-      bus.onClosed = jest.fn();
+      const closedCb = jest.fn();
+      bus.on("connection-state-changed", closedCb);
       server.close();
       await server.closed;
-      expect(bus.onClosed).toBeCalledTimes(1);
+      expect(bus.state).toBe("closed");
+      expect(closedCb).toBeCalledWith("closed");
     });
   });
 
@@ -105,11 +132,13 @@ describe("UpnpEventBus", () => {
       bus = new ControlPointEventBus();
       await server.connected;
 
+      const ready = waitForState(bus, "connected");
       server.send({
         jsonrpc: "2.0",
         method: "initialize",
         params: { version: "0.2.0" },
       });
+      await ready;
     });
 
     it("should request discovery notifications", async () => {
@@ -122,26 +151,28 @@ describe("UpnpEventBus", () => {
     });
 
     it("should handle wrong payload data by closing the connection", async () => {
-      bus.onClosed = jest.fn();
       server.send({ foo: "bar" });
       await server.closed;
-      expect(bus.onClosed).toHaveBeenCalledTimes(1);
+
       expect(bus.state).toBe("closed");
     });
 
     it("should trigger a data update on new device events", async () => {
-      bus.onNewDevice = jest.fn();
+      const result = waitForEvent<NewDeviceMessage>(bus, "new-device");
 
       server.send({
         jsonrpc: "2.0",
         method: "new_device",
         params: { udn: "1234", device_type: "MediaRenderer" },
       });
-      expect(bus.onNewDevice).toHaveBeenCalledTimes(1);
+      await expect(result).resolves.toStrictEqual({
+        deviceType: "MediaRenderer",
+        udn: "1234",
+      });
     });
 
     it("should trigger a data update on device loss", async () => {
-      bus.onDeviceLost = jest.fn();
+      const result = waitForEvent<DeviceLostMessage>(bus, "device-lost");
       // actual event
       server.send({
         jsonrpc: "2.0",
@@ -149,7 +180,10 @@ describe("UpnpEventBus", () => {
         params: { udn: "1234", device_type: "MediaRenderer" },
       });
 
-      expect(bus.onDeviceLost).toHaveBeenCalledTimes(1);
+      await expect(result).resolves.toStrictEqual({
+        deviceType: "MediaRenderer",
+        udn: "1234",
+      });
     });
 
     it("should subscribe to playback info events", async () => {
@@ -196,15 +230,16 @@ describe("UpnpEventBus", () => {
     });
 
     it("should trigger a playbackinfo update on update", () => {
-      bus.onPlaybackInfo = jest.fn();
+      const playbackInfoCb = jest.fn();
+      bus.on("playback-info-update", playbackInfoCb);
       server.send({
         jsonrpc: "2.0",
         method: "playbackinfo",
         params: { udn: "1234", playbackinfo: { volume_percent: 20 } },
       });
 
-      expect(bus.onPlaybackInfo).toHaveBeenCalledTimes(1);
-      expect(bus.onPlaybackInfo).toHaveBeenLastCalledWith({
+      expect(playbackInfoCb).toHaveBeenCalledTimes(1);
+      expect(playbackInfoCb).toHaveBeenLastCalledWith({
         id: "1234",
         playbackinfo: { volumePercent: 20 },
       });

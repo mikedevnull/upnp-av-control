@@ -1,3 +1,4 @@
+import { EventEmitter } from "eventemitter3";
 import JsonRPCClient from "./jsonrpc";
 import { PlaybackInfo } from "./types";
 import { adaptTo } from "./utils";
@@ -8,10 +9,6 @@ function websocketUrl(socketPath: string) {
     (loc.protocol === "https:" ? "wss://" : "ws://") + loc.host + socketPath
   );
 }
-
-type InitMessage = {
-  version: string;
-};
 
 export type NewDeviceMessage = {
   udn: string;
@@ -29,62 +26,48 @@ export type PlaybackInfoMessage = {
 };
 
 export type ControlPointState = "closed" | "connecting" | "connected";
-export default class ControlPointEventBus {
+
+export type ControlPointEvents =
+  | "new-device"
+  | "device-lost"
+  | "playback-info-update"
+  | "connection-state-changed";
+
+export default class ControlPointEventBus extends EventEmitter<ControlPointEvents> {
   socketUrl: string;
-  socket: WebSocket;
+  socket?: WebSocket;
   jrpc: JsonRPCClient;
   state: ControlPointState;
-  onClosed?: () => void;
-  onNewDevice?: (message: NewDeviceMessage) => void;
-  onDeviceLost?: (message: DeviceLostMessage) => void;
-  onPlaybackInfo?: (message: PlaybackInfoMessage) => void;
 
   constructor() {
+    super();
     this.socketUrl = websocketUrl("/api/ws/events");
-    this.socket = new WebSocket(this.socketUrl);
     this.jrpc = new JsonRPCClient();
-    this.state = "connecting";
-    this.onClosed = undefined;
+    this.state = "closed";
 
     this.jrpc.onerror = (message: string) => {
-      this.socket.close();
+      this.socket?.close();
     };
-    this.jrpc.on("initialize", (params: InitMessage) =>
+    this.jrpc.on("initialize", (params: { version: string }) =>
       this._onInitialize(params.version)
     );
     this.jrpc.on("new_device", (params: any) => {
-      if (this.onNewDevice) {
-        this.onNewDevice(adaptTo<NewDeviceMessage>(params));
-      }
+      this.emit("new-device", adaptTo<NewDeviceMessage>(params));
     });
     this.jrpc.on("device_lost", (params: any) => {
-      if (this.onDeviceLost) {
-        this.onDeviceLost(adaptTo<DeviceLostMessage>(params));
-      }
+      this.emit("device-lost", adaptTo<DeviceLostMessage>(params));
     });
     this.jrpc.on("playbackinfo", (params: any) => {
-      if (this.onPlaybackInfo) {
-        this.onPlaybackInfo(
-          adaptTo<PlaybackInfoMessage>({
-            id: params.udn,
-            playbackinfo: params.playbackinfo,
-          })
-        );
-      }
+      this.emit(
+        "playback-info-update",
+        adaptTo<PlaybackInfoMessage>({
+          id: params.udn,
+          playbackinfo: params.playbackinfo,
+        })
+      );
     });
 
-    this.socket.onmessage = (event) => {
-      this.jrpc.handleMessage(event.data);
-    };
-    this.socket.onclose = () => {
-      this.state = "closed";
-      if (this.onClosed) {
-        this.onClosed();
-      }
-    };
-    this.jrpc.streamTo = (_msg: string) => {
-      this.socket.send(_msg);
-    };
+    this.connect();
   }
 
   _onInitialize(version: string) {
@@ -92,10 +75,10 @@ export default class ControlPointEventBus {
       return;
     }
     if (version !== "0.2.0") {
-      this.socket.close();
+      this.socket?.close();
       return;
     }
-    this.state = "connected";
+    this._changeStateTo("connected");
     this.jrpc.call("subscribe", { category: "discovery" });
   }
 
@@ -113,5 +96,29 @@ export default class ControlPointEventBus {
       udn: playerid,
     };
     await this.jrpc.call("unsubscribe", data);
+  }
+
+  connect() {
+    if (this.state !== "closed") {
+      return;
+    }
+    this.socket = new WebSocket(this.socketUrl);
+    this.socket.onmessage = (event) => {
+      this.jrpc.handleMessage(event.data);
+    };
+    this.socket.onclose = () => {
+      this._changeStateTo("closed");
+    };
+    this.jrpc.streamTo = (_msg: string) => {
+      this.socket?.send(_msg);
+    };
+  }
+
+  _changeStateTo(targetState: ControlPointState) {
+    if (this.state === targetState) {
+      return;
+    }
+    this.state = targetState;
+    this.emit("connection-state-changed", this.state);
   }
 }
