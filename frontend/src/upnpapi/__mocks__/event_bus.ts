@@ -1,33 +1,28 @@
 import _ from "lodash";
+import EventEmitter from "eventemitter3";
 import {
   NewDeviceMessage,
   DeviceLostMessage,
   PlaybackInfoMessage,
   ControlPointState,
+  ControlPointEvents,
 } from "../event_bus";
 
-export default class MockEventBus {
-  onNewDevice?: (message: NewDeviceMessage) => void;
-  onDeviceLost?: (message: DeviceLostMessage) => void;
-  onClosed?: () => void;
-  private _state: ControlPointState = "connected";
+export default class MockEventBus extends EventEmitter<ControlPointEvents> {
+  private _state: ControlPointState = "closed";
 
   private infoSubscriptions = new Array<String>();
 
   triggerDeviceLost(data: DeviceLostMessage) {
-    if (this.onDeviceLost) {
-      this.onDeviceLost(data);
-    }
+    this.emit("device-lost", data);
   }
   triggerNewDevice(data: NewDeviceMessage) {
-    if (this.onNewDevice) {
-      this.onNewDevice(data);
-    }
+    this.emit("new-device", data);
   }
   triggerClosed() {
-    this._state = "closed";
-    if (this.onClosed) {
-      this.onClosed();
+    if (this._state !== "closed") {
+      this._state = "closed";
+      this.emit("connection-state-changed", "closed");
     }
   }
   get state() {
