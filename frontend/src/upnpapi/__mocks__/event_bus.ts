@@ -6,6 +6,7 @@ import {
   EventBus,
   ControlPointState,
   ControlPointEvents,
+  PlaybackInfoMessage,
 } from "../event_bus";
 
 export default class MockedEventBus
@@ -30,6 +31,9 @@ export default class MockedEventBus
   triggerStateChange(targetState: ControlPointState) {
     this._state = targetState;
     this.emit("connection-state-changed", targetState);
+  }
+  triggerPlaybackInfoChange(info: PlaybackInfoMessage) {
+    this.emit("playback-info-update", info);
   }
 
   get state() {

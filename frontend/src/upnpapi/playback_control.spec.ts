@@ -105,6 +105,8 @@ describe("PlaybackControl", () => {
       eventBus.triggerStateChange("connected");
       const control = new PlaybackControl(eventBus);
 
+      expect(control.selectedPlayerName).toBe("");
+
       const playerCb = jest.fn();
       control.on("active-player-presence", playerCb);
       await flushPromises();
@@ -115,6 +117,7 @@ describe("PlaybackControl", () => {
       expect(playerCb).toHaveBeenCalledTimes(1);
       expect(playerCb).toHaveBeenCalledWith(true);
       expect(control.isPlayerPresent).toBeTruthy();
+      expect(control.selectedPlayerName).toBe("foo");
     });
 
     it("emits an event when a pre-selected playback device becomes available", async () => {
@@ -135,6 +138,7 @@ describe("PlaybackControl", () => {
       expect(playerCb).toHaveBeenCalledTimes(1);
       expect(playerCb).toHaveBeenCalledWith(true);
       expect(control.isPlayerPresent).toBeTruthy();
+      expect(control.selectedPlayerName).toBe("foo");
     });
 
     it("emits an event when the selected playback device gets lost", async () => {
@@ -154,6 +158,7 @@ describe("PlaybackControl", () => {
       expect(playerCb).toHaveBeenCalledTimes(2);
       expect(playerCb).toHaveBeenCalledWith(false);
       expect(control.isPlayerPresent).toBeFalsy();
+      expect(control.selectedPlayerName).toBe("");
     });
 
     it("emits an event when active player is set to undefined", async () => {
@@ -170,6 +175,7 @@ describe("PlaybackControl", () => {
       expect(playerCb).toHaveBeenCalledTimes(2);
       expect(playerCb).toHaveBeenCalledWith(false);
       expect(control.isPlayerPresent).toBeFalsy();
+      expect(control.selectedPlayerName).toBe("");
     });
   });
 
@@ -251,6 +257,37 @@ describe("PlaybackControl", () => {
       eventBus.triggerStateChange("connected");
 
       expect(mockedGetDevice).toHaveBeenCalledTimes(2);
+    });
+
+    describe("playback info handling", () => {
+      beforeEach(() => {
+        eventBus.triggerStateChange("connected");
+      });
+      it("should forward and store playback info changes", async () => {
+        const control = new PlaybackControl(eventBus);
+        const oldInfo = control.playbackInfo;
+
+        const infoCb = jest.fn();
+        control.on("playback-info-changed", infoCb);
+
+        const newInfo = {
+          transport: "PLAYING",
+          volumePercent: 10,
+          title: "t",
+          album: "al",
+          artist: "ar",
+        };
+        eventBus.triggerPlaybackInfoChange({
+          id: "foo",
+          playbackinfo: newInfo,
+        });
+        await flushPromises();
+
+        expect(infoCb).toHaveBeenCalledTimes(1);
+        expect(infoCb).toHaveBeenCalledWith(newInfo);
+        expect(control.playbackInfo).toEqual(newInfo);
+        expect(control.playbackInfo).not.toEqual(oldInfo);
+      });
     });
   });
 });
