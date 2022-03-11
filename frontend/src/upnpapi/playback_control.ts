@@ -1,4 +1,4 @@
-import ControlPointEventBus, { PlaybackInfoMessage } from "./event_bus";
+import { EventBus, ControlPointState, PlaybackInfoMessage } from "./event_bus";
 import { PlaybackInfo, PlayerDevice } from "./types";
 import { api } from ".";
 import EventEmitter from "eventemitter3";
@@ -23,22 +23,26 @@ export default class PlaybackControl extends EventEmitter<PlaybackControlEvent> 
     artist: null,
   };
 
-  constructor(private readonly _eventBus: ControlPointEventBus) {
+  constructor(private readonly _eventBus: EventBus) {
     super();
     const storedId = localStorage.getItem("selected-player-id");
     if (storedId) {
       this._selectedPlayerId = storedId;
     }
-    this._eventBus.onNewDevice = this.updateDevices.bind(this);
-    this._eventBus.onDeviceLost = this.updateDevices.bind(this);
-    this._eventBus.onPlaybackInfo = (message: PlaybackInfoMessage) => {
-      this._playbackInfo = message.playbackinfo;
-      this.emit("playback-info-changed", this._playbackInfo);
-    };
-    this._eventBus.onClosed = () => {
-      this.emit("backend-state-changed");
-    };
-    this.updateDevices();
+    this._eventBus.on("new-device", this.updateDevices.bind(this));
+    this._eventBus.on("device-lost", this.updateDevices.bind(this));
+    this._eventBus.on(
+      "playback-info-update",
+      (message: PlaybackInfoMessage) => {
+        this._playbackInfo = message.playbackinfo;
+        this.emit("playback-info-changed", this._playbackInfo);
+      }
+    );
+    this._eventBus.on(
+      "connection-state-changed",
+      this.onBusStateChanged.bind(this)
+    );
+    this.onBusStateChanged(this._eventBus.state);
   }
 
   async playItemsImmediatly(itemIds: string[]) {
@@ -69,7 +73,7 @@ export default class PlaybackControl extends EventEmitter<PlaybackControlEvent> 
   }
 
   get backendState(): PlaybackControlState {
-    return this._eventBus.state === "closed" ? "disconnected" : "connected";
+    return this._eventBus.state !== "connected" ? "disconnected" : "connected";
   }
 
   get playbackInfo() {
@@ -154,5 +158,12 @@ export default class PlaybackControl extends EventEmitter<PlaybackControlEvent> 
         this.emit("playback-info-changed", this._playbackInfo);
       });
     }
+  }
+
+  private onBusStateChanged(state: ControlPointState) {
+    if (state === "connected") {
+      this.updateDevices();
+    }
+    this.emit("backend-state-changed");
   }
 }
