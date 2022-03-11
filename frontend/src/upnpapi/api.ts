@@ -2,8 +2,7 @@ import { PlaybackInfo, PlaybackQueue, PlayerDevice } from "./types";
 import { LibraryListItem } from "./types";
 import { adaptTo } from "./utils";
 
-export function getDevices() {
-  // return testData.renderer
+export async function getDevices() {
   const url = "/api/player/";
   return fetch(url).then(
     (response) => response.json() as Promise<PlayerDevice[]>

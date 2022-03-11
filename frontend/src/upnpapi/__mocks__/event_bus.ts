@@ -3,12 +3,15 @@ import EventEmitter from "eventemitter3";
 import {
   NewDeviceMessage,
   DeviceLostMessage,
-  PlaybackInfoMessage,
+  EventBus,
   ControlPointState,
   ControlPointEvents,
 } from "../event_bus";
 
-export default class MockEventBus extends EventEmitter<ControlPointEvents> {
+export default class MockedEventBus
+  extends EventEmitter<ControlPointEvents>
+  implements EventBus
+{
   private _state: ControlPointState = "closed";
 
   private infoSubscriptions = new Array<String>();
@@ -21,18 +24,22 @@ export default class MockEventBus extends EventEmitter<ControlPointEvents> {
   }
   triggerClosed() {
     if (this._state !== "closed") {
-      this._state = "closed";
-      this.emit("connection-state-changed", "closed");
+      this.triggerStateChange("closed");
     }
   }
+  triggerStateChange(targetState: ControlPointState) {
+    this._state = targetState;
+    this.emit("connection-state-changed", targetState);
+  }
+
   get state() {
     return this._state;
   }
 
-  subscribePlaybackInfo(playerId: string) {
+  async subscribePlaybackInfo(playerId: string) {
     this.infoSubscriptions.push(playerId);
   }
-  unsubscribePlaybackInfo(playerId: string) {
+  async unsubscribePlaybackInfo(playerId: string) {
     _.remove(this.infoSubscriptions, (x) => x === playerId);
   }
 }
