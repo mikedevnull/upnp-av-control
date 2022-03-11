@@ -1,5 +1,3 @@
-import ControlPointEventBus from "./event_bus";
-
 export type PlayerDevice = {
   id: string;
   name: string;

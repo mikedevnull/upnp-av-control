@@ -33,17 +33,33 @@ export type ControlPointEvents =
   | "playback-info-update"
   | "connection-state-changed";
 
-export default class ControlPointEventBus extends EventEmitter<ControlPointEvents> {
-  socketUrl: string;
-  socket?: WebSocket;
-  jrpc: JsonRPCClient;
-  state: ControlPointState;
+export interface EventBus {
+  on<T extends ControlPointEvents>(
+    event: ControlPointEvents,
+    fn: (...args: any[]) => void,
+    context?: any
+  ): this;
+
+  subscribePlaybackInfo(playerid: string): Promise<void>;
+  unsubscribePlaybackInfo(playerid: string): Promise<void>;
+
+  readonly state: ControlPointState;
+}
+
+export default class ControlPointEventBus
+  extends EventEmitter<ControlPointEvents>
+  implements EventBus
+{
+  private socketUrl: string;
+  private socket?: WebSocket;
+  private jrpc: JsonRPCClient;
+  private _state: ControlPointState;
 
   constructor() {
     super();
     this.socketUrl = websocketUrl("/api/ws/events");
     this.jrpc = new JsonRPCClient();
-    this.state = "closed";
+    this._state = "closed";
 
     this.jrpc.onerror = (message: string) => {
       this.socket?.close();
@@ -70,8 +86,12 @@ export default class ControlPointEventBus extends EventEmitter<ControlPointEvent
     this.connect();
   }
 
+  get state() {
+    return this._state;
+  }
+
   _onInitialize(version: string) {
-    if (this.state === "connected") {
+    if (this._state === "connected") {
       return;
     }
     if (version !== "0.2.0") {
@@ -99,7 +119,7 @@ export default class ControlPointEventBus extends EventEmitter<ControlPointEvent
   }
 
   connect() {
-    if (this.state !== "closed") {
+    if (this._state !== "closed") {
       return;
     }
     this.socket = new WebSocket(this.socketUrl);
@@ -115,10 +135,10 @@ export default class ControlPointEventBus extends EventEmitter<ControlPointEvent
   }
 
   _changeStateTo(targetState: ControlPointState) {
-    if (this.state === targetState) {
+    if (this._state === targetState) {
       return;
     }
-    this.state = targetState;
-    this.emit("connection-state-changed", this.state);
+    this._state = targetState;
+    this.emit("connection-state-changed", this._state);
   }
 }
