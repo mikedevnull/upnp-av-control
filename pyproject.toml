@@ -21,7 +21,7 @@ include = ['upnpavcontrol/web/static/**/*']
 python = ">=3.7,<4.0"
 async-upnp-client = "^0.24.0"
 fastapi = "^0.73.0"
-websockets = "^10.1"
+websockets = "^10.2"
 defusedxml = "^0.7.1"
 uvicorn = "^0.17.4"
 colorlog = "^6.6.0"
