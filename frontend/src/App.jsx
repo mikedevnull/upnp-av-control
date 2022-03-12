@@ -5,14 +5,12 @@ import { Player, PlayerSelection, PlayerQueue } from "./pages";
 import { useEffect, useState, useRef } from "react";
 import { ControlPointEventBus, PlaybackControl } from "./upnpapi";
 import { BackendConnectionStateView} from './components';
+import { EventBusWatchdog } from "./upnpapi/event_bus_watchdog";
 
-function createPlaybackControl() {
-  const eventBus = new ControlPointEventBus();
-  const playbackControl = new PlaybackControl(eventBus);
-  return playbackControl;
-}
 
-const playbackControlInstance = createPlaybackControl();
+const eventBus = new ControlPointEventBus()
+const playbackControlInstance = new PlaybackControl(eventBus);
+const eventBusWatchDog = new EventBusWatchdog(eventBus)
 
 function App() {
   const playbackControl = useRef(playbackControlInstance);
