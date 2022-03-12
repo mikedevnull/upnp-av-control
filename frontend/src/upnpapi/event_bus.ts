@@ -42,6 +42,7 @@ export interface EventBus {
 
   subscribePlaybackInfo(playerid: string): Promise<void>;
   unsubscribePlaybackInfo(playerid: string): Promise<void>;
+  connect(): void;
 
   readonly state: ControlPointState;
 }

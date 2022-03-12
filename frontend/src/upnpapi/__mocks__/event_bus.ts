@@ -46,4 +46,9 @@ export default class MockedEventBus
   async unsubscribePlaybackInfo(playerId: string) {
     _.remove(this.infoSubscriptions, (x) => x === playerId);
   }
+
+  connect() {
+    this.triggerStateChange("connecting");
+    this.triggerStateChange("connected");
+  }
 }
