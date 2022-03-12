@@ -25,7 +25,7 @@ websockets = "^10.2"
 defusedxml = "^0.7.1"
 uvicorn = "^0.17.4"
 colorlog = "^6.6.0"
-itsdangerous = "^2.0.1"
+itsdangerous = "^2.1.1"
 PyYAML = "^6.0"
 aiofiles = {version = "^0.8.0", python = ">=3.7"}
 typing-extensions = {version = "^4.1.1", python = "3.7"}
