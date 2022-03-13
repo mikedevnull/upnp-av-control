@@ -73,14 +73,14 @@ tests = ["pytest", "pytest-asyncio", "mypy (>=0.800)"]
 
 [[package]]
 name = "async-asgi-testclient"
-version = "1.4.9"
+version = "1.4.10"
 description = "Async client for testing ASGI web applications"
 category = "dev"
 optional = false
 python-versions = "*"
 
 [package.dependencies]
-multidict = ">=4.0,<6.0"
+multidict = ">=4.0,<7.0"
 requests = ">=2.21,<3.0"
 
 [[package]]
@@ -699,7 +699,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.7,<4.0"
-content-hash = "58e67d591baacd16bbe163777a242fe80c3b773b629e66a91968718b54d527b6"
+content-hash = "64b606f54beda91e8b8ca0174d6ffa3c4e6d895dc5acb33ef1372c955d70d12d"
 
 [metadata.files]
 aiofiles = [
@@ -793,7 +793,7 @@ asgiref = [
     {file = "asgiref-3.5.0.tar.gz", hash = "sha256:2f8abc20f7248433085eda803936d98992f1343ddb022065779f37c5da0181d0"},
 ]
 async-asgi-testclient = [
-    {file = "async-asgi-testclient-1.4.9.tar.gz", hash = "sha256:ae507f44a53699611cff81ad548090dad24055fba02cce398e1ca9b84d1e1288"},
+    {file = "async-asgi-testclient-1.4.10.tar.gz", hash = "sha256:21492eb238547275d9dccbf1a4c9331d001fe987f345a5e92ca3e88ff092645c"},
 ]
 async-timeout = [
     {file = "async-timeout-4.0.2.tar.gz", hash = "sha256:2163e1640ddb52b7a8c80d0a67a08587e5d245cc9c553a74a847056bc2976b15"},
