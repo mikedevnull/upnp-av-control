@@ -3,11 +3,12 @@
   "packageRules": [
     {
       "matchLanguages": ["python"],
-      "groupName": "backend dependencies"
+      "groupName": "backend deps"
     },
     {
       "matchLanguages": ["javascript", "typescript"],
-      "groupName": "frontend dependencies"
+      "matchPackagePrefixes": ["@types/", "postcss-"],
+      "groupName": "frontend deps"
     }
   ]
 }
