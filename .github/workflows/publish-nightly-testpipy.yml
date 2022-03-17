@@ -19,7 +19,7 @@ jobs:
         run: |
           python -m pip install poetry poetry-dynamic-versioning
       - name: Use Node.js 17.x
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v3
         with:
           node-version: 17.x
       - name: Install dependencies
