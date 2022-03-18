@@ -45,14 +45,21 @@ def prettify_xml(xml_frame):
 
 def _set_current_track_metadata(xml: str, info: PlaybackInfo):
     didl = didllite.from_xml_string(xml)
+    changed = False
     if len(didl) > 0:
         current = didl[0]
         if current.upnpclass.startswith('object.item.audioItem.musicTrack'):
             current = cast(didllite.MusicTrack, current)
-            info.artist = current.artist
-            info.album = current.album
-            info.title = current.title
-    return info
+            if current.artist != info.artist:
+                info.artist = current.artist
+                changed = True
+            if current.album != info.album:
+                info.album = current.album
+                changed = True
+            if current.title != info.title:
+                info.title = current.title
+                changed = True
+    return changed
 
 
 def update_playback_info_from_event(info: PlaybackInfo, event: str) -> bool:
@@ -73,8 +80,8 @@ def update_playback_info_from_event(info: PlaybackInfo, event: str) -> bool:
             any_value_changed = True
     transportMeta = tree.find("./avt-event:InstanceID[@val='0']/avt-event:CurrentTrackMetaData", namespaces=_nsmap)
     if transportMeta is not None:
-        info = _set_current_track_metadata(transportMeta.attrib['val'], info)
-        any_value_changed = True
+        if _set_current_track_metadata(transportMeta.attrib['val'], info):
+            any_value_changed = True
     return any_value_changed
 
 
