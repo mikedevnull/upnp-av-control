@@ -2,7 +2,7 @@ from upnpavcontrol.core import AVControlPoint
 from upnpavcontrol.core.discovery import DeviceRegistry
 from upnpavcontrol.core.notification_backend import NotificationBackend
 from ..testsupport import NullAdvertisementListener, UpnpTestRequester, NotificationTestEndpoint
-import async_upnp_client
+from async_upnp_client.client import UpnpDevice
 from .fake_upnp import format_ssdp_event, FakeAsyncUpnpDevice
 from .async_utils import run_on_main_loop
 import logging
@@ -11,10 +11,11 @@ _logger = logging.getLogger(__name__)
 
 
 class FakeUpnpDeviceFactory():
+
     def __init__(self, context: 'TestContext'):
         self._context = context
 
-    async def async_create_device(self, location: str) -> async_upnp_client.UpnpDevice:
+    async def async_create_device(self, location: str) -> UpnpDevice:
         _logger.debug('Creating device for location %s', location)
         for device in self._context.devices_on_network.values():
             if device.location == location:
@@ -23,6 +24,7 @@ class FakeUpnpDeviceFactory():
 
 
 class TestContext(object):
+
     def __init__(self):
         self._available_devices = {}
         device_factory = FakeUpnpDeviceFactory(self)
