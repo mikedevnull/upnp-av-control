@@ -11,7 +11,6 @@ from pydantic import BaseModel
 import enum
 import xml.dom.minidom
 import typing
-import html
 
 _logger = logging.getLogger(__name__)
 
@@ -45,7 +44,7 @@ def prettify_xml(xml_frame):
 
 
 def _set_current_track_metadata(xml: str, info: PlaybackInfo):
-    didl = didllite.from_xml_string(html.unescape(xml))
+    didl = didllite.from_xml_string(xml)
     if len(didl) > 0:
         current = didl[0]
         if current.upnpclass.startswith('object.item.audioItem.musicTrack'):
