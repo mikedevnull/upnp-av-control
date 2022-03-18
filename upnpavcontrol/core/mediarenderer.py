@@ -71,7 +71,7 @@ def update_playback_info_from_event(info: PlaybackInfo, event: str) -> bool:
         if value != info.transport:
             info.transport = value
             any_value_changed = True
-    transportMeta = tree.find("./avt-event:InstanceID[@val='0']/avt-event:AVTransportURIMetaData", namespaces=_nsmap)
+    transportMeta = tree.find("./avt-event:InstanceID[@val='0']/avt-event:CurrentTrackMetaData", namespaces=_nsmap)
     if transportMeta is not None:
         info = _set_current_track_metadata(transportMeta.attrib['val'], info)
         any_value_changed = True
