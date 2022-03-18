@@ -3,7 +3,7 @@ from .notification_backend import NotificationBackend
 from .oberserver import Observable, Subscription
 from . import didllite
 from .playback.protocol_info import parse_protocol_infos
-from async_upnp_client import UpnpStateVariable, UpnpDevice, UpnpService
+from async_upnp_client.client import UpnpStateVariable, UpnpDevice, UpnpService
 import defusedxml.ElementTree as etree
 from typing import Iterable, Optional, cast
 import asyncio

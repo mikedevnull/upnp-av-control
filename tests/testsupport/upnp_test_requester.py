@@ -1,4 +1,4 @@
-from async_upnp_client import UpnpRequester
+from async_upnp_client.client import UpnpRequester
 import os
 import asyncio
 import typing
@@ -7,6 +7,7 @@ TestResponseHandler = typing.Callable[[], typing.Tuple[int, typing.Mapping[str, 
 
 
 def _make_datafile_response_handler(filepath):
+
     def f():
         with open(filepath, 'r') as handle:
             return 200, {}, handle.read()
@@ -25,6 +26,7 @@ def _make_static_reponse_handler(body: str, headers: dict = None):
 
 
 class UpnpTestRequester(UpnpRequester):
+
     def __init__(self):
         self._response_map = {}
 

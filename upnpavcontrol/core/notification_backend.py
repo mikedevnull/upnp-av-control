@@ -1,7 +1,8 @@
 from aiohttp import web
 import logging
 import socket
-from async_upnp_client import UpnpEventHandler, UpnpService, UpnpRequester, UpnpNotifyServer
+from async_upnp_client.client import UpnpService, UpnpRequester
+from async_upnp_client.event_handler import UpnpEventHandler, UpnpNotifyServer
 from typing import Callable, Awaitable, Mapping, Optional
 from datetime import timedelta
 import http

@@ -1,4 +1,4 @@
-from async_upnp_client import UpnpNotifyServer
+from async_upnp_client.event_handler import UpnpNotifyServer
 
 
 class NotificationTestEndpoint(UpnpNotifyServer):

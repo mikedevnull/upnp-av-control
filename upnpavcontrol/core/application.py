@@ -7,7 +7,7 @@ from .playback.controller import PlaybackController
 from .playback.utils import PlaybackControllableWrapper
 from .notification_backend import NotificationBackend, AiohttpNotificationEndpoint
 from async_upnp_client.aiohttp import AiohttpRequester
-from async_upnp_client import UpnpFactory, UpnpDevice
+from async_upnp_client.client_factory import UpnpFactory, UpnpDevice
 from typing import Awaitable, Callable, Union, Dict, cast
 from .oberserver import Observable
 from .typing_compat import Protocol
@@ -20,11 +20,13 @@ _logger = logging.getLogger(__name__)
 
 
 class UpnpDeviceFactory(Protocol):
+
     async def async_create_device(self, location: str) -> UpnpDevice:
         pass
 
 
 class AVControlPoint(object):
+
     def __init__(self,
                  device_registry: DeviceRegistry = None,
                  notifcation_backend=None,
