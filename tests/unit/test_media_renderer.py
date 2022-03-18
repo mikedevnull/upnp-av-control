@@ -49,6 +49,12 @@ def test_parse_av_trasnport_event():
     assert info.title == "SomeTitle"
     assert some_value_changed is True
 
+    some_value_changed = update_playback_info_from_event(info, av_last_change_event)
+    assert info.album == "SomeAlbum"
+    assert info.artist == "SomeArtist"
+    assert info.title == "SomeTitle"
+    assert some_value_changed is False
+
 
 # @pytest.mark.asyncio
 # async def test_renderer_creation():
