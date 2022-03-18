@@ -3,8 +3,12 @@ name: Tests
 on:
   pull_request:
     branches: [master]
+    paths-ignore:
+      - 'frontend/**'
   push:
     branches: [master]
+    paths-ignore:
+      - 'frontend/**'
 
 jobs:
   test-backend:
@@ -37,26 +41,3 @@ jobs:
           flags: backend
           env_vars: PYTHON
           fail_ci_if_error: true
-  test-frontend:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Use Node.js 17.x
-        uses: actions/setup-node@v3
-        with:
-          node-version: 17.x
-      - name: Install dependencies
-        run: yarn install --frozen-lockfile
-        working-directory: ./frontend
-      - name: Build frontend
-        run: yarn build
-        working-directory: ./frontend
-      - name: Run tests
-        run: yarn test --coverage --watchAll=false
-        working-directory: ./frontend
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v2
-        with:
-          flags: frontend
-          fail_ci_if_error: true
-          directory: ./frontend
