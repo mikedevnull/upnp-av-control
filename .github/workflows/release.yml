@@ -1,11 +1,11 @@
-name: Publish python package to TestPyPI
+name: Release Python Package
 
-on: 
-  push:
-    branches: ["master"]
+on:
+  release:
+    types: [created]
 
 jobs:
-  build-and-publish:
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
