@@ -1,9 +1,7 @@
-import PropTypes from "prop-types";
-
 interface TopBarProps {
-  nav?: PropTypes.ReactNodeLike;
+  nav?: JSX.Element | JSX.Element[];
   title?: string;
-  action?: PropTypes.ReactNodeLike;
+  action?: JSX.Element | JSX.Element[];
 }
 
 export const TopBar = ({ nav, title, action }: TopBarProps) => {
