@@ -2,13 +2,9 @@
   "extends": ["config:base", ":maintainLockFilesWeekly"],
   "packageRules": [
     {
-      "matchLanguages": ["python"],
-      "groupName": "backend deps"
-    },
-    {
-      "matchLanguages": ["javascript", "typescript"],
-      "matchPackagePrefixes": ["@types/", "postcss-"],
-      "groupName": "frontend deps"
+      "description": "Automatically merge minor and patch-level updates",
+      "matchUpdateTypes": ["minor", "patch", "digest"],
+      "automerge": true
     }
   ]
 }
