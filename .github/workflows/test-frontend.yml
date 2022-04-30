@@ -3,34 +3,39 @@ name: Tests
 on:
   pull_request:
     branches: [master]
-    paths-ignore:
-      - 'upnpavcontrol/**'
-      - 'tests/**'
   push:
     branches: [master]
-    paths-ignore:
-      - 'upnpavcontrol/**'
-      - 'tests/**'
 
 jobs:
   test-frontend:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            frontend:
+              - 'frontend/**'
       - name: Use Node.js 17.x
         uses: actions/setup-node@v3
+        if: steps.filter.outputs.frontend == 'true'
         with:
           node-version: 17.x
       - name: Install dependencies
+        if: steps.filter.outputs.frontend == 'true'
         run: yarn install --frozen-lockfile
         working-directory: ./frontend
       - name: Build frontend
+        if: steps.filter.outputs.frontend == 'true'
         run: yarn build
         working-directory: ./frontend
       - name: Run tests
+        if: steps.filter.outputs.frontend == 'true'
         run: yarn test --coverage --watchAll=false
         working-directory: ./frontend
       - name: Upload coverage to Codecov
+        if: steps.filter.outputs.frontend == 'true'
         uses: codecov/codecov-action@v3
         with:
           flags: frontend
