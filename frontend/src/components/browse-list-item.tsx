@@ -14,12 +14,6 @@ export function BrowseListItem({ item, clickHandler }: BrowseListItemProps) {
     "block group flex items-center px-4 h-16 hover:bg-primary-lightest cursor-pointer text-left";
   const placeholderIcon = item.upnpclass === "item" ? IconTrack : IconContainer;
   const img = item.image ? item.image : placeholderIcon;
-  const overlay =
-    item.upnpclass === "item" ? (
-      <div className="flex justify-center items-center absolute opacity-0 group-hover:opacity-70 m-1 rounded-xl h-14 w-14 bg-gray-800 text-white font-semibold">
-        <img src={PlayIcon} className="h-10 w-10" />
-      </div>
-    ) : null;
   return (
     <li
       onClick={() => {
@@ -35,7 +29,6 @@ export function BrowseListItem({ item, clickHandler }: BrowseListItemProps) {
         className="h-14 w-14 m-1 rounded-xl object-scale-down"
         placeholderSrc={placeholderIcon}
       />
-      {overlay}
       {item.title}
     </li>
   );
