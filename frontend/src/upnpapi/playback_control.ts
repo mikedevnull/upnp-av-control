@@ -51,6 +51,11 @@ export default class PlaybackControl extends EventEmitter<PlaybackControlEvent> 
     }
     await api.stop(this._selectedPlayerId);
     await api.setPlaybackQueue(this._selectedPlayerId, itemIds);
+    this._playbackInfo.transport = "PLAYING";
+    this._playbackInfo.title = "";
+    this._playbackInfo.artist = "";
+    this._playbackInfo.album = "";
+    this.emit("playback-info-changed", this._playbackInfo);
     await api.play(this._selectedPlayerId);
   }
 
@@ -59,8 +64,12 @@ export default class PlaybackControl extends EventEmitter<PlaybackControlEvent> 
       return;
     }
     if (this._playbackInfo.transport === "PLAYING") {
+      this._playbackInfo.transport = "STOPPED";
+      this.emit("playback-info-changed", this._playbackInfo);
       api.stop(this._selectedPlayerId);
     } else if (this._playbackInfo.transport === "STOPPED") {
+      this._playbackInfo.transport = "PLAYING";
+      this.emit("playback-info-changed", this._playbackInfo);
       api.play(this._selectedPlayerId);
     }
   }
