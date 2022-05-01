@@ -108,7 +108,7 @@ const Player = (props: PlayerProps) => {
           </button>
           <img src={NextIcon} className="h-12 w-12 text-primary-lightest" />
         </div>
-        <div className="mb-8 flex justify-around items-center">
+        <div className="mb-8 p-8 flex justify-around items-center">
           <input
             type="range"
             max="100"
@@ -117,6 +117,7 @@ const Player = (props: PlayerProps) => {
             onChange={changeVolume}
             name="volume"
             aria-label="Volume"
+            className="max-w-md"
           />
         </div>
         <div className={overlayClass}></div>
