@@ -2,6 +2,8 @@ import { LibraryListItem } from "../upnpapi/types";
 import IconContainer from "../assets/folder.svg";
 import IconTrack from "../assets/track.svg";
 import PlayIcon from "../assets/control-play.svg";
+import { LazyLoadImage } from "react-lazy-load-image-component";
+
 interface BrowseListItemProps {
   item: LibraryListItem;
   clickHandler?: CallableFunction;
@@ -21,10 +23,11 @@ export function BrowseListItem({ item, clickHandler }: BrowseListItemProps) {
       }}
       className={className}
     >
-      <img
+      <LazyLoadImage
         src={img}
         alt="album art"
         className="h-14 w-14 m-1 rounded-xl object-scale-down"
+        placeholderSrc={placeholderIcon}
       />
       {item.title}
     </li>
