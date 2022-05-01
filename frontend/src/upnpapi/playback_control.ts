@@ -69,7 +69,11 @@ export default class PlaybackControl extends EventEmitter<PlaybackControlEvent> 
     if (this._selectedPlayerId === undefined) {
       return;
     }
-    api.setVolume(this._selectedPlayerId, volume);
+    if (this._playbackInfo.volumePercent != volume) {
+      this._playbackInfo.volumePercent = volume;
+      this.emit("playback-info-changed", this._playbackInfo);
+      api.setVolume(this._selectedPlayerId, volume);
+    }
   }
 
   get backendState(): PlaybackControlState {
