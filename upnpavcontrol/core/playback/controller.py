@@ -38,7 +38,7 @@ class PlaybackController():
         else:
             self._queue = PlaybackQueue()
         self._is_playing = False
-        self._player_subscription: Subscription = None
+        self._player_subscription = Subscription()
 
     @property
     def is_playing(self):
@@ -62,7 +62,7 @@ class PlaybackController():
             _logger.debug("No item left to play, doing nothing")
             return
 
-        if self._player_subscription is None:
+        if not self._player_subscription.is_active:
             _logger.debug("Subscribing to transport state changes.")
             self._player_subscription = await self._player.subscribe(self._on_transport_state_changed)
         try:
@@ -73,11 +73,17 @@ class PlaybackController():
             _logger.debug('got for playing feedback')
         except Exception:
             _logger.exception("Error while trying to play next queue item")
-            if self._player_subscription is not None:
-                _logger.debug("Unsubscribing from transport state changes due to error.")
-                await self._player_subscription.unsubscribe()
-                self._player_subscription = None
-                self._is_playing = False
+            await self._player_subscription.unsubscribe()
+            self._is_playing = False
+
+    async def set_current_item(self, index: int):
+        if self._queue.current_item_index == index:
+            return
+        self._queue.current_item_index = index
+
+        if self._is_playing:
+            await self.stop()
+            await self.play()
 
     def clear(self):
         self._queue.clear()
@@ -92,9 +98,7 @@ class PlaybackController():
             self._is_playing = False
             await self._player.stop()
         _logger.debug('got stopped feedback')
-        if self._player_subscription is not None:
-            await self._player_subscription.unsubscribe()
-            self._player_subscription = None
+        await self._player_subscription.unsubscribe()
 
     async def _on_transport_state_changed(self, info: PlaybackInfo):
         player_is_playing = (info.transport == TransportState.PLAYING)
@@ -107,6 +111,5 @@ class PlaybackController():
             if self._queue.next_item() is not None:
                 _logger.debug("Trying to play next item in queue")
                 await self.play()
-            elif self._player_subscription is not None:
+            else:
                 await self._player_subscription.unsubscribe()
-                self._player_subscription = None
