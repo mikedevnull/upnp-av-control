@@ -10,7 +10,7 @@ class PlaybackItem():
     album: typing.Optional[str] = None
     artist: typing.Optional[str] = None
     image: typing.Optional[str] = None
-    fixme: str
+    fixme: str = 'foo'
 
 
 class PlaybackQueue():
