@@ -14,7 +14,7 @@ class Subscription(object):
     Can be used to unsubscribe from notifications later on
     """
 
-    def __init__(self, observable):
+    def __init__(self, observable=None):
         self._observable = observable
 
     async def unsubscribe(self):
@@ -32,6 +32,10 @@ class Subscription(object):
         Reset the subscription handle _without_ unsubscribing.
         """
         self._observable = None
+
+    @property
+    def is_active(self):
+        return self._observable is not None
 
 
 class Observable(Generic[T]):
