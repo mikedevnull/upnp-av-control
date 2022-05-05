@@ -10,9 +10,11 @@ class PlaybackItem():
     album: typing.Optional[str] = None
     artist: typing.Optional[str] = None
     image: typing.Optional[str] = None
+    fixme: str
 
 
 class PlaybackQueue():
+
     def __init__(self):
         self._items = []
         self._current_item_index: typing.Optional[PlaybackItem] = None
