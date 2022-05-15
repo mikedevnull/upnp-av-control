@@ -1,16 +1,23 @@
 version: 1
 formatters:
-  simple:
-    format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+  color:
+    "()": "colorlog.ColoredFormatter"
+    format: '%(asctime)s %(log_color)s%(levelname)s%(reset)s %(yellow)s%(name)-15s%(reset)s %(blue)s%(message)s%(reset)s'
+    datefmt: '%Y-%m-%d %H:%M:%S'
+  default:
+    format: '%(asctime)s %(levelname)-8s %(name)-15s %(message)s'
+    datefmt: '%Y-%m-%d %H:%M:%S'
 handlers:
   console:
     class: logging.StreamHandler
     level: DEBUG
-    formatter: simple
+    formatter: color
     stream: ext://sys.stdout
 loggers:
   upnpavcontrol:
     level: DEBUG
+  upnpavcontrol.core.discovery:
+    level: WARNING
 root:
   level: INFO
   handlers: [console]
