@@ -258,4 +258,75 @@ describe("PlaybackControl", () => {
       });
     });
   });
+
+  describe("playback controls if player present", () => {
+    let control: PlaybackControl;
+    const fakePlayerId = "1234";
+    beforeEach(() => {
+      control = new PlaybackControl(eventBus);
+      eventBus.triggerStateChange("connected");
+      control.selectedPlayerId = fakePlayerId;
+    });
+
+    it("stops playback and starts playing new queue items", async () => {
+      await control.playItemsImmediatly(["a", "b", "c"]);
+      expect(api.stop).toHaveBeenCalledWith(fakePlayerId);
+      expect(api.setPlaybackQueue).toHaveBeenCalledWith(fakePlayerId, [
+        "a",
+        "b",
+        "c",
+      ]);
+      expect(api.play).toHaveBeenCalledWith(fakePlayerId);
+    });
+
+    it("changes the volume", async () => {
+      control.setVolume(23);
+      expect(api.setVolume).toHaveBeenCalledWith(fakePlayerId, 23);
+    });
+
+    it("toggles play/pause", async () => {
+      control.playbackInfo.transport = "STOPPED";
+      expect(control.playbackInfo.transport).toBe("STOPPED");
+
+      await control.playPause();
+      expect(api.play).toHaveBeenCalledWith(fakePlayerId);
+      expect(control.playbackInfo.transport).toBe("PLAYING");
+
+      await control.playPause();
+      expect(api.stop).toHaveBeenCalledWith(fakePlayerId);
+      expect(control.playbackInfo.transport).toBe("STOPPED");
+    });
+  });
+
+  describe("playback controls without player present", () => {
+    let control: PlaybackControl;
+    const fakePlayerId = "is-not-present";
+    beforeEach(() => {
+      control = new PlaybackControl(eventBus);
+      eventBus.triggerStateChange("connected");
+      control.selectedPlayerId = fakePlayerId;
+    });
+
+    it("stops playback and starts playing new queue items", async () => {
+      await control.playItemsImmediatly(["a", "b", "c"]);
+      expect(api.stop).not.toHaveBeenCalled();
+      expect(api.setPlaybackQueue).not.toHaveBeenCalled();
+
+      expect(api.play).not.toHaveBeenCalled();
+    });
+
+    it("changes the volume", async () => {
+      control.setVolume(23);
+      expect(api.setVolume).not.toHaveBeenCalled();
+    });
+
+    it("toggles play/pause", async () => {
+      control.playbackInfo.transport = "STOPPED";
+      expect(control.playbackInfo.transport).toBe("STOPPED");
+
+      await control.playPause();
+      expect(api.play).not.toHaveBeenCalled();
+      expect(api.stop).not.toHaveBeenCalled();
+    });
+  });
 });
