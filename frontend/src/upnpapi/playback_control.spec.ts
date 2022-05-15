@@ -1,44 +1,12 @@
 import { api } from ".";
 
 import PlaybackControl from "./playback_control";
-import { MapLike } from "typescript";
 import MockedEventBus from "./__mocks__/event_bus";
 
 jest.mock("./api");
 
 const mockedGetDevice = api.getDevices as jest.Mock;
 const mockedPlaybackInfo = api.getPlaybackInfo as jest.Mock;
-class LocalStorageMock {
-  private store: MapLike<string>;
-  constructor() {
-    this.store = {};
-  }
-  clear() {
-    this.store = {};
-  }
-
-  getItem(key: string) {
-    return this.store[key] || null;
-  }
-
-  setItem(key: string, value: string) {
-    this.store[key] = value;
-  }
-
-  removeItem(key: string) {
-    delete this.store[key];
-  }
-
-  get length() {
-    return this.store.keys.length;
-  }
-
-  key(n: number) {
-    return this.store.keys[n];
-  }
-}
-
-global.localStorage = new LocalStorageMock();
 
 const devices = [
   { id: "1234", name: "foo" },
