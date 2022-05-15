@@ -71,12 +71,9 @@ def create_control_point_from_settings():
 
 @app.on_event("startup")
 def setup_logging():
-    import colorlog
     import logging
     level = logging.WARNING if settings.QUIET else logging.INFO
     level = logging.DEBUG if settings.DEBUG else level
-    colorlog.basicConfig(level=level,
-                         format='%(log_color)s%(levelname)s%(reset)s:%(yellow)s%(name)s%(reset)s: %(message)s')
     logging.getLogger('async_upnp_client').setLevel(logging.INFO)
 
 
