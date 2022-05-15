@@ -15,6 +15,7 @@ class FakeAVTransportService(UpnpServiceMock):
         super().__init__(service_type="urn:schemas-upnp-org:service:AVTransport:1", device=device)
         self.add_async_action('SetAVTransportURI', self._set_transport)
         self.add_async_action('Play', self._play)
+        self.add_async_action('Stop', self._stop)
         self.state = PlaybackState.STOPPED
         self.current_uri = None
         self._current_uri_metadata = None
@@ -44,5 +45,11 @@ class FakeAVTransportService(UpnpServiceMock):
             return
         if self.state != PlaybackState.PLAYING:
             self.state = PlaybackState.PLAYING
+            await self.trigger_notification(instance_xml_namespace='{urn:schemas-upnp-org:metadata-1-0/AVT/}',
+                                            variables={'TransportState': self.state.value})
+
+    async def _stop(self, InstanceID):
+        if self.state != PlaybackState.STOPPED:
+            self.state = PlaybackState.STOPPED
             await self.trigger_notification(instance_xml_namespace='{urn:schemas-upnp-org:metadata-1-0/AVT/}',
                                             variables={'TransportState': self.state.value})

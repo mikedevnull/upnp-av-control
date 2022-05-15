@@ -93,9 +93,12 @@ async def get_queued_items(request: Request, udn: str):
 async def append_items_to_queue(request: Request, udn: str, payload: models.PlaybackQueueIn):
     try:
         pc = request.app.av_control_point.get_controller_for_renderer(udn)
-        items = [await _resolve_queue_item(request.app.av_control_point, i) for i in payload.items]
-        for item in items:
-            pc.queue.appendItem(item)
+        if payload.items is not None:
+            items = [await _resolve_queue_item(request.app.av_control_point, i) for i in payload.items]
+            for item in items:
+                pc.queue.appendItem(item)
+        if payload.current_item_index is not None:
+            await pc.set_current_item(payload.current_item_index)
 
     except Exception as e:
         _logger.exception(e)
@@ -103,13 +106,15 @@ async def append_items_to_queue(request: Request, udn: str, payload: models.Play
 
 
 @router.put('/{udn}/queue', status_code=200)
-async def set_queue_items(request: Request, udn: str, payload: models.PlaybackQueueIn):
+async def set_queue_items(request: Request, udn: str, payload: models.PlaybackQueue):
     try:
         pc = request.app.av_control_point.get_controller_for_renderer(udn)
         items = [await _resolve_queue_item(request.app.av_control_point, i) for i in payload.items]
         pc.clear()
         for item in items:
             pc.queue.appendItem(item)
+        if payload.current_item_index:
+            await pc.set_current_item(payload.current_item_index)
 
     except Exception as e:
         _logger.exception(e)

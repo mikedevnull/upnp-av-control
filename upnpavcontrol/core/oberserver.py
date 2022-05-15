@@ -151,7 +151,6 @@ async def wait_for_value_if(observerable: Observable[T], predicate: Callable[[T]
             if predicate(v):
                 future.set_result(True)
         except Exception as e:
-            _logger.exception('predicate')
             future.set_exception(e)
 
     subscription = await observerable.subscribe(f)
