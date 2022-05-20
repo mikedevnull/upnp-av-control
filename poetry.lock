@@ -96,7 +96,7 @@ typing-extensions = {version = ">=3.6.5", markers = "python_version < \"3.8\""}
 
 [[package]]
 name = "async-upnp-client"
-version = "0.29.0"
+version = "0.30.0"
 description = "Async UPnP Client"
 category = "main"
 optional = false
@@ -700,7 +700,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.7,<4.0"
-content-hash = "8f0938ea3a6e2c83841796afccad3fae6a1271975d9e91cda0a5b6fe18bf07c9"
+content-hash = "3e7fefc1e17c3c522e4de0538ac0d6f76618fdfe4daf703edaf8e79e698e3ffb"
 
 [metadata.files]
 aiofiles = [
@@ -801,7 +801,7 @@ async-timeout = [
     {file = "async_timeout-4.0.2-py3-none-any.whl", hash = "sha256:8ca1e4fcf50d07413d66d1a5e416e42cfdf5851c981d679a09851a6853383b3c"},
 ]
 async-upnp-client = [
-    {file = "async_upnp_client-0.29.0.tar.gz", hash = "sha256:54ac8a7ce4b15eb3ae3c3f4c5b42a964c58414a187f280c19f67b4cc01771908"},
+    {file = "async_upnp_client-0.30.0.tar.gz", hash = "sha256:396b234ae774943f1dcf01138276b53be147ec1a856060531bec7a2f6d667438"},
 ]
 asynctest = [
     {file = "asynctest-0.13.0-py3-none-any.whl", hash = "sha256:5da6118a7e6d6b54d83a8f7197769d046922a44d2a99c21382f0a6e4fadae676"},
