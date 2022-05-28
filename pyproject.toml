@@ -19,7 +19,7 @@ include = ['upnpavcontrol/web/static/**/*']
 
 [tool.poetry.dependencies]
 python = ">=3.7,<4.0"
-async-upnp-client = "^0.30.0"
+async-upnp-client = "^0.31.0"
 fastapi = "^0.78.0"
 websockets = "^10.2"
 defusedxml = "^0.7.1"
