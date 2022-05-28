@@ -125,6 +125,15 @@ describe("upnp web api", () => {
       expect(queue.items).toContainEqual(item1);
       expect(queue.items).toContainEqual(item2);
     });
+
+    it("posts item index to change current playback item", async () => {
+      await api.setCurrentPlaybackItem("somePlayerId", 2);
+      expect(fetchMock).toHaveBeenCalledWith("/api/player/somePlayerId/queue", {
+        method: "PUT",
+        body: JSON.stringify({ current_item_index: 2 }),
+        headers: { "Content-Type": "application/json" },
+      });
+    });
   });
 
   describe("playback state control", () => {

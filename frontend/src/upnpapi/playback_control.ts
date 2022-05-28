@@ -46,7 +46,7 @@ export default class PlaybackControl extends EventEmitter<PlaybackControlEvent> 
   }
 
   async playItemsImmediatly(itemIds: string[]) {
-    if (this._selectedPlayerId === undefined) {
+    if (!this.isPlayerPresent || this._selectedPlayerId === undefined) {
       return;
     }
     await api.stop(this._selectedPlayerId);
@@ -60,7 +60,7 @@ export default class PlaybackControl extends EventEmitter<PlaybackControlEvent> 
   }
 
   async playPause() {
-    if (this._selectedPlayerId === undefined) {
+    if (!this.isPlayerPresent || this._selectedPlayerId === undefined) {
       return;
     }
     if (this._playbackInfo.transport === "PLAYING") {
@@ -75,7 +75,7 @@ export default class PlaybackControl extends EventEmitter<PlaybackControlEvent> 
   }
 
   setVolume(volume: number) {
-    if (this._selectedPlayerId === undefined) {
+    if (!this.isPlayerPresent || this._selectedPlayerId === undefined) {
       return;
     }
     if (this._playbackInfo.volumePercent != volume) {

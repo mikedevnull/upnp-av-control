@@ -1,44 +1,12 @@
 import { api } from ".";
 
 import PlaybackControl from "./playback_control";
-import { MapLike } from "typescript";
 import MockedEventBus from "./__mocks__/event_bus";
 
 jest.mock("./api");
 
 const mockedGetDevice = api.getDevices as jest.Mock;
 const mockedPlaybackInfo = api.getPlaybackInfo as jest.Mock;
-class LocalStorageMock {
-  private store: MapLike<string>;
-  constructor() {
-    this.store = {};
-  }
-  clear() {
-    this.store = {};
-  }
-
-  getItem(key: string) {
-    return this.store[key] || null;
-  }
-
-  setItem(key: string, value: string) {
-    this.store[key] = value;
-  }
-
-  removeItem(key: string) {
-    delete this.store[key];
-  }
-
-  get length() {
-    return this.store.keys.length;
-  }
-
-  key(n: number) {
-    return this.store.keys[n];
-  }
-}
-
-global.localStorage = new LocalStorageMock();
 
 const devices = [
   { id: "1234", name: "foo" },
@@ -288,6 +256,77 @@ describe("PlaybackControl", () => {
         expect(control.playbackInfo).toEqual(newInfo);
         expect(control.playbackInfo).not.toEqual(oldInfo);
       });
+    });
+  });
+
+  describe("playback controls if player present", () => {
+    let control: PlaybackControl;
+    const fakePlayerId = "1234";
+    beforeEach(() => {
+      control = new PlaybackControl(eventBus);
+      eventBus.triggerStateChange("connected");
+      control.selectedPlayerId = fakePlayerId;
+    });
+
+    it("stops playback and starts playing new queue items", async () => {
+      await control.playItemsImmediatly(["a", "b", "c"]);
+      expect(api.stop).toHaveBeenCalledWith(fakePlayerId);
+      expect(api.setPlaybackQueue).toHaveBeenCalledWith(fakePlayerId, [
+        "a",
+        "b",
+        "c",
+      ]);
+      expect(api.play).toHaveBeenCalledWith(fakePlayerId);
+    });
+
+    it("changes the volume", async () => {
+      control.setVolume(23);
+      expect(api.setVolume).toHaveBeenCalledWith(fakePlayerId, 23);
+    });
+
+    it("toggles play/pause", async () => {
+      control.playbackInfo.transport = "STOPPED";
+      expect(control.playbackInfo.transport).toBe("STOPPED");
+
+      await control.playPause();
+      expect(api.play).toHaveBeenCalledWith(fakePlayerId);
+      expect(control.playbackInfo.transport).toBe("PLAYING");
+
+      await control.playPause();
+      expect(api.stop).toHaveBeenCalledWith(fakePlayerId);
+      expect(control.playbackInfo.transport).toBe("STOPPED");
+    });
+  });
+
+  describe("playback controls without player present", () => {
+    let control: PlaybackControl;
+    const fakePlayerId = "is-not-present";
+    beforeEach(() => {
+      control = new PlaybackControl(eventBus);
+      eventBus.triggerStateChange("connected");
+      control.selectedPlayerId = fakePlayerId;
+    });
+
+    it("stops playback and starts playing new queue items", async () => {
+      await control.playItemsImmediatly(["a", "b", "c"]);
+      expect(api.stop).not.toHaveBeenCalled();
+      expect(api.setPlaybackQueue).not.toHaveBeenCalled();
+
+      expect(api.play).not.toHaveBeenCalled();
+    });
+
+    it("changes the volume", async () => {
+      control.setVolume(23);
+      expect(api.setVolume).not.toHaveBeenCalled();
+    });
+
+    it("toggles play/pause", async () => {
+      control.playbackInfo.transport = "STOPPED";
+      expect(control.playbackInfo.transport).toBe("STOPPED");
+
+      await control.playPause();
+      expect(api.play).not.toHaveBeenCalled();
+      expect(api.stop).not.toHaveBeenCalled();
     });
   });
 });

@@ -49,7 +49,8 @@ class PlaybackQueue(BaseModel):
 
 
 class PlaybackQueueIn(BaseModel):
-    items: typing.List[PlaybackQueueItem]
+    items: typing.Optional[typing.List[PlaybackQueueItem]]
+    current_item_index: typing.Optional[int]
 
 
 class LibraryItemType(Enum):

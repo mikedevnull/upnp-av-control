@@ -133,7 +133,7 @@ export default class JsonRPCClient {
       this._pending.delete(payload.id);
       handle.reject(payload.error);
     } else {
-      this.onerror("Unexpected jsonrpc response");
+      this.onerror("Unexpected jsonrpc error");
     }
   }
 

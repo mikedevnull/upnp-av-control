@@ -11,7 +11,10 @@ async def test_basic_usage():
     callback2 = AsyncMock()
     observable = oberserver.Observable[int]()
     subscription1 = await observable.subscribe(callback1)
+    assert subscription1.is_active
     subscription2 = await observable.subscribe(callback2)
+    assert subscription2.is_active
+
     await observable.notify(42)
     callback1.assert_called_once_with(42)
     callback2.assert_called_once_with(42)
@@ -20,6 +23,8 @@ async def test_basic_usage():
     callback2.reset_mock()
 
     await subscription1.unsubscribe()
+    assert not subscription1.is_active
+    assert subscription2.is_active
     await observable.notify(21)
     callback1.assert_not_called()
     callback2.assert_called_once_with(21)
@@ -121,6 +126,16 @@ async def test_no_replay_on_subscription_without_initial_value():
 
     await observable.notify(None)
     callback.assert_called_once_with(None)
+
+
+@pytest.mark.asyncio
+async def test_unsubscribe_is_noop_for_unbound_subscription_handles():
+    subscription = oberserver.Subscription()
+    assert not subscription.is_active
+
+    await subscription.unsubscribe()
+
+    assert not subscription.is_active
 
 
 @pytest.mark.asyncio

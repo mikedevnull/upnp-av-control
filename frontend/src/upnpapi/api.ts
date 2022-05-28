@@ -9,6 +9,13 @@ export async function getDevices() {
   );
 }
 
+export function getPlaybackQueue(playerid: string) {
+  const url = `/api/player/${playerid}/queue`;
+  return fetch(url)
+    .then((response: any) => response.json())
+    .then((data: any) => adaptTo<PlaybackQueue>(data));
+}
+
 export async function setPlaybackQueue(playerId: string, itemids: string[]) {
   const queueurl = `/api/player/${playerId}/queue`;
   await fetch(queueurl, {
@@ -30,6 +37,20 @@ export async function clearQueue(playerId: string) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ items: [] }),
+  });
+}
+
+export async function setCurrentPlaybackItem(
+  playerid: string,
+  itemIndex: number
+) {
+  const url = `/api/player/${playerid}/queue`;
+  await fetch(url, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ current_item_index: itemIndex }),
   });
 }
 
@@ -91,11 +112,4 @@ export function getItem(id: string) {
   return fetch(url)
     .then((response: any) => response.json())
     .then((data: any) => adaptTo<LibraryListItem>(data));
-}
-
-export function getPlaybackQueue(playerid: string) {
-  const url = `/api/player/${playerid}/queue`;
-  return fetch(url)
-    .then((response: any) => response.json())
-    .then((data: any) => adaptTo<PlaybackQueue>(data));
 }

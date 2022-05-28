@@ -51,6 +51,26 @@ Feature: Playback
       | 0/5/6   | FooMediaServer |
     And the playback queue current item index of AcmeRenderer is not defined
 
+  Scenario: Replace contents of playback queue with new item index
+    Given a device AcmeRenderer already present on the network
+    And a device FooMediaServer already present on the network
+    And a client subscribed to playback notifications from AcmeRenderer
+    And the playback queue of AcmeRenderer already contains the following items:
+      | item id | dms            |
+      | 0/2/2   | FooMediaServer |
+      | 0/1/1   | FooMediaServer |
+    When the client replaces the content of the queue of AcmeRenderer with the following items and current item index 2:
+      | item id | dms            |
+      | 0/3/4   | FooMediaServer |
+      | 0/7/8   | FooMediaServer |
+      | 0/5/6   | FooMediaServer |
+    Then the playback queue of AcmeRenderer contains the following items:
+      | item id | dms            |
+      | 0/3/4   | FooMediaServer |
+      | 0/7/8   | FooMediaServer |
+      | 0/5/6   | FooMediaServer |
+    And the playback queue current item index of AcmeRenderer is 2
+
   Scenario: Automatic playback of next item in queue
     Given a device AcmeRenderer already present on the network
     And a device FooMediaServer already present on the network
@@ -106,4 +126,39 @@ Feature: Playback
       | 0/2/2   | FooMediaServer |
       | 0/1/1   | FooMediaServer |
     And the playback queue of AcmeRenderer is empty
+
+
+  Scenario: Change current playback item
+    Given a device AcmeRenderer already present on the network
+    And a device FooMediaServer already present on the network
+    And a client subscribed to playback notifications from AcmeRenderer
+    And the playback queue of AcmeRenderer already contains the following items:
+      | item id | dms            |
+      | 0/7/8   | FooMediaServer |
+      | 0/5/6   | FooMediaServer |
+    When the client starts playback on AcmeRenderer
+    And the client read all pending notifications
+    And the client sets the current queue item index of AcmeRenderer to 1
+    Then the device AcmeRenderer is playing item 0/5/6 from FooMediaServer
+    And the playback queue current item index of AcmeRenderer is 1
+
+  Scenario: Stop playback with API
+    Given a device AcmeRenderer already present on the network
+    And a device FooMediaServer already present on the network
+    And a client subscribed to playback notifications from AcmeRenderer
+    And the playback queue of AcmeRenderer already contains the following items:
+      | item id | dms            |
+      | 0/7/8   | FooMediaServer |
+      | 0/5/6   | FooMediaServer |
+    And the state of AcmeRenderer is PLAYING
+    And the client read all pending notifications
+    When the client stops playback on AcmeRenderer
+    Then the client will be notified that AcmeRenderer is now in STOPPED state
+    And the playback state reported by the API of AcmeRenderer is STOPPED
+    And the playback queue of AcmeRenderer contains the following items:
+      | item id | dms            |
+      | 0/7/8   | FooMediaServer |
+      | 0/5/6   | FooMediaServer |
+    And the playback queue current item index of AcmeRenderer is 0
+
 

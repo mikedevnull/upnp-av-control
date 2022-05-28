@@ -210,3 +210,71 @@ async def test_playing_device_stops_after_last_item(queue_with_items):
 
     assert not controller.is_playing
     assert player.state_subscription_count == 0
+
+
+@pytest.mark.asyncio
+async def test_playing_device_set_item_index_plays_new_item(queue_with_items):
+    queue_with_items._current_item_index = 0
+    player = FakePlayerInterface()
+    controller = PlaybackController(queue_with_items)
+    await controller.setup_player(player)
+
+    await controller.play()
+    assert controller.is_playing
+
+    await controller.set_current_item(1)
+
+    player.stop.assert_called_once()
+    player.play.assert_called_with(queue_with_items.items[1])
+
+    assert controller.is_playing
+    assert player.state_subscription_count == 1
+
+
+@pytest.mark.asyncio
+async def test_playing_device_set_already_selected_itemindex_does_nothing(queue_with_items):
+    queue_with_items._current_item_index = 0
+    player = FakePlayerInterface()
+    controller = PlaybackController(queue_with_items)
+    await controller.setup_player(player)
+
+    await controller.play()
+    assert controller.is_playing
+    player.play.reset_mock()
+
+    await controller.set_current_item(0)
+
+    player.stop.assert_not_called()
+    player.play.assert_not_called()
+
+    assert controller.is_playing
+    assert player.state_subscription_count == 1
+
+
+@pytest.mark.asyncio
+async def test_playing_device_set_out_of_bound_itemindex_raises_exception(queue_with_items):
+    queue_with_items._current_item_index = 0
+    player = FakePlayerInterface()
+    controller = PlaybackController(queue_with_items)
+    await controller.setup_player(player)
+
+    await controller.play()
+    assert controller.is_playing
+
+    with pytest.raises(ValueError):
+        await controller.set_current_item(2)
+
+
+@pytest.mark.asyncio
+async def test_stopped_device_set_item_index_new_item_selected_without_playing(queue_with_items):
+    queue_with_items._current_item_index = 0
+    player = FakePlayerInterface()
+    controller = PlaybackController(queue_with_items)
+    await controller.setup_player(player)
+    await controller.set_current_item(1)
+
+    player.stop.assert_not_called()
+    player.play.assert_not_called()
+
+    assert not controller.is_playing
+    assert player.state_subscription_count == 0

@@ -33,6 +33,19 @@ async def clear_playback_queue(test_context):
     pc.queue.clear()
 
 
+@given(parsers.cfparse('the state of AcmeRenderer is {state}'))
+@sync
+async def set_playback_state(test_context, state: str):
+    assert state in ['PLAYING', 'STOPPED']
+    dmr_device = test_context.get_device('AcmeRenderer')
+    dmr_udn = dmr_device.udn
+    pc = test_context.control_point.get_controller_for_renderer(dmr_udn)
+    if state == 'PLAYING':
+        await pc.play()
+    else:
+        await pc.stop()
+
+
 @given(parsers.cfparse('the playback queue of AcmeRenderer already contains the following items:\n{table}'))
 @sync
 async def preset_playback_queue(test_context, table):
@@ -78,19 +91,40 @@ async def set_queue_on_dmr(test_context, table, webclient):
         items.append({"id": item_id})
     payload = {'items': items}
     uri = f"/api/player/{dmr_udn}/queue"
-    response = await webclient.put(uri, json=payload)
-    assert response.status_code == 200
+    await webclient.put(uri, json=payload)
 
 
-@when('the client starts playback on AcmeRenderer')
+@when(
+    parsers.cfparse(
+        'the client replaces the content of the queue of AcmeRenderer with the following items and current item index {queueIndex}:\n{table}'  # noqa: E501
+    ))
 @sync
-async def client_starts_playback(test_context, webclient):
+async def set_queue_on_dmr_with_index(test_context, table, queueIndex, webclient):
+    data = parse_data_table(table)
+    dmr_udn = '13bf6358-00b8-101b-8000-74dfbfed7306'
+    items = []
+    for entry in data:
+        dms_udn = test_context.get_device(entry['dms']).udn
+        object_id = entry['item id']
+        item_id = create_library_item_id(dms_udn, object_id)
+        items.append({"id": item_id})
+    payload = {'items': items, 'current_item_index': queueIndex}
+    uri = f"/api/player/{dmr_udn}/queue"
+    await webclient.put(uri, json=payload)
+
+
+@when(parsers.cfparse('the client {action} playback on AcmeRenderer'))
+@sync
+async def client_starts_playback(test_context, webclient, action: str):
+    assert action in ['stops', 'starts']
     dmr_device = test_context.get_device('AcmeRenderer')
     dmr_udn = dmr_device.udn
-    payload = {'transport': 'PLAYING'}
+    if action == 'starts':
+        payload = {'transport': 'PLAYING'}
+    else:
+        payload = {'transport': 'STOPPED'}
     uri = f"/api/player/{dmr_udn}/playback"
-    response = await webclient.patch(uri, json=payload)
-    assert response.status_code == 200
+    await webclient.patch(uri, json=payload)
 
 
 @when(parsers.cfparse('the client will be notified that {dmr} is now {state}'))
@@ -100,6 +134,7 @@ async def when_check_playback_state_notification(test_context, dmr, event_bus_co
 
 
 @when('the client read all pending notifications')
+@given('the client read all pending notifications')
 @sync
 async def client_clear_all_event_bus_notifications(event_bus_connection):
     await event_bus_connection.clear_pending_notifications()
@@ -111,6 +146,17 @@ async def renderer_finishes_current_track(test_context):
     dmr_device = test_context.get_device('AcmeRenderer')
     avt_service = dmr_device.service('urn:schemas-upnp-org:service:AVTransport:1')
     await avt_service._ext_set_transport_state('STOPPED')
+
+
+@when(parsers.cfparse('the client sets the current queue item index of {dmr} to {queueIndex}'))
+@sync
+async def change_current_palyback_item(test_context, webclient, dmr: str, queueIndex: int):
+    dmr_device = test_context.get_device('AcmeRenderer')
+    dmr_udn = dmr_device.udn
+    payload = {'current_item_index': queueIndex}
+    uri = f"/api/player/{dmr_udn}/queue"
+    response = await webclient.post(uri, json=payload)
+    assert response.status_code == 201
 
 
 @then(parsers.cfparse('the client will be notified that {dmr} is now in {state} state'))

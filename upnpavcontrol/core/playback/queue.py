@@ -33,6 +33,12 @@ class PlaybackQueue():
     def current_item_index(self):
         return self._current_item_index
 
+    @current_item_index.setter
+    def current_item_index(self, value):
+        if value < 0 or value >= len(self._items):
+            raise ValueError('Item index out of bounds')
+        self._current_item_index = value
+
     def append(self, dms, object_id, title):
         self._items.append(PlaybackItem(dms=dms, object_id=object_id, title=title))
 
