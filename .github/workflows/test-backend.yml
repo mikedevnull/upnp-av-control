@@ -27,7 +27,7 @@ jobs:
               - 'pyproject.toml'
               - 'poetry.log'
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v4
         if: steps.filter.outputs.backend == 'true'
         with:
           python-version: ${{ matrix.python-version }}
