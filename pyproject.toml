@@ -18,7 +18,7 @@ packages = [
 include = ['upnpavcontrol/web/static/**/*']
 
 [tool.poetry.dependencies]
-python = ">=3.7,<4.0"
+python = ">=3.7,<3.11"
 async-upnp-client = "^0.31.0"
 fastapi = "^0.79.0"
 websockets = "^10.2"
@@ -29,6 +29,7 @@ itsdangerous = "^2.1.1"
 PyYAML = "^6.0"
 aiofiles = {version = "^0.8.0", python = ">=3.7"}
 typing-extensions = {version = "^4.1.1", python = "3.7"}
+reactivex = "^4.0.3"
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.1.0"
