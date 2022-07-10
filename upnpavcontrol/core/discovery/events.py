@@ -1,6 +1,11 @@
 from enum import Enum
 from dataclasses import dataclass
 import typing
+from .utils import is_media_device
+from async_upnp_client.ssdp_listener import SsdpListener, SsdpDevice, SsdpSource
+import reactivex as rx
+import reactivex.operators as ops
+import asyncio
 
 
 class DiscoveryEventType(Enum):
@@ -36,3 +41,52 @@ class SSDPEvent:
     device_type: str
     udn: str
     location: typing.Optional[str] = None
+
+
+@dataclass(frozen=True)
+class _SsdpRawEvent(object):
+    device: SsdpDevice
+    device_or_service_type: str
+    source: SsdpSource
+
+
+def to_discovery_event(raw_event: _SsdpRawEvent) -> SSDPEvent:
+    _type_mapping = {
+        SsdpSource.SEARCH_CHANGED: DiscoveryEventType.NEW_DEVICE,
+        SsdpSource.ADVERTISEMENT_ALIVE: DiscoveryEventType.NEW_DEVICE,
+        SsdpSource.ADVERTISEMENT_BYEBYE: DiscoveryEventType.DEVICE_LOST,
+    }
+    return SSDPEvent(event_type=_type_mapping[raw_event.source],
+                     device_type=raw_event.device_or_service_type,
+                     udn=raw_event.device.udn,
+                     location=raw_event.device.location)
+
+
+def create_discovery_event_observable(loop: typing.Optional[asyncio.AbstractEventLoop] = None, listenerFactory=None):
+
+    def _on_subscribe(observer: rx.Observer, scheduler):
+
+        async def on_listener_callback(device: SsdpDevice, dtype, source: SsdpSource):
+            observer.on_next(_SsdpRawEvent(device, dtype, source))
+
+        activeloop = loop or asyncio.get_running_loop()
+
+        create_listener = listenerFactory or SsdpListener
+        listener = create_listener(on_listener_callback, loop=activeloop)
+
+        async def startup():
+            await listener.async_start()
+            await listener.async_search()
+
+        async def shutdown():
+            await listener.async_stop()
+
+        task = activeloop.create_task(startup())
+        task_cancel = rx.disposable.Disposable(task.cancel)
+        listener_stop = rx.disposable.Disposable(lambda: activeloop.create_task(listener.async_stop()))
+        return rx.disposable.CompositeDisposable(task_cancel, listener_stop)
+
+    return rx.create(_on_subscribe).pipe(
+        ops.filter(lambda e: e.source in
+                   (SsdpSource.ADVERTISEMENT_ALIVE, SsdpSource.ADVERTISEMENT_BYEBYE, SsdpSource.SEARCH_CHANGED)),
+        ops.filter(lambda e: is_media_device(e.device_or_service_type)), ops.map(to_discovery_event))
