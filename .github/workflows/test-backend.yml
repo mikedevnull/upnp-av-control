@@ -25,7 +25,7 @@ jobs:
               - 'tests/**'
               - 'setup.cfg'
               - 'pyproject.toml'
-              - 'poetry.log'
+              - 'poetry.lock'
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         if: steps.filter.outputs.backend == 'true'
