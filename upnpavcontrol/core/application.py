@@ -53,8 +53,7 @@ class AVControlPoint(object):
 
         self._active_renderer = None
         if notifcation_backend is None:
-            self._notify_receiver = NotificationBackend(AiohttpNotificationEndpoint(public_ip="127.0.0.1"),
-                                                        AiohttpRequester())
+            self._notify_receiver = NotificationBackend(AiohttpNotificationEndpoint(), AiohttpRequester())
         else:
             self._notify_receiver = notifcation_backend
 
