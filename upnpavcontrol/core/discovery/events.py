@@ -1,7 +1,7 @@
 from enum import Enum
 from dataclasses import dataclass
 import typing
-from .utils import is_media_device
+from .utils import is_media_device, is_media_renderer, is_media_server
 from async_upnp_client.ssdp_listener import SsdpListener, SsdpDevice, SsdpSource
 import reactivex as rx
 import reactivex.operators as ops
@@ -41,6 +41,22 @@ class DiscoveryEvent:
     device_type: str
     udn: str
     location: typing.Optional[str] = None
+
+
+def filter_mediarenderer_events():
+    return rx.operators.filter(lambda e: is_media_renderer(e.device_type))
+
+
+def filter_mediaserver_events():
+    return rx.operators.filter(lambda e: is_media_server(e.device_type))
+
+
+def filter_new_device_events():
+    return rx.operators.filter(lambda e: e.event_type == DiscoveryEventType.NEW_DEVICE)
+
+
+def filter_lost_device_events():
+    return rx.operators.filter(lambda e: e.event_type == DiscoveryEventType.DEVICE_LOST)
 
 
 @dataclass(frozen=True)

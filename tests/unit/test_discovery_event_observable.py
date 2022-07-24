@@ -3,6 +3,8 @@ import pytest_asyncio
 from unittest import mock
 from async_upnp_client.ssdp_listener import SsdpListener, SsdpDevice, SsdpSource
 from upnpavcontrol.core.discovery.events import DiscoveryEvent, DiscoveryEventType, create_discovery_event_observable
+from upnpavcontrol.core.discovery.events import filter_lost_device_events, filter_new_device_events
+from upnpavcontrol.core.discovery.events import filter_mediarenderer_events, filter_mediaserver_events
 import reactivex as rx
 import asyncio
 import datetime
@@ -75,7 +77,7 @@ async def test_maps_event_types(subscribed_observable: SubscribedObservableConte
     await asyncio.sleep(0)
 
     subscribed_observable.observer_mock.on_next.assert_called_once_with(
-        SSDPEvent(mapped_event_type, 'urn:schemas-upnp-org:device:MediaServer:1', fakedevice.udn))
+        DiscoveryEvent(mapped_event_type, 'urn:schemas-upnp-org:device:MediaServer:1', fakedevice.udn))
 
 
 @pytest.mark.parametrize("source_event_type", [SsdpSource.ADVERTISEMENT_UPDATE, SsdpSource.SEARCH_ALIVE])
@@ -114,3 +116,84 @@ async def test_filters_media_devices(subscribed_observable: SubscribedObservable
         subscribed_observable.observer_mock.on_next.assert_called_once()
     else:
         subscribed_observable.observer_mock.on_next.assert_not_called()
+
+
+@pytest.fixture
+def events_to_be_filtered():
+    return rx.of(
+        DiscoveryEvent(event_type=DiscoveryEventType.NEW_DEVICE,
+                       device_type='urn:schemas-upnp-org:device:MediaServer:1',
+                       udn='1'),
+        DiscoveryEvent(event_type=DiscoveryEventType.NEW_DEVICE,
+                       device_type='urn:schemas-upnp-org:device:MediaRenderer:1',
+                       udn='2'),
+        DiscoveryEvent(event_type=DiscoveryEventType.DEVICE_LOST,
+                       device_type='urn:schemas-upnp-org:device:MediaServer:1',
+                       udn='3'),
+        DiscoveryEvent(event_type=DiscoveryEventType.DEVICE_LOST,
+                       device_type='urn:schemas-upnp-org:device:MediaRenderer:1',
+                       udn='4'))
+
+
+def test_event_filter_new_devices(events_to_be_filtered):
+    obs = mock.Mock(spec=rx.abc.ObserverBase)
+    events_to_be_filtered.pipe(filter_new_device_events()).subscribe(obs)
+    assert obs.on_next.call_count == 2
+    obs.on_next.assert_has_calls([
+        mock.call(
+            DiscoveryEvent(event_type=DiscoveryEventType.NEW_DEVICE,
+                           device_type='urn:schemas-upnp-org:device:MediaServer:1',
+                           udn='1')),
+        mock.call(
+            DiscoveryEvent(event_type=DiscoveryEventType.NEW_DEVICE,
+                           device_type='urn:schemas-upnp-org:device:MediaRenderer:1',
+                           udn='2'))
+    ])
+
+
+def test_event_filter_lost_devices(events_to_be_filtered):
+    obs = mock.Mock(spec=rx.abc.ObserverBase)
+    events_to_be_filtered.pipe(filter_lost_device_events()).subscribe(obs)
+    assert obs.on_next.call_count == 2
+    obs.on_next.assert_has_calls([
+        mock.call(
+            DiscoveryEvent(event_type=DiscoveryEventType.DEVICE_LOST,
+                           device_type='urn:schemas-upnp-org:device:MediaServer:1',
+                           udn='3')),
+        mock.call(
+            DiscoveryEvent(event_type=DiscoveryEventType.DEVICE_LOST,
+                           device_type='urn:schemas-upnp-org:device:MediaRenderer:1',
+                           udn='4'))
+    ])
+
+
+def test_event_filter_renderer_devices(events_to_be_filtered):
+    obs = mock.Mock(spec=rx.abc.ObserverBase)
+    events_to_be_filtered.pipe(filter_mediarenderer_events()).subscribe(obs)
+    assert obs.on_next.call_count == 2
+    obs.on_next.assert_has_calls([
+        mock.call(
+            DiscoveryEvent(event_type=DiscoveryEventType.NEW_DEVICE,
+                           device_type='urn:schemas-upnp-org:device:MediaRenderer:1',
+                           udn='2')),
+        mock.call(
+            DiscoveryEvent(event_type=DiscoveryEventType.DEVICE_LOST,
+                           device_type='urn:schemas-upnp-org:device:MediaRenderer:1',
+                           udn='4'))
+    ])
+
+
+def test_event_filter_server_devices(events_to_be_filtered):
+    obs = mock.Mock(spec=rx.abc.ObserverBase)
+    events_to_be_filtered.pipe(filter_mediaserver_events()).subscribe(obs)
+    assert obs.on_next.call_count == 2
+    obs.on_next.assert_has_calls([
+        mock.call(
+            DiscoveryEvent(event_type=DiscoveryEventType.NEW_DEVICE,
+                           device_type='urn:schemas-upnp-org:device:MediaServer:1',
+                           udn='1')),
+        mock.call(
+            DiscoveryEvent(event_type=DiscoveryEventType.DEVICE_LOST,
+                           device_type='urn:schemas-upnp-org:device:MediaServer:1',
+                           udn='3')),
+    ])
