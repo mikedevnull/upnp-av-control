@@ -12,6 +12,7 @@ from typing import Awaitable, Callable, Union, Dict, cast
 from .oberserver import Observable
 from .typing_compat import Protocol
 import logging
+_logger = logging.getLogger(__name__)
 
 MediaDevice = Union[MediaServer, MediaRenderer]
 DiscoveryEventCallback = Callable[[DiscoveryEventType, MediaDevice], Awaitable]
