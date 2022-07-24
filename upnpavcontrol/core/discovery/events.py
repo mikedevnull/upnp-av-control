@@ -6,6 +6,9 @@ from async_upnp_client.ssdp_listener import SsdpListener, SsdpDevice, SsdpSource
 import reactivex as rx
 import reactivex.operators as ops
 import asyncio
+import logging
+
+_logger = logging.getLogger(__name__)
 
 
 class DiscoveryEventType(Enum):
@@ -73,12 +76,13 @@ def to_discovery_event(raw_event: _SsdpRawEvent) -> DiscoveryEvent:
         SsdpSource.ADVERTISEMENT_BYEBYE: DiscoveryEventType.DEVICE_LOST,
     }
     return DiscoveryEvent(event_type=_type_mapping[raw_event.source],
-                     device_type=raw_event.device_or_service_type,
+                          device_type=raw_event.device_or_service_type,
                           udn=raw_event.device.udn.lstrip('uuid:'),
-                     location=raw_event.device.location)
+                          location=raw_event.device.location)
 
 
-def create_discovery_event_observable(loop: typing.Optional[asyncio.AbstractEventLoop] = None, listenerFactory=None):
+def create_discovery_event_observable(loop: typing.Optional[asyncio.AbstractEventLoop] = None,
+                                      listenerFactory=None) -> rx.Observable[DiscoveryEvent]:
 
     def _on_subscribe(observer: rx.Observer, scheduler):
 
@@ -103,6 +107,8 @@ def create_discovery_event_observable(loop: typing.Optional[asyncio.AbstractEven
         return rx.disposable.CompositeDisposable(task_cancel, listener_stop)
 
     return rx.create(_on_subscribe).pipe(
+        ops.do_action(lambda x: _logger.debug(x)),
         ops.filter(lambda e: e.source in
                    (SsdpSource.ADVERTISEMENT_ALIVE, SsdpSource.ADVERTISEMENT_BYEBYE, SsdpSource.SEARCH_CHANGED)),
-        ops.filter(lambda e: is_media_device(e.device_or_service_type)), ops.map(to_discovery_event))
+        ops.filter(lambda e: is_media_device(e.device_or_service_type) or e.source == SsdpSource.ADVERTISEMENT_BYEBYE),
+        ops.map(to_discovery_event))
