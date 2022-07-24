@@ -1,4 +1,4 @@
-from upnpavcontrol.core.discovery import MediaDeviceDiscoveryEvent
+from upnpavcontrol.core.discovery import MediaDeviceDiscoveryEvent, MediaDeviceType
 from .discovery import create_discovery_event_observable, DiscoveryEvent
 from .discovery.events import filter_lost_device_events, filter_mediarenderer_events
 from .discovery.events import filter_mediaserver_events, filter_new_device_events
@@ -100,7 +100,11 @@ class AVControlPoint(object):
         wrapped_device = PlaybackControllableWrapper(renderer, self.get_mediaserver_by_UDN)
         await self._playback_controller[event.udn].setup_player(wrapped_device)
         _logger.info("New renderer %s [%s]", renderer.friendly_name, renderer.udn)
-        await self._notify_discovery(event)
+        forward_event = MediaDeviceDiscoveryEvent(event_type=event.event_type,
+                                                  device_type=MediaDeviceType.MEDIARENDERER,
+                                                  udn=event.udn,
+                                                  friendly_name=renderer.friendly_name)
+        await self._notify_discovery(forward_event)
 
     async def _remove_renderer(self, event: DiscoveryEvent):
         if event.udn not in self._renderers:
@@ -108,11 +112,11 @@ class AVControlPoint(object):
         renderer = self._renderers.pop(event.udn)
         self._playback_controller.pop(event.udn)
         _logger.info("Renderer gone %s [%s]", renderer.friendly_name, renderer.udn)
-        # We might receive a different device type in bye for the renderer with this UDN, i.e. a root device
-        # but only once for each UDN, whichever event arrives first
-        # Fixup type to "renderer" to let other listeners not what's going on
-        event.device_type = 'urn:schemas-upnp-org:device:MediaRenderer:1'
-        await self._notify_discovery(event)
+        forward_event = MediaDeviceDiscoveryEvent(event_type=event.event_type,
+                                                  device_type=MediaDeviceType.MEDIARENDERER,
+                                                  udn=event.udn,
+                                                  friendly_name=renderer.friendly_name)
+        await self._notify_discovery(forward_event)
 
     async def _add_server(self, event: DiscoveryEvent):
         _logger.debug("Loading server description from: %s", event.location)
@@ -120,18 +124,22 @@ class AVControlPoint(object):
         server = MediaServer(raw_device)
         self._servers[event.udn] = MediaServer(raw_device)
         _logger.info("New server %s [%s]", server.friendly_name, server.udn)
-        await self._notify_discovery(event)
+        forward_event = MediaDeviceDiscoveryEvent(event_type=event.event_type,
+                                                  device_type=MediaDeviceType.MEDIASERVER,
+                                                  udn=event.udn,
+                                                  friendly_name=server.friendly_name)
+        await self._notify_discovery(forward_event)
 
-    async def _remove_lost_server(self, event: DiscoveryEvent):
+    async def _remove_server(self, event: DiscoveryEvent):
         if event.udn not in self._servers:
             return
         server = self._servers.pop(event.udn)
         _logger.info("Server gone %s [%s]", server.friendly_name, server.udn)
-        # We might receive a different device type in bye for the renderer with this UDN, i.e. a root device
-        # but only once for each UDN, whichever event arrives first
-        # Fixup type to "renderer" to let other listeners not what's going on
-        event.device_type = 'urn:schemas-upnp-org:device:MediaServer:1'
-        await self._notify_discovery(event)
+        forward_event = MediaDeviceDiscoveryEvent(event_type=event.event_type,
+                                                  device_type=MediaDeviceType.MEDIASERVER,
+                                                  udn=event.udn,
+                                                  friendly_name=server.friendly_name)
+        await self._notify_discovery(forward_event)
 
     def _setup_discovery(self, device_discovery_events: Optional[rx.Observable[DiscoveryEvent]] = None):
         o = device_discovery_events or create_discovery_event_observable()
@@ -148,5 +156,5 @@ class AVControlPoint(object):
         self._device_discovery_events.pipe(filter_lost_device_events()).subscribe(_wrap_async(self._remove_renderer),
                                                                                   scheduler=scheduler)
         self._device_discovery_events.pipe(filter_lost_device_events(),
-                                           filter_mediaserver_events()).subscribe(_wrap_async(self._remove_lost_server),
+                                           filter_mediaserver_events()).subscribe(_wrap_async(self._remove_server),
                                                                                   scheduler=scheduler)
