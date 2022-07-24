@@ -5,7 +5,7 @@ from .scan import scan_devices
 from dataclasses import dataclass
 import asyncio
 import typing
-from .events import SSDPEvent, DiscoveryEventType
+from .events import DiscoveryEvent as SSDPEvent, DiscoveryEventType
 import datetime
 from enum import Enum
 from pydantic import BaseModel
@@ -70,6 +70,7 @@ class DeviceRegistry(object):
     -----
     Currently, only a single event callback can be registered at a given time.
     """
+
     def __init__(self, advertisement_listener: typing.Type[AdvertisementListenerInterface] = None):
         """
         Constructor

@@ -18,7 +18,7 @@ class DiscoveryEventType(Enum):
 
 
 @dataclass(frozen=True)
-class SSDPEvent:
+class DiscoveryEvent:
     """
     Provides all required information to handle discovery
     events in a uniform way.
@@ -50,13 +50,13 @@ class _SsdpRawEvent(object):
     source: SsdpSource
 
 
-def to_discovery_event(raw_event: _SsdpRawEvent) -> SSDPEvent:
+def to_discovery_event(raw_event: _SsdpRawEvent) -> DiscoveryEvent:
     _type_mapping = {
         SsdpSource.SEARCH_CHANGED: DiscoveryEventType.NEW_DEVICE,
         SsdpSource.ADVERTISEMENT_ALIVE: DiscoveryEventType.NEW_DEVICE,
         SsdpSource.ADVERTISEMENT_BYEBYE: DiscoveryEventType.DEVICE_LOST,
     }
-    return SSDPEvent(event_type=_type_mapping[raw_event.source],
+    return DiscoveryEvent(event_type=_type_mapping[raw_event.source],
                      device_type=raw_event.device_or_service_type,
                      udn=raw_event.device.udn,
                      location=raw_event.device.location)
