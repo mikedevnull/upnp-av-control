@@ -74,7 +74,7 @@ def to_discovery_event(raw_event: _SsdpRawEvent) -> DiscoveryEvent:
     }
     return DiscoveryEvent(event_type=_type_mapping[raw_event.source],
                      device_type=raw_event.device_or_service_type,
-                     udn=raw_event.device.udn,
+                          udn=raw_event.device.udn.lstrip('uuid:'),
                      location=raw_event.device.location)
 
 
