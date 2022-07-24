@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from upnpavcontrol.core.discovery.events import SSDPEvent, DiscoveryEventType
+from upnpavcontrol.core.discovery.events import DiscoveryEvent as SSDPEvent, DiscoveryEventType
 import pytest
 from upnpavcontrol.core.discovery.advertisement import _DeviceAdvertisementHandler
 import upnpavcontrol.core.discovery.scan

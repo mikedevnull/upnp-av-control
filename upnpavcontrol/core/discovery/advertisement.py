@@ -1,6 +1,6 @@
 import asyncio
 from .utils import is_media_device, udn_from_usn
-from .events import SSDPEvent, DiscoveryEventType
+from .events import DiscoveryEvent as SSDPEvent, DiscoveryEventType
 from abc import ABC, abstractmethod
 import typing
 from async_upnp_client.advertisement import SsdpAdvertisementListener
@@ -13,6 +13,7 @@ class AdvertisementListenerInterface(ABC):
     Implementations must receive and parse SSDP notifications for Mediarenderers and
     Mediaservers, convert them to discoverey events and push them to the given event queue.
     """
+
     @abstractmethod
     def __init__(self, event_queue: asyncio.Queue):
         """
@@ -36,6 +37,7 @@ class AdvertisementListenerInterface(ABC):
 
 
 class AdvertisementListener(AdvertisementListenerInterface):
+
     def __init__(self, event_queue: asyncio.Queue):
         self._handler = _DeviceAdvertisementHandler(event_queue)
         self._listener = SsdpAdvertisementListener(on_alive=self._handler.on_alive,
@@ -57,6 +59,7 @@ class _DeviceAdvertisementHandler(object):
     These discovery events are put into a queue so they can be processed
     by a consumer.
     """
+
     def __init__(self, event_queue: asyncio.Queue):
         """
         Constructor

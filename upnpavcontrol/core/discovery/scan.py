@@ -1,5 +1,5 @@
 from .utils import udn_from_usn
-from .events import SSDPEvent, DiscoveryEventType
+from .events import DiscoveryEvent as SSDPEvent, DiscoveryEventType
 from async_upnp_client.search import async_search
 import asyncio
 import logging
@@ -24,6 +24,7 @@ async def scan_devices(event_queue: asyncio.Queue, device_type: str, timeout: in
     timeout : int
         Time in seconds that will be waited for av devices to respond
     """
+
     async def handle_discovery(description):
         description_url = description['Location']
         device_type = description['ST']

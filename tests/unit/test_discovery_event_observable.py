@@ -2,7 +2,7 @@ import pytest
 import pytest_asyncio
 from unittest import mock
 from async_upnp_client.ssdp_listener import SsdpListener, SsdpDevice, SsdpSource
-from upnpavcontrol.core.discovery.events import SSDPEvent, DiscoveryEventType, create_discovery_event_observable
+from upnpavcontrol.core.discovery.events import DiscoveryEvent, DiscoveryEventType, create_discovery_event_observable
 import reactivex as rx
 import asyncio
 import datetime

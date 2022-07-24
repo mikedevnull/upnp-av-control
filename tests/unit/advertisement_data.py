@@ -1,4 +1,4 @@
-from upnpavcontrol.core.discovery.events import SSDPEvent
+from upnpavcontrol.core.discovery.events import DiscoveryEvent as SSDPEvent
 from upnpavcontrol.core.discovery import DiscoveryEventType, DeviceEntry, MediaDeviceType
 
 renderer_entry = DeviceEntry(device_type=MediaDeviceType.MEDIARENDERER,
