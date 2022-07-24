@@ -1,6 +1,7 @@
 from upnpavcontrol.core.discovery import MediaDeviceDiscoveryEvent
-from upnpavcontrol.core.discovery.registry import MediaDeviceType
-from .discovery import DeviceRegistry, DeviceEntry, DiscoveryEventType
+from .discovery import create_discovery_event_observable, DiscoveryEvent
+from .discovery.events import filter_lost_device_events, filter_mediarenderer_events
+from .discovery.events import filter_mediaserver_events, filter_new_device_events
 from .mediarenderer import create_media_renderer, MediaRenderer
 from .mediaserver import MediaServer
 from .playback.controller import PlaybackController
@@ -8,16 +9,24 @@ from .playback.utils import PlaybackControllableWrapper
 from .notification_backend import NotificationBackend, AiohttpNotificationEndpoint
 from async_upnp_client.aiohttp import AiohttpRequester
 from async_upnp_client.client_factory import UpnpFactory, UpnpDevice
-from typing import Awaitable, Callable, Union, Dict, cast
+from typing import Awaitable, Callable, Union, Dict, Optional
 from .oberserver import Observable
 from .typing_compat import Protocol
 import logging
+import reactivex as rx
+import asyncio
+
 _logger = logging.getLogger(__name__)
 
 MediaDevice = Union[MediaServer, MediaRenderer]
-DiscoveryEventCallback = Callable[[DiscoveryEventType, MediaDevice], Awaitable]
 
-_logger = logging.getLogger(__name__)
+
+def _wrap_async(c):
+
+    def f(*args, **kwargs):
+        return asyncio.get_running_loop().create_task(c(*args, **kwargs))
+
+    return f
 
 
 class UpnpDeviceFactory(Protocol):
@@ -29,7 +38,7 @@ class UpnpDeviceFactory(Protocol):
 class AVControlPoint(object):
 
     def __init__(self,
-                 device_registry: DeviceRegistry = None,
+                 device_discovery_events: Optional[rx.Observable] = None,
                  notifcation_backend=None,
                  device_factory: UpnpDeviceFactory = None):
         self._device_discover_observer = Observable[MediaDeviceDiscoveryEvent]()
@@ -39,15 +48,13 @@ class AVControlPoint(object):
         if device_factory is None:
             self._upnp_device_factory = UpnpFactory(AiohttpRequester())
         else:
-            self._upnp_device_factory = device_factory
-        if device_registry is None:
-            self._device_registry = DeviceRegistry()
-        else:
-            self._device_registry = device_registry
-        self._device_registry.set_event_callback(self._handle_discovery_event)
+            self._upnp_device_factory = device_factory or UpnpFactory(AiohttpRequester())
+        self._setup_discovery(device_discovery_events)
+
         self._active_renderer = None
         if notifcation_backend is None:
-            self._notify_receiver = NotificationBackend(AiohttpNotificationEndpoint(), AiohttpRequester())
+            self._notify_receiver = NotificationBackend(AiohttpNotificationEndpoint(public_ip="127.0.0.1"),
+                                                        AiohttpRequester())
         else:
             self._notify_receiver = notifcation_backend
 
@@ -72,56 +79,74 @@ class AVControlPoint(object):
         return self._device_discover_observer.subscribe(callback)
 
     async def async_start(self):
-        await self._device_registry.async_start()
+        _logger.debug("Start Control Point core")
+        self._discovery_subscription = self._device_discovery_events.connect()
         await self._notify_receiver.async_start()
 
     async def async_stop(self):
-        await self._device_registry.async_stop()
+        self._discovery_subscription.dispose()
+        self._discovery_subscription = None
         await self._notify_receiver.async_stop()
-
-    async def _handle_discovery_event(self, event_type: DiscoveryEventType, entry: DeviceEntry):
-        try:
-            event = MediaDeviceDiscoveryEvent(event_type=event_type, device_type=entry.device_type, udn=entry.udn)
-            if event_type == DiscoveryEventType.NEW_DEVICE:
-                device = await self._create_device(entry)
-                if entry.device_type == MediaDeviceType.MEDIASERVER:
-                    self._add_new_server(entry.udn, cast(MediaServer, device))
-                elif entry.device_type == MediaDeviceType.MEDIARENDERER:
-                    await self._add_new_renderer(entry.udn, cast(MediaRenderer, device))
-                await self._notify_discovery(event)
-            elif event_type == DiscoveryEventType.DEVICE_LOST:
-                if entry.device_type == MediaDeviceType.MEDIASERVER:
-                    self._remove_lost_server(entry.udn)
-                elif entry.device_type == MediaDeviceType.MEDIARENDERER:
-                    self._remove_lost_renderer(entry.udn)
-                await self._notify_discovery(event)
-        except Exception:
-            _logger.exception('Failed to handle device discovery event')
 
     async def _notify_discovery(self, event: MediaDeviceDiscoveryEvent):
         await self._device_discover_observer.notify(event)
 
-    async def _create_device(self, entry: DeviceEntry) -> MediaDevice:
-        _logger.debug('Loading device description from %s', entry.location)
-        raw_device = await self._upnp_device_factory.async_create_device(entry.location)
-        if entry.device_type == MediaDeviceType.MEDIASERVER:
-            return MediaServer(raw_device)
-        elif entry.device_type == MediaDeviceType.MEDIARENDERER:
-            return await create_media_renderer(raw_device, self._notify_receiver)
-        raise RuntimeError('Cannot create device, is neither Renderer nor Server')
+    async def _add_renderer(self, event: DiscoveryEvent):
+        _logger.debug("Loading renderer description from %s", event.location)
+        raw_device = await self._upnp_device_factory.async_create_device(event.location)
+        renderer = await create_media_renderer(raw_device, self._notify_receiver)
+        self._renderers[event.udn] = renderer
+        self._playback_controller[event.udn] = PlaybackController()
+        wrapped_device = PlaybackControllableWrapper(renderer, self.get_mediaserver_by_UDN)
+        await self._playback_controller[event.udn].setup_player(wrapped_device)
+        _logger.info("New renderer %s [%s]", renderer.friendly_name, renderer.udn)
+        await self._notify_discovery(event)
 
-    async def _add_new_renderer(self, udn: str, device: MediaRenderer):
-        self._renderers[udn] = device
-        self._playback_controller[udn] = PlaybackController()
-        wrapped_device = PlaybackControllableWrapper(device, self.get_mediaserver_by_UDN)
-        await self._playback_controller[udn].setup_player(wrapped_device)
+    async def _remove_renderer(self, event: DiscoveryEvent):
+        if event.udn not in self._renderers:
+            return
+        renderer = self._renderers.pop(event.udn)
+        self._playback_controller.pop(event.udn)
+        _logger.info("Renderer gone %s [%s]", renderer.friendly_name, renderer.udn)
+        # We might receive a different device type in bye for the renderer with this UDN, i.e. a root device
+        # but only once for each UDN, whichever event arrives first
+        # Fixup type to "renderer" to let other listeners not what's going on
+        event.device_type = 'urn:schemas-upnp-org:device:MediaRenderer:1'
+        await self._notify_discovery(event)
 
-    def _remove_lost_renderer(self, udn: str):
-        self._renderers.pop(udn)
-        self._playback_controller.pop(udn)
+    async def _add_server(self, event: DiscoveryEvent):
+        _logger.debug("Loading server description from: %s", event.location)
+        raw_device = await self._upnp_device_factory.async_create_device(event.location)
+        server = MediaServer(raw_device)
+        self._servers[event.udn] = MediaServer(raw_device)
+        _logger.info("New server %s [%s]", server.friendly_name, server.udn)
+        await self._notify_discovery(event)
 
-    def _add_new_server(self, udn: str, device: MediaServer):
-        self._servers[udn] = device
+    async def _remove_lost_server(self, event: DiscoveryEvent):
+        if event.udn not in self._servers:
+            return
+        server = self._servers.pop(event.udn)
+        _logger.info("Server gone %s [%s]", server.friendly_name, server.udn)
+        # We might receive a different device type in bye for the renderer with this UDN, i.e. a root device
+        # but only once for each UDN, whichever event arrives first
+        # Fixup type to "renderer" to let other listeners not what's going on
+        event.device_type = 'urn:schemas-upnp-org:device:MediaServer:1'
+        await self._notify_discovery(event)
 
-    def _remove_lost_server(self, udn: str):
-        self._servers.pop(udn)
+    def _setup_discovery(self, device_discovery_events: Optional[rx.Observable[DiscoveryEvent]] = None):
+        o = device_discovery_events or create_discovery_event_observable()
+        self._device_discovery_events = o.pipe(rx.operators.publish())
+        self._discovery_subscription = None
+        scheduler = rx.scheduler.eventloop.AsyncIOScheduler(loop=asyncio.get_running_loop())
+
+        self._device_discovery_events.pipe(filter_new_device_events(),
+                                           filter_mediarenderer_events()).subscribe(_wrap_async(self._add_renderer),
+                                                                                    scheduler=scheduler)
+        self._device_discovery_events.pipe(filter_new_device_events(),
+                                           filter_mediaserver_events()).subscribe(_wrap_async(self._add_server),
+                                                                                  scheduler=scheduler)
+        self._device_discovery_events.pipe(filter_lost_device_events()).subscribe(_wrap_async(self._remove_renderer),
+                                                                                  scheduler=scheduler)
+        self._device_discovery_events.pipe(filter_lost_device_events(),
+                                           filter_mediaserver_events()).subscribe(_wrap_async(self._remove_lost_server),
+                                                                                  scheduler=scheduler)
