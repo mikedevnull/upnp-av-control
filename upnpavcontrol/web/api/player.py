@@ -14,6 +14,8 @@ _logger = logging.getLogger(__name__)
 
 async def _resolve_queue_item(cp: AVControlPoint, item: models.PlaybackQueueItem):
     dms_udn, object_id = split_library_item_id(item.id)
+    if object_id is None:
+        return None
     dms = cp.get_mediaserver_by_UDN(dms_udn)
     didl = await dms.browse_metadata(object_id)
     meta = didl.objects[0]
@@ -95,7 +97,8 @@ async def append_items_to_queue(request: Request, udn: str, payload: models.Play
         pc = request.app.av_control_point.get_controller_for_renderer(udn)
         items = [await _resolve_queue_item(request.app.av_control_point, i) for i in payload.items]
         for item in items:
-            pc.queue.appendItem(item)
+            if item is not None:
+                pc.queue.appendItem(item)
 
     except Exception as e:
         _logger.exception(e)
