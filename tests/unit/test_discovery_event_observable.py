@@ -10,11 +10,14 @@ import asyncio
 import datetime
 from typing import Callable, Awaitable
 from dataclasses import dataclass
+from ..testsupport.asyncmock_stub import AsyncMock
 
 
 @pytest.mark.asyncio
 async def test_subscribe_dispose_starts_and_stops_listener():
     mockListener = mock.create_autospec(SsdpListener, spec_set=True, instance=True)
+    mockListener.async_start = AsyncMock()
+    mockListener.async_stop = AsyncMock()
     listenerFactory = mock.Mock(return_value=mockListener)
 
     events = create_discovery_event_observable(listenerFactory=listenerFactory)
@@ -44,6 +47,8 @@ class SubscribedObservableContext(object):
 @pytest_asyncio.fixture
 async def subscribed_observable():
     mockListener = mock.create_autospec(SsdpListener, spec_set=True, instance=True)
+    mockListener.async_start = AsyncMock()
+    mockListener.async_stop = AsyncMock()
     listenerFactory = mock.Mock(return_value=mockListener)
 
     events = create_discovery_event_observable(listenerFactory=listenerFactory)
