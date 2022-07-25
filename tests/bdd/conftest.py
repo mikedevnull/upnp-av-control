@@ -1,7 +1,6 @@
 import pytest
 import pytest_asyncio
 from starlette.websockets import WebSocketDisconnect
-import upnpavcontrol.core.discovery
 from async_asgi_testclient import TestClient
 from .context import TestContext
 from .json_rpc_connection import JsonRPCTestConnection
@@ -9,20 +8,21 @@ from .json_rpc_connection import JsonRPCTestConnection
 
 @pytest.mark.asyncio
 @pytest_asyncio.fixture
-def test_context(monkeypatch, event_loop):
+async def test_context(monkeypatch, event_loop):
     context = TestContext()
-    monkeypatch.setattr(upnpavcontrol.core.discovery.scan, 'async_search', context.fake_async_search)
 
-    return context
+    # create webclient here already to ensure the control point will be started
+    from upnpavcontrol.web import application
+    application.app.av_control_point = context.control_point
+    async with TestClient(application.app) as webclient:
+        context.webclient = webclient
+        yield context
 
 
 @pytest.mark.asyncio
 @pytest_asyncio.fixture
 async def webclient(test_context, event_loop):
-    from upnpavcontrol.web import application
-    application.app.av_control_point = test_context.control_point
-    async with TestClient(application.app) as webclient:
-        yield webclient
+    return test_context.webclient
 
 
 @pytest.mark.asyncio

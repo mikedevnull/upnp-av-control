@@ -24,7 +24,7 @@ MediaDevice = Union[MediaServer, MediaRenderer]
 def _wrap_async(c):
 
     def f(*args, **kwargs):
-        return asyncio.get_running_loop().create_task(c(*args, **kwargs))
+        return asyncio.get_event_loop().create_task(c(*args, **kwargs))
 
     return f
 
