@@ -1,11 +1,13 @@
 from upnpavcontrol.core import AVControlPoint
-from upnpavcontrol.core.discovery import DeviceRegistry
 from upnpavcontrol.core.notification_backend import NotificationBackend
-from ..testsupport import NullAdvertisementListener, UpnpTestRequester, NotificationTestEndpoint
+from upnpavcontrol.core.discovery.events import DiscoveryEvent, DiscoveryEventType
+from ..testsupport import UpnpTestRequester, NotificationTestEndpoint
 from async_upnp_client.client import UpnpDevice
-from .fake_upnp import format_ssdp_event, FakeAsyncUpnpDevice
-from .async_utils import run_on_main_loop
+from .fake_upnp import FakeAsyncUpnpDevice
+from async_asgi_testclient import TestClient
 import logging
+import reactivex as rx
+import typing
 
 _logger = logging.getLogger(__name__)
 
@@ -28,15 +30,15 @@ class TestContext(object):
     def __init__(self):
         self._available_devices = {}
         device_factory = FakeUpnpDeviceFactory(self)
-        device_registry = DeviceRegistry(advertisement_listener=NullAdvertisementListener)
-        self._advertisement_listener = device_registry._listener
         self._notification_endpoint = NotificationTestEndpoint()
+        self._discovery_events = rx.Subject()
         self._test_requester = UpnpTestRequester()
         notification_backend = NotificationBackend(endpoint=self._notification_endpoint, requester=self._test_requester)
 
-        self.control_point = AVControlPoint(device_registry=device_registry,
+        self.control_point = AVControlPoint(device_discovery_events=self._discovery_events,
                                             notifcation_backend=notification_backend,
                                             device_factory=device_factory)
+        self.webclient: typing.Optional[TestClient] = None
 
     def get_device(self, name: str):
         return self._available_devices[name]
@@ -51,18 +53,21 @@ class TestContext(object):
         for service in device.services.values():
             service.configure_event_handling(self._test_requester, self._notification_endpoint)
         if notify:
-            self.trigger_notification(device, 'alive')
+            self.trigger_notification(device, DiscoveryEventType.NEW_DEVICE)
 
     def remove_device_to_network(self, name, notify=False):
         _logger.debug('remove device %s', name)
         descriptor = self._available_devices.pop(name)
         if notify:
-            self.trigger_notification(descriptor, 'byebye')
+            self.trigger_notification(descriptor, DiscoveryEventType.DEVICE_LOST)
 
-    def trigger_notification(self, device, event):
-        ssdp = format_ssdp_event(device.descriptor, event)
-        _logger.debug('trigger ssdp %s', ssdp)
-        run_on_main_loop(self._advertisement_listener.simulate(ssdp))
+    def trigger_notification(self, device, event_type: DiscoveryEventType):
+        descriptor = device.descriptor
+        simulated_event = DiscoveryEvent(
+            event_type=event_type,
+            device_type=f'urn:schemas-upnp-org:device:{descriptor.device_type}:{descriptor.device_version}',
+            udn=descriptor.udn,
+            location=descriptor.location)
+        _logger.debug('trigger event %s', simulated_event)
 
-    async def fake_async_search(self, *args, **kwargs):
-        return
+        self._discovery_events.on_next(simulated_event)
