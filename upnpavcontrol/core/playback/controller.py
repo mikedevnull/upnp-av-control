@@ -2,7 +2,7 @@ from upnpavcontrol.core.typing_compat import Protocol
 from upnpavcontrol.core.mediarenderer import TransportState, PlaybackInfo
 from upnpavcontrol.core.oberserver import Subscription, wait_for_value_if
 from .queue import PlaybackQueue, PlaybackItem
-import typing
+from typing import Optional, Callable, Awaitable
 import logging
 
 _logger = logging.getLogger(__name__)
@@ -16,29 +16,33 @@ class PlaybackControllable(Protocol):
     async def stop(self):
         ...
 
-    async def subscribe(self, callback: typing.Callable[[TransportState], typing.Awaitable[None]]) -> Subscription:
+    async def subscribe(self, callback: Callable[[PlaybackInfo], Awaitable[None]]) -> Subscription:
         ...
 
 
 class QueueInterface(Protocol):
 
-    def next_item(self) -> typing.Optional[PlaybackItem]:
+    def next_item(self) -> Optional[PlaybackItem]:
         ...
 
     def clear(self) -> None:
         ...
 
+    @property
+    def current_item(self) -> Optional[PlaybackItem]:
+        ...
+
 
 class PlaybackController():
 
-    def __init__(self, queue: QueueInterface = None):
+    def __init__(self, queue: Optional[QueueInterface] = None):
         self._player = None
         if queue is not None:
             self._queue = queue
         else:
             self._queue = PlaybackQueue()
         self._is_playing = False
-        self._player_subscription: Subscription = None
+        self._player_subscription: Optional[Subscription] = None
 
     @property
     def is_playing(self):
@@ -52,6 +56,9 @@ class PlaybackController():
         self._player = player
 
     async def play(self):
+        if self._player is None:
+            return
+
         if self._is_playing:
             _logger.debug("Already playing, doing nothing")
             return
@@ -83,6 +90,8 @@ class PlaybackController():
         self._queue.clear()
 
     async def stop(self):
+        if self._player is None:
+            return
         if not self._is_playing:
             _logger.debug("Already stopped, doing nothing")
             return

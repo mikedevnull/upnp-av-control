@@ -40,13 +40,13 @@ class AiohttpNotificationEndpoint(UpnpNotifyServer):
             return web.Response(status=status.value)
         return web.Response(status=200)
 
-    async def async_start(self, callback: NotifyReceivedCallable):
+    async def async_start_server(self, callback: NotifyReceivedCallable):
         await self._runner.setup()
         self._site = web.TCPSite(self._runner, "0.0.0.0", self._port)
         self._notify_callback = callback
         await self._site.start()
 
-    async def async_stop(self):
+    async def async_stop_server(self):
         await self._runner.shutdown()
         self._notify_callback = None
 
@@ -76,7 +76,7 @@ class NotificationBackend(object):
         if self._renew_subscriptions_task is not None:
             # assume we're already running
             return
-        await self._endpoint.async_start(self._handler.handle_notify)
+        await self._endpoint.async_start_server(self._handler.handle_notify)  # type: ignore
         self._renew_subscriptions_task = asyncio.create_task(self._resubscription_loop())
         _logger.info('NotificationBackend started (%s)', self._endpoint.callback_url)
 
@@ -88,7 +88,7 @@ class NotificationBackend(object):
             self._renew_subscriptions_task.cancel()
             await self._renew_subscriptions_task
             self._renew_subscriptions_task = None
-            await self._endpoint.async_stop()
+            await self._endpoint.async_stop_server()
             _logger.info('NotificationBackend stopped')
 
     async def _resubscription_loop(self):

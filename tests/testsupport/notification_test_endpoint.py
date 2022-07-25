@@ -10,12 +10,13 @@ class NotificationTestEndpoint(UpnpNotifyServer):
     def callback_url(self):
         return 'http://localhost:12345'
 
-    async def async_start(self, callback):
+    async def async_start_server(self, callback):
         self._callback = callback
         pass
 
-    async def async_stop(self):
+    async def async_stop_server(self):
         pass
 
     async def trigger_notification(self, headers, body):
-        await self._callback(headers, body)
+        if self._callback is not None:
+            await self._callback(headers, body)

@@ -20,7 +20,7 @@ def is_media_server(device_type: str) -> bool:
     bool
         True if a MediaServer device, False otherwise
     """
-    return _media_server_regex.match(device_type)
+    return _media_server_regex.match(device_type) is not None
 
 
 def is_media_renderer(device_type: str) -> bool:
@@ -38,7 +38,7 @@ def is_media_renderer(device_type: str) -> bool:
     bool
         True if a MediaRenderer device, False otherwise
     """
-    return _media_renderer_regex.match(device_type)
+    return _media_renderer_regex.match(device_type) is not None
 
 
 def is_media_device(device_type: str) -> bool:
@@ -56,7 +56,7 @@ def is_media_device(device_type: str) -> bool:
     bool
         True if a MediaServer or MediaRenderer device, False otherwise
     """
-    return _media_device_type_regex.match(device_type)
+    return _media_device_type_regex.match(device_type) is not None
 
 
 def udn_from_usn(usn: str, device_type: str):

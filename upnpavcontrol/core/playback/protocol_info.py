@@ -46,6 +46,8 @@ def match_resources(object_resources: typing.Sequence[didllite.Resource],
     for object_resource in object_resources:
         for renderer_protocol in renderer_protocols:
             object_protoinfo = ProtocolInfoEntry.fromstring(object_resource.protocolInfo)
+            if object_protoinfo is None:
+                continue
             if protocol_info_matches(object_protoinfo, renderer_protocol):
                 matched_resources.append(object_resource)
                 break

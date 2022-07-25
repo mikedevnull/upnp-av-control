@@ -8,12 +8,15 @@ from .playback.controller import PlaybackController
 from .playback.utils import PlaybackControllableWrapper
 from .notification_backend import NotificationBackend, AiohttpNotificationEndpoint
 from async_upnp_client.aiohttp import AiohttpRequester
-from async_upnp_client.client_factory import UpnpFactory, UpnpDevice
-from typing import Awaitable, Callable, Union, Dict, Optional
+from async_upnp_client.client_factory import UpnpFactory
+from async_upnp_client.client import UpnpDevice
+from typing import Callable, Coroutine, Union, Dict, Optional, Any
 from .oberserver import Observable
 from .typing_compat import Protocol
 import logging
 import reactivex as rx
+import reactivex.operators as rxoperators
+from reactivex.scheduler.eventloop import AsyncIOScheduler
 import asyncio
 
 _logger = logging.getLogger(__name__)
@@ -21,10 +24,10 @@ _logger = logging.getLogger(__name__)
 MediaDevice = Union[MediaServer, MediaRenderer]
 
 
-def _wrap_async(c):
+def _wrap_async(c: Callable[[Any], Coroutine[Any, None, None]]):
 
-    def f(*args, **kwargs):
-        return asyncio.get_event_loop().create_task(c(*args, **kwargs))
+    def f(t: Any):
+        asyncio.get_event_loop().create_task(c(t))
 
     return f
 
@@ -32,7 +35,7 @@ def _wrap_async(c):
 class UpnpDeviceFactory(Protocol):
 
     async def async_create_device(self, location: str) -> UpnpDevice:
-        pass
+        ...
 
 
 class AVControlPoint(object):
@@ -40,7 +43,7 @@ class AVControlPoint(object):
     def __init__(self,
                  device_discovery_events: Optional[rx.Observable] = None,
                  notifcation_backend=None,
-                 device_factory: UpnpDeviceFactory = None):
+                 device_factory: Optional[UpnpDeviceFactory] = None):
         self._device_discover_observer = Observable[MediaDeviceDiscoveryEvent]()
         self._renderers: Dict[str, MediaRenderer] = {}
         self._servers: Dict[str, MediaServer] = {}
@@ -74,7 +77,7 @@ class AVControlPoint(object):
     def get_controller_for_renderer(self, udn: str) -> PlaybackController:
         return self._playback_controller[udn]
 
-    def on_device_discovery_event(self, callback: Callable[[MediaDeviceDiscoveryEvent], Awaitable[None]]):
+    def on_device_discovery_event(self, callback: Callable[[MediaDeviceDiscoveryEvent], Coroutine[None, None, None]]):
         return self._device_discover_observer.subscribe(callback)
 
     async def async_start(self):
@@ -83,14 +86,18 @@ class AVControlPoint(object):
         await self._notify_receiver.async_start()
 
     async def async_stop(self):
-        self._discovery_subscription.dispose()
-        self._discovery_subscription = None
+        if self._discovery_subscription is not None:
+            self._discovery_subscription.dispose()
+            self._discovery_subscription = None
         await self._notify_receiver.async_stop()
 
     async def _notify_discovery(self, event: MediaDeviceDiscoveryEvent):
         await self._device_discover_observer.notify(event)
 
     async def _add_renderer(self, event: DiscoveryEvent):
+        if event.location is None:
+            _logger.warning("Server description has no location, ignoring")
+            return
         _logger.debug("Loading renderer description from %s", event.location)
         raw_device = await self._upnp_device_factory.async_create_device(event.location)
         renderer = await create_media_renderer(raw_device, self._notify_receiver)
@@ -118,6 +125,9 @@ class AVControlPoint(object):
         await self._notify_discovery(forward_event)
 
     async def _add_server(self, event: DiscoveryEvent):
+        if event.location is None:
+            _logger.warning("Server description has no location, ignoring")
+            return
         _logger.debug("Loading server description from: %s", event.location)
         raw_device = await self._upnp_device_factory.async_create_device(event.location)
         server = MediaServer(raw_device)
@@ -142,9 +152,9 @@ class AVControlPoint(object):
 
     def _setup_discovery(self, device_discovery_events: Optional[rx.Observable[DiscoveryEvent]] = None):
         o = device_discovery_events or create_discovery_event_observable()
-        self._device_discovery_events = o.pipe(rx.operators.publish())
+        self._device_discovery_events = o.pipe(rxoperators.publish())
         self._discovery_subscription = None
-        scheduler = rx.scheduler.eventloop.AsyncIOScheduler(loop=asyncio.get_running_loop())
+        scheduler = AsyncIOScheduler(loop=asyncio.get_running_loop())
 
         self._device_discovery_events.pipe(filter_new_device_events(),
                                            filter_mediarenderer_events()).subscribe(_wrap_async(self._add_renderer),

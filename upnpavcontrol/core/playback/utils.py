@@ -3,10 +3,12 @@ import typing
 from .queue import PlaybackItem
 from .protocol_info import match_resources
 from ..oberserver import Subscription
+
 from async_upnp_client.exceptions import UpnpActionResponseError
 import logging
 if typing.TYPE_CHECKING:
-    from .. import MediaRenderer, MediaServer, TransportState
+    from .. import MediaRenderer, MediaServer
+    from ..mediarenderer import PlaybackInfo
 
 _logger = logging.getLogger(__name__)
 
@@ -28,6 +30,9 @@ def prepare_for_connection(dmr: 'MediaRenderer', dms: 'MediaServer') -> Prepared
 
 
 async def play(dms: 'MediaServer', object_id: str, dmr: 'MediaRenderer'):  # noqa F812
+    if dmr.av_transport is None:
+        _logger.error('Renderer %s has no AV Transport service', dmr.friendly_name)
+        raise RuntimeError("Failed to play without transport service")
     didl = await dms.browse_metadata(object_id)
     playbackitem = didl.objects[0]
     assert len(didl.objects) == 1
@@ -38,11 +43,15 @@ async def play(dms: 'MediaServer', object_id: str, dmr: 'MediaRenderer'):  # noq
     play_resource = resources[0]
     connection = prepare_for_connection(dmr, dms)
     try:
-        await dmr.av_transport.async_call_action('SetAVTransportURI',
-                                                 InstanceID=connection.av_transport_id,
-                                                 CurrentURI=play_resource.uri,
-                                                 CurrentURIMetaData=playback_meta)
-        await dmr.av_transport.async_call_action('Play', InstanceID=connection.av_transport_id, Speed="1")
+        await dmr.av_transport.async_call_action(
+            'SetAVTransportURI',  # type: ignore
+            InstanceID=connection.av_transport_id,
+            CurrentURI=play_resource.uri,
+            CurrentURIMetaData=playback_meta)
+        await dmr.av_transport.async_call_action(
+            'Play',  # type: ignore
+            InstanceID=connection.av_transport_id,
+            Speed="1")
     except UpnpActionResponseError as e:
         _logger.exception(e)
         _logger.debug("%s (%s)", e.error_desc, e.error_code)
@@ -64,9 +73,11 @@ class PlaybackControllableWrapper(object):
         self._connection = await play(dms, item.object_id, self._renderer)
 
     async def stop(self):
-        if self._connection is not None:
-            await self._renderer.av_transport.async_call_action('Stop', InstanceID=self._connection.av_transport_id)
+        if self._connection is not None and self._renderer.av_transport is not None:
+            await self._renderer.av_transport.async_call_action(
+                'Stop',  # type: ignore
+                InstanceID=self._connection.av_transport_id)
             self._connection = None
 
-    async def subscribe(self, callback: typing.Callable[['TransportState'], typing.Awaitable[None]]) -> Subscription:
+    async def subscribe(self, callback: typing.Callable[['PlaybackInfo'], typing.Awaitable[None]]) -> Subscription:
         return await self._renderer.subscribe_notifcations(callback)

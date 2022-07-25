@@ -1,9 +1,11 @@
-from typing import Callable, Awaitable, TypeVar, Generic, Dict, List, Optional
+from typing import Callable, Awaitable, TypeVar, Generic, Dict, List, Optional, Coroutine
+from .typing_compat import Protocol
 import asyncio
 import logging
 from contextlib import asynccontextmanager
 
 T = TypeVar('T')
+S = TypeVar('S', covariant=True)
 _logger = logging.getLogger(__name__)
 
 
@@ -32,6 +34,12 @@ class Subscription(object):
         Reset the subscription handle _without_ unsubscribing.
         """
         self._observable = None
+
+
+class Subscribable(Protocol[S]):
+
+    async def subscribe(self, callback: Callable[[S], Awaitable[None]]) -> Subscription:
+        ...
 
 
 class Observable(Generic[T]):
@@ -69,7 +77,7 @@ class Observable(Generic[T]):
     def on_subscription_change(self, callback: Optional[Callable[[int], Awaitable[None]]]):
         self._change_callback_cb = callback
 
-    async def subscribe(self, subscriber: Callable[[T], Awaitable[None]]) -> Subscription:
+    async def subscribe(self, subscriber: Callable[[T], Coroutine[None, None, None]]) -> Subscription:
         """
         Subscribe an async callable that will be invoked when the observable wants to notify its subscribers.
 
@@ -83,7 +91,7 @@ class Observable(Generic[T]):
             self._subscriptions[subscription] = subscriber
             if self._change_callback_cb is not None:
                 await self._change_callback_cb(len(self._subscriptions))
-            if self._has_last_value and self._is_replaying:
+            if self._has_last_value and self._is_replaying and self._last_value is not None:
                 asyncio.create_task(subscriber(self._last_value))
         return subscription
 
@@ -127,7 +135,7 @@ class Observable(Generic[T]):
 
 
 @asynccontextmanager
-async def wait_for_value_if(observerable: Observable[T], predicate: Callable[[T], bool], timeout: int = 15):
+async def wait_for_value_if(observerable: Subscribable[T], predicate: Callable[[T], bool], timeout: int = 15):
     """
     Async contextmanager that blocks on exit until some predicate for the observable value became true.
 

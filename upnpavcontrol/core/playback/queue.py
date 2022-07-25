@@ -16,8 +16,8 @@ class PlaybackItem():
 class PlaybackQueue():
 
     def __init__(self):
-        self._items = []
-        self._current_item_index: typing.Optional[PlaybackItem] = None
+        self._items: typing.List[PlaybackItem] = []
+        self._current_item_index: typing.Optional[int] = None
 
     @property
     def items(self):
