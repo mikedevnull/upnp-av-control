@@ -2,9 +2,12 @@ from enum import Enum
 from dataclasses import dataclass
 import typing
 from .utils import is_media_device, is_media_renderer, is_media_server
-from async_upnp_client.ssdp_listener import SsdpListener, SsdpDevice, SsdpSource
+from async_upnp_client.ssdp_listener import SsdpListener, SsdpDevice
+from async_upnp_client.const import SsdpSource
 import reactivex as rx
-import reactivex.operators as ops
+import reactivex.operators as rxops
+import reactivex.disposable as rxdisposable
+from reactivex.typing import Action
 import asyncio
 import logging
 
@@ -47,19 +50,23 @@ class DiscoveryEvent:
 
 
 def filter_mediarenderer_events():
-    return rx.operators.filter(lambda e: is_media_renderer(e.device_type))
+    f: typing.Callable[[DiscoveryEvent], bool] = lambda e: is_media_renderer(e.device_type)
+    return rxops.filter(f)
 
 
 def filter_mediaserver_events():
-    return rx.operators.filter(lambda e: is_media_server(e.device_type))
+    f: typing.Callable[[DiscoveryEvent], bool] = lambda e: is_media_server(e.device_type)
+    return rxops.filter(f)
 
 
 def filter_new_device_events():
-    return rx.operators.filter(lambda e: e.event_type == DiscoveryEventType.NEW_DEVICE)
+    f: typing.Callable[[DiscoveryEvent], bool] = lambda e: e.event_type == DiscoveryEventType.NEW_DEVICE
+    return rxops.filter(f)
 
 
 def filter_lost_device_events():
-    return rx.operators.filter(lambda e: e.event_type == DiscoveryEventType.DEVICE_LOST)
+    f: typing.Callable[[DiscoveryEvent], bool] = lambda e: e.event_type == DiscoveryEventType.DEVICE_LOST
+    return rxops.filter(f)
 
 
 @dataclass(frozen=True)
@@ -84,7 +91,7 @@ def to_discovery_event(raw_event: _SsdpRawEvent) -> DiscoveryEvent:
 def create_discovery_event_observable(loop: typing.Optional[asyncio.AbstractEventLoop] = None,
                                       listenerFactory=None) -> rx.Observable[DiscoveryEvent]:
 
-    def _on_subscribe(observer: rx.Observer, scheduler):
+    def _on_subscribe(observer: rx.abc.ObserverBase[_SsdpRawEvent], scheduler: typing.Optional[rx.abc.SchedulerBase]):
 
         async def on_listener_callback(device: SsdpDevice, dtype, source: SsdpSource):
             observer.on_next(_SsdpRawEvent(device, dtype, source))
@@ -102,13 +109,14 @@ def create_discovery_event_observable(loop: typing.Optional[asyncio.AbstractEven
             await listener.async_stop()
 
         task = activeloop.create_task(startup())
-        task_cancel = rx.disposable.Disposable(task.cancel)
-        listener_stop = rx.disposable.Disposable(lambda: activeloop.create_task(listener.async_stop()))
-        return rx.disposable.CompositeDisposable(task_cancel, listener_stop)
+        task_cancel = rxdisposable.Disposable(typing.cast(Action, task.cancel))
+        listener_stop = rxdisposable.Disposable(typing.cast(Action, lambda: activeloop.create_task(shutdown())))
+        return rxdisposable.CompositeDisposable(task_cancel, listener_stop)
 
     return rx.create(_on_subscribe).pipe(
-        ops.do_action(lambda x: _logger.debug(x)),
-        ops.filter(lambda e: e.source in
-                   (SsdpSource.ADVERTISEMENT_ALIVE, SsdpSource.ADVERTISEMENT_BYEBYE, SsdpSource.SEARCH_CHANGED)),
-        ops.filter(lambda e: is_media_device(e.device_or_service_type) or e.source == SsdpSource.ADVERTISEMENT_BYEBYE),
-        ops.map(to_discovery_event))
+        rxops.do_action(lambda x: _logger.debug(x)),
+        rxops.filter(lambda e: e.source in
+                     (SsdpSource.ADVERTISEMENT_ALIVE, SsdpSource.ADVERTISEMENT_BYEBYE, SsdpSource.SEARCH_CHANGED)),
+        rxops.filter(
+            lambda e: is_media_device(e.device_or_service_type) or e.source == SsdpSource.ADVERTISEMENT_BYEBYE),
+        rxops.map(to_discovery_event))

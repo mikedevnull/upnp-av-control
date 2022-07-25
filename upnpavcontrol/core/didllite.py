@@ -22,6 +22,7 @@ class DictAdapter():
 
     Adapted from pydantic.utils.GetterDict.
     """
+
     def __init__(self, obj: typing.Any, namespaces: typing.Mapping[str, str] = _nsmap):
         self._xml = obj
         self._nsmap = namespaces
@@ -122,6 +123,7 @@ def from_xml_string(xmldata):
 
 
 class DidlLite(object):
+
     def __init__(self, xml: str):
         self._raw = xml
         self._objects: typing.Optional[typing.List[DidlObject]] = None
@@ -144,7 +146,7 @@ _class_to_element_mapping = {
 }
 
 
-def _to_didl_element(xmlElement: any):
+def _to_didl_element(xmlElement: typing.Any):
     upnpclass = xmlElement.findtext('upnp:class', namespaces=_nsmap)
     # mapping logic should be improved/refactored when more types are supported
     if upnpclass in _class_to_element_mapping:

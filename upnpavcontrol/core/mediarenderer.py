@@ -25,9 +25,9 @@ class TransportState(str, enum.Enum):
 class PlaybackInfo(BaseModel):
     volume_percent: int = 0
     transport: TransportState = TransportState.STOPPED
-    title: typing.Optional[str]
-    artist: typing.Optional[str]
-    album: typing.Optional[str]
+    title: typing.Optional[str] = None
+    artist: typing.Optional[str] = None
+    album: typing.Optional[str] = None
 
 
 _nsmap = {
@@ -134,7 +134,7 @@ class MediaRenderer(object):
                                                                            DesiredVolume=value)
 
     async def get_protocol_info(self):
-        response = await self.connection_manager.async_call_action('GetProtocolInfo')
+        response = await self.connection_manager.async_call_action('GetProtocolInfo')  # type: ignore
         data = response['Sink']
         return parse_protocol_infos(data)
 
