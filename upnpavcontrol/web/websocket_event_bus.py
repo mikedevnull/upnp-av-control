@@ -1,5 +1,5 @@
 from . import json_rpc
-from typing import Callable, Awaitable
+from typing import Callable, Awaitable, Coroutine
 from upnpavcontrol.core.typing_compat import Protocol
 from upnpavcontrol.core.discovery import MediaDeviceDiscoveryEvent
 from upnpavcontrol.core.mediarenderer import PlaybackInfo
@@ -9,12 +9,13 @@ from contextlib import asynccontextmanager
 
 _event_type_map = {'NEW_DEVICE': 'new_device', 'DEVICE_LOST': 'device_lost'}
 
-MediaDeviceDiscoveryCallback = Callable[[MediaDeviceDiscoveryEvent], Awaitable]
+MediaDeviceDiscoveryCallback = Callable[[MediaDeviceDiscoveryEvent], Coroutine]
 
 _logger = logging.getLogger(__name__)
 
 
 class EventBusConnector(Protocol):
+
     async def subscribe_discovery_notifications(self, callback: MediaDeviceDiscoveryCallback) -> Subscription:
         ...
 
@@ -24,6 +25,7 @@ class EventBusConnector(Protocol):
 
 
 class EventBusConnection(object):
+
     def __init__(self, websocket, connector: EventBusConnector):
         self._websocket = websocket
         self._connector = connector
@@ -115,6 +117,7 @@ async def event_bus_connection(websocket, connector):
 
 
 class WebsocketEventBus(object):
+
     def __init__(self, connector: EventBusConnector):
         self._notification_sockets = []
         self._connector = connector

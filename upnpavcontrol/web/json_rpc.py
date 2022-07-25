@@ -29,7 +29,7 @@ class JsonRPCResponse(BaseModel):
 class JsonRPCError(BaseModel):
     code: int
     message: str
-    data: Optional[Any]
+    data: Optional[Any] = None
 
 
 JSONRPC_PARSE_ERROR = JsonRPCError(code=-32700, message='Parse error')
@@ -38,6 +38,7 @@ JSONRPC_METHOD_NOT_FOUND = JsonRPCError(code=-32601, message='Method not found')
 
 
 class JsonRPCException(ValueError):
+
     def __init__(self, error: JsonRPCError, id=None):
         super().__init__()
         self.rpcerror = error
@@ -50,7 +51,7 @@ class JsonRPCException(ValueError):
 class JsonRPCErrorResponse(BaseModel):
     jsonrpc: Literal['2.0'] = '2.0'
     error: JsonRPCError
-    id: Union[int, str]
+    id: Union[int, str, None]
 
 
 def parse_jsonrpc_request(payload: str):
@@ -68,6 +69,7 @@ def parse_jsonrpc_request(payload: str):
 
 
 class WebsocketEventBus(object):
+
     def __init__(self):
         self._queue = asyncio.Queue()
 

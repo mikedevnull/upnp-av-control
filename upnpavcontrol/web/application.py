@@ -8,7 +8,7 @@ from .websocket_event_bus import WebsocketEventBus, MediaDeviceDiscoveryCallback
 from . import api
 from . import settings
 import aiohttp
-import os
+import pathlib
 from typing import Optional
 
 
@@ -39,6 +39,7 @@ class AVControlPointAPI(FastAPI):
         return await self._av_control_point.on_device_discovery_event(callback)
 
     async def subscribe_renderer_notifications(self, udn, callback):
+        assert self._av_control_point is not None
         renderer = self._av_control_point.get_mediarenderer_by_UDN(udn)
 
         async def f(playbackinfo):
@@ -56,7 +57,7 @@ async def websocket_endpoint(websocket: WebSocket):
     await app.event_bus.accept(websocket)
 
 
-static_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'static')
+static_dir = pathlib.PurePath(__file__).parent / 'static'
 static_files = StaticFilesSPA(directory=static_dir, html=True, check_dir=False)
 app.mount('/', static_files, name='static')
 
@@ -89,5 +90,5 @@ async def init_event_bus():
 
 @app.on_event("shutdown")
 async def stop_av_control_point():
-    if app._av_control_point is not None:
+    if app.av_control_point is not None:
         await app.av_control_point.async_stop()

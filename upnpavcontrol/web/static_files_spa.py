@@ -13,14 +13,14 @@ class StaticFilesSPA(StaticFiles):
         super().__init__(directory=directory, packages=packages, html=html, check_dir=check_dir)
         self._fallback = super().lookup_path(index)
 
-    def lookup_path(self, path: str) -> typing.Tuple[str, os.stat_result]:
+    def lookup_path(self, path: str) -> typing.Tuple[str, typing.Optional[os.stat_result]]:
         """
         Normal static file lookup with fallback to index file
         """
 
         full_path, stat_result = super().lookup_path(path)
 
-        if stat_result is None:
+        if stat_result is None and self._fallback:
             return self._fallback
 
         return (full_path, stat_result)
