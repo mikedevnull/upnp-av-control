@@ -37,7 +37,7 @@ pytest-cov = "^3.0.0"
 pytest-asyncio = "^0.19.0"
 pytest-bdd = "^6.0.0"
 async-asgi-testclient = "^1.4.10"
-flake8 = "^4.0.1"
+flake8 = "^5.0.0"
 flake8-print = "^5.0.0"
 yapf = "^0.32.0"
 
