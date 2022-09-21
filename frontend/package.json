@@ -27,7 +27,7 @@
     "@types/react-lazy-load-image-component": "1.5.2",
     "@types/react-router-dom": "5.3.3",
     "@vitejs/plugin-react": "2.1.0",
-    "autoprefixer": "10.4.11",
+    "autoprefixer": "10.4.12",
     "babel-jest": "29.0.3",
     "babel-preset-react-app": "10.0.1",
     "eventemitter3": "4.0.7",
